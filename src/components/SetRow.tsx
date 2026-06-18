@@ -1,6 +1,7 @@
 "use client";
 
 import { useStore } from "@/lib/store";
+import { useRestTimer } from "@/lib/restTimer";
 import type { WorkoutSet } from "@/domain/types";
 
 export interface PreviousSet {
@@ -16,15 +17,18 @@ export interface PreviousSet {
 export function SetRow({
   set,
   previous,
+  restSeconds,
   onPr,
 }: {
   set: WorkoutSet;
   previous?: PreviousSet;
+  restSeconds: number;
   onPr: (kinds: string[]) => void;
 }) {
   const updateSet = useStore((s) => s.updateSet);
   const completeSet = useStore((s) => s.completeSet);
   const removeSet = useStore((s) => s.removeSet);
+  const startRest = useRestTimer((s) => s.start);
 
   const num = (v: string) => (v === "" ? null : Number(v));
   const prevWeight = previous?.weight ?? set.plannedWeight;
@@ -75,6 +79,7 @@ export function SetRow({
           if (set.actualWeight == null) updateSet(set.id, { actualWeight: prevWeight });
           if (set.actualReps == null) updateSet(set.id, { actualReps: prevReps });
           const { newPrs } = completeSet(set.id);
+          startRest(restSeconds); // auto-start rest the moment a set is done
           if (newPrs.length) onPr(newPrs);
         }}
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg ${

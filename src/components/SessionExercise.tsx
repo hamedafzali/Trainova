@@ -5,6 +5,7 @@ import { SetRow } from "@/components/SetRow";
 import { suggestNextLoad } from "@/domain/progression";
 import { useStore } from "@/lib/store";
 import { cleanName, machineNo } from "@/lib/format";
+import { defaultRest } from "@/lib/restTimer";
 import type { WorkoutSet } from "@/domain/types";
 
 /** All sets for a single exercise within the active session, plus its suggestion. */
@@ -102,6 +103,7 @@ export function SessionExercise({
           <SetRow
             key={s.id}
             set={s}
+            restSeconds={defaultRest(ex?.isCompound ?? false)}
             previous={
               last?.sets[s.setIndex]
                 ? {
