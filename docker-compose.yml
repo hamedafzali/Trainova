@@ -66,10 +66,15 @@ services:
     command:
       - |
         while true; do
+          until pg_isready -h trainova-db -U trainova -d trainova -q; do sleep 2; done;
           ts=$$(date +%Y%m%d-%H%M%S);
-          pg_dump -h trainova-db -U trainova -d trainova | gzip > /backups/trainova-$$ts.sql.gz \
-            && echo "backup ok: trainova-$$ts.sql.gz" \
-            || echo "backup FAILED at $$ts";
+          pg_dump -h trainova-db -U trainova -d trainova | gzip > /tmp/dump.gz;
+          if [ -s /tmp/dump.gz ]; then
+            mv /tmp/dump.gz /backups/trainova-$$ts.sql.gz;
+            echo "backup ok: trainova-$$ts.sql.gz";
+          else
+            echo "backup FAILED at $$ts (empty)"; rm -f /tmp/dump.gz;
+          fi;
           ls -1t /backups/*.sql.gz 2>/dev/null | tail -n +8 | xargs -r rm -f;
           sleep 86400;
         done
