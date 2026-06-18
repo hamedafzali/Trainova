@@ -51,8 +51,35 @@ services:
       retries: 5
       start_period: 10s
 
+  # Nightly pg_dump → /backups, keeping the 7 most recent. Tiny, mostly idle.
+  trainova-backup:
+    image: postgres:16-alpine
+    container_name: trainova-backup
+    depends_on:
+      trainova-db:
+        condition: service_healthy
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in project variables}
+    volumes:
+      - trainova-backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          ts=$$(date +%Y%m%d-%H%M%S);
+          pg_dump -h trainova-db -U trainova -d trainova | gzip > /backups/trainova-$$ts.sql.gz \
+            && echo "backup ok: trainova-$$ts.sql.gz" \
+            || echo "backup FAILED at $$ts";
+          ls -1t /backups/*.sql.gz 2>/dev/null | tail -n +8 | xargs -r rm -f;
+          sleep 86400;
+        done
+    restart: unless-stopped
+    networks:
+      - trainova-network
+
 volumes:
   trainova-db-data:
+  trainova-backups:
 
 networks:
   trainova-network:
