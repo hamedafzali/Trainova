@@ -88,6 +88,10 @@ export default function AdminPage() {
         </Link>
       </header>
 
+      <Link href="/admin/devices" className="btn-ghost w-full">
+        🏋️ Manage device library
+      </Link>
+
       {error && <p className="text-sm text-danger">{error}</p>}
 
       <ul className="space-y-2">

@@ -70,6 +70,7 @@ export interface TrainovaState {
   enterAccount: (email: string, role?: AppSession["role"]) => void;
   leaveSession: () => void;
   setUnits: (u: Units) => void;
+  setLibrary: (devices: Device[], exercises: Exercise[]) => void;
   completeOnboarding: (p: Partial<UserProfile>) => void;
   updateProfile: (p: Partial<UserProfile>) => void;
   editSet: (
@@ -153,6 +154,14 @@ export const useStore = create<TrainovaState>()(
       leaveSession: () => set({ session: null }),
 
       setUnits: (u) => set({ units: u }),
+
+      // Replace shared (owner === null) library items with the central copy,
+      // keeping the user's own custom devices/exercises.
+      setLibrary: (devices, exercises) =>
+        set((s) => ({
+          devices: [...devices, ...s.devices.filter((d) => d.owner != null)],
+          exercises: [...exercises, ...s.exercises.filter((e) => e.owner != null)],
+        })),
 
       completeOnboarding: (p) =>
         set((s) => ({ profile: { ...s.profile, ...p, onboarded: true } })),
