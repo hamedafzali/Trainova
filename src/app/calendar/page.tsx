@@ -121,7 +121,7 @@ export default function CalendarPage() {
                     key={i}
                     onClick={() => setSelected(k)}
                     className={`flex aspect-square items-center justify-center rounded-lg text-sm tabular-nums transition ${
-                      trained ? "bg-accent font-bold text-black" : "text-muted hover:bg-surface2"
+                      trained ? "bg-accent font-bold text-onAccent" : "text-inkSoft hover:bg-surface2"
                     } ${isSel ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""} ${
                       isToday && !trained ? "border border-accent/60" : ""
                     }`}

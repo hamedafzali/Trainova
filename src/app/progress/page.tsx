@@ -35,7 +35,7 @@ export default function ProgressPage() {
             <button
               key={u}
               onClick={() => setUnits(u)}
-              className={`px-3 py-1.5 ${units === u ? "bg-accent text-black" : "text-muted"}`}
+              className={`px-3 py-1.5 ${units === u ? "bg-accent text-onAccent" : "text-muted"}`}
             >
               {u}
             </button>

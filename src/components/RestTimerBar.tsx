@@ -42,28 +42,37 @@ export function RestTimerBar() {
     <div className="fixed inset-x-0 bottom-[60px] z-30 mx-auto max-w-md px-3">
       <div
         className={`overflow-hidden rounded-2xl border shadow-lg ${
-          over ? "border-accent bg-accent text-black" : "border-border bg-surface2 text-white"
+          over ? "border-green bg-green text-onAccent" : "border-border bg-surface text-ink"
         }`}
       >
         {!over && (
-          <div className="h-1 bg-accent transition-all duration-200" style={{ width: `${pct}%` }} />
+          <div
+            className="h-1 bg-accentDim transition-all duration-200"
+            style={{ width: `${pct}%` }}
+          />
         )}
         <div className="flex items-center gap-2 px-3 py-2.5">
-          <span className="text-sm font-medium">{over ? "💪 Rest over" : "Resting"}</span>
-          <span className="flex-1 text-center text-2xl font-bold tabular-nums">
+          <span className={`text-sm font-medium ${over ? "" : "text-inkSoft"}`}>
+            {over ? "💪 Rest over" : "Resting"}
+          </span>
+          <span
+            className={`flex-1 text-center text-2xl font-bold tabular-nums ${
+              over ? "" : "text-accentDim animate-breathe"
+            }`}
+          >
             {over ? "Go!" : mmss(remainingSec)}
           </span>
           {!over && (
             <>
               <button
                 onClick={() => add(-15)}
-                className="rounded-lg bg-bg/40 px-2.5 py-1 text-xs font-semibold"
+                className="rounded-lg bg-surface2 px-2.5 py-1 text-xs font-semibold text-ink"
               >
                 −15
               </button>
               <button
                 onClick={() => add(15)}
-                className="rounded-lg bg-bg/40 px-2.5 py-1 text-xs font-semibold"
+                className="rounded-lg bg-surface2 px-2.5 py-1 text-xs font-semibold text-ink"
               >
                 +15
               </button>
@@ -72,7 +81,7 @@ export function RestTimerBar() {
           <button
             onClick={stop}
             className={`rounded-lg px-3 py-1 text-xs font-bold ${
-              over ? "bg-black/15" : "bg-accent text-black"
+              over ? "bg-black/10" : "bg-accentDim text-onAccent"
             }`}
           >
             {over ? "Dismiss" : "Skip"}

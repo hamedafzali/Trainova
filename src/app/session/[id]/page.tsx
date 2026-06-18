@@ -7,6 +7,7 @@ import { ExercisePicker } from "@/components/ExercisePicker";
 import { OnlineBadge } from "@/components/OnlineBadge";
 import { SessionExercise } from "@/components/SessionExercise";
 import { RestTimerBar } from "@/components/RestTimerBar";
+import { haptic } from "@/lib/haptics";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function SessionPage() {
@@ -61,6 +62,7 @@ export default function SessionPage() {
 
   const finish = () => {
     const { discarded } = finishSession(session.id);
+    if (!discarded) haptic("finish");
     router.push(discarded ? "/" : "/history");
   };
 
@@ -156,7 +158,7 @@ export default function SessionPage() {
       )}
 
       {toast && (
-        <div className="fixed inset-x-0 bottom-28 z-40 mx-auto w-fit rounded-full bg-accent px-5 py-2.5 font-semibold text-black shadow-lg">
+        <div className="fixed inset-x-0 bottom-28 z-40 mx-auto w-fit rounded-full bg-gold px-5 py-2.5 font-semibold text-onAccent shadow-lg animate-popIn">
           {toast}
         </div>
       )}

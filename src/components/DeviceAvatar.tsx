@@ -18,7 +18,7 @@ export function DeviceAvatar({
   return (
     <span
       className={`flex shrink-0 items-center justify-center overflow-hidden font-bold ${className} ${
-        hasImg ? "bg-bg p-1" : machine ? "bg-accent text-black" : "bg-border text-white"
+        hasImg ? "bg-bg p-1" : machine ? "bg-accent text-onAccent" : "bg-surface2 text-ink"
       }`}
     >
       {hasImg ? (

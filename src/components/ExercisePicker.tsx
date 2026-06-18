@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
+import { muscleColor } from "@/lib/format";
 import type { Device, DeviceCategory, Exercise } from "@/domain/types";
 
 const CATEGORIES: { key: DeviceCategory | "all"; label: string }[] = [
@@ -85,16 +86,16 @@ export function ExercisePicker({
 
         {recents.length > 0 && !q.trim() && (
           <div className="mb-3">
-            <p className="mb-1.5 text-xs uppercase tracking-wide text-muted">Recent</p>
-            <div className="grid grid-cols-4 gap-2">
+            <p className="mb-1.5 text-xs uppercase tracking-wide text-muted">Recently used</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
               {recents.map((e) => (
                 <button
                   key={e.id}
                   onClick={() => onPick(e.id)}
-                  className="flex flex-col items-center gap-1 rounded-xl border border-border bg-surface2 p-2 active:scale-95"
+                  className="flex w-16 shrink-0 flex-col items-center gap-1 rounded-xl border border-border bg-surface2 p-2 active:scale-95"
                 >
                   <DeviceAvatar device={deviceOf(e)} />
-                  <span className="line-clamp-1 text-[10px] text-muted">{e.name}</span>
+                  <span className="line-clamp-1 text-[10px] text-inkSoft">{e.name}</span>
                 </button>
               ))}
             </div>
@@ -107,7 +108,7 @@ export function ExercisePicker({
               key={c.key}
               onClick={() => setCat(c.key)}
               className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs ${
-                cat === c.key ? "border-accent bg-accent text-black" : "border-border bg-surface2 text-muted"
+                cat === c.key ? "border-accent bg-accent text-onAccent" : "border-border bg-surface2 text-inkSoft"
               }`}
             >
               {c.label}
@@ -126,8 +127,14 @@ export function ExercisePicker({
                 >
                   <DeviceAvatar device={d} />
                   <span className="flex-1">
-                    <span className="block font-semibold leading-tight">{e.name}</span>
-                    <span className="text-xs text-muted">
+                    <span className="block font-semibold leading-tight text-ink">{e.name}</span>
+                    <span className="flex items-center gap-1.5 text-xs text-muted">
+                      {e.primaryMuscle && (
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: muscleColor(e.primaryMuscle) }}
+                        />
+                      )}
                       {d ? `${d.machineNumber ? `No.${d.machineNumber} · ` : ""}${d.category.replace("_", " ")}` : "no device"}
                       {e.primaryMuscle ? ` · ${e.primaryMuscle}` : ""}
                     </span>

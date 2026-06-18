@@ -7,11 +7,11 @@ export const metadata: Metadata = {
   title: "Trainova",
   description: "Fast, offline-friendly strength training tracker.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Trainova" },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "Trainova" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0f14",
+  themeColor: "#F4ECE1",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

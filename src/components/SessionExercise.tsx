@@ -1,13 +1,20 @@
 "use client";
 
 import { useMemo } from "react";
-import { SetRow } from "@/components/SetRow";
-import { suggestNextLoad } from "@/domain/progression";
-import { useStore } from "@/lib/store";
+import { Stepper } from "@/components/Stepper";
+import { CompleteButton } from "@/components/CompleteButton";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
+import { suggestNextLoad, plateIncrement } from "@/domain/progression";
+import { useStore } from "@/lib/store";
+import { useRestTimer, defaultRest } from "@/lib/restTimer";
+import { haptic } from "@/lib/haptics";
 import type { WorkoutSet } from "@/domain/types";
 
-/** All sets for a single exercise within a session, plus its suggestion. */
+/**
+ * Focus-mode exercise card. Completed sets collapse to a compact rail; the first
+ * incomplete set expands into big keyboard-free steppers + a swipe/tap complete.
+ * Completing auto-advances to the next set.
+ */
 export function SessionExercise({
   sessionId,
   exerciseId,
@@ -26,11 +33,14 @@ export function SessionExercise({
   const deviceById = useStore((s) => s.deviceById);
   const addSet = useStore((s) => s.addSet);
   const updateSet = useStore((s) => s.updateSet);
+  const completeSet = useStore((s) => s.completeSet);
   const lastPerformance = useStore((s) => s.lastPerformance);
   const missStreak = useStore((s) => s.missStreak);
+  const startRest = useRestTimer((s) => s.start);
 
   const ex = exerciseById(exerciseId);
   const device = deviceById(sets[0]?.deviceId ?? ex?.defaultDeviceId);
+  const isCompound = ex?.isCompound ?? false;
 
   const last = useMemo(
     () => lastPerformance(exerciseId, sessionId),
@@ -41,32 +51,44 @@ export function SessionExercise({
   const suggestion = useMemo(() => {
     const targetReps = sets[0]?.targetReps ?? last?.targetReps ?? 8;
     return suggestNextLoad(last, units, {
-      isCompound: ex?.isCompound ?? true,
+      isCompound,
       templateWeight: sets[0]?.targetWeight ?? null,
       missStreak: missStreak(exerciseId, targetReps),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exerciseId, sessionId, units, sets.length]);
 
-  const restSeconds = ex?.isCompound ? 120 : 90;
   const done = sets.filter((s) => s.completed).length;
+  const activeSet = readOnly ? undefined : sets.find((s) => !s.completed);
 
-  const fillEmpty = () => {
-    for (const s of sets) {
-      if (s.completed) continue;
-      updateSet(s.id, {
-        actualWeight: s.actualWeight ?? (suggestion.weight || null),
-        actualReps: s.actualReps ?? suggestion.reps,
-      });
+  const prevFor = (idx: number) => last?.sets[idx];
+
+  const startWeight = (s: WorkoutSet) =>
+    s.actualWeight ?? prevFor(s.setIndex)?.actualWeight ?? s.targetWeight ?? suggestion.weight ?? 0;
+  const startReps = (s: WorkoutSet) =>
+    s.actualReps ?? prevFor(s.setIndex)?.actualReps ?? s.targetReps ?? suggestion.reps ?? 8;
+
+  const complete = (s: WorkoutSet) => {
+    const w = s.actualWeight ?? startWeight(s);
+    const r = s.actualReps ?? startReps(s);
+    updateSet(s.id, { actualWeight: w, actualReps: r });
+    const { newPrs } = completeSet(s.id);
+    startRest(defaultRest(isCompound));
+    if (newPrs.length) {
+      haptic("pr");
+      onPr(newPrs);
+    } else {
+      haptic("tick");
     }
   };
 
   return (
-    <section className="card space-y-2">
+    <section className="card space-y-3">
+      {/* header */}
       <div className="flex items-center gap-2.5">
         <DeviceAvatar device={device} className="h-10 w-10 rounded-lg text-sm" />
         <div className="flex-1">
-          <h3 className="font-semibold leading-tight">{ex?.name ?? "Exercise"}</h3>
+          <h3 className="font-semibold leading-tight text-ink">{ex?.name ?? "Exercise"}</h3>
           {device && (
             <p className="text-[11px] text-muted">
               {device.name}
@@ -74,53 +96,94 @@ export function SessionExercise({
             </p>
           )}
         </div>
-        <span className="text-xs text-muted">
-          {done}/{sets.length}
-        </span>
+        {/* progress dots */}
+        <div className="flex items-center gap-1">
+          {sets.map((s) => (
+            <span
+              key={s.id}
+              className={`h-2 w-2 rounded-full ${
+                s.completed ? "bg-green" : s === activeSet ? "bg-accent" : "border border-border"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* sets */}
+      <div className="space-y-1.5">
+        {sets.map((s) => {
+          const prev = prevFor(s.setIndex);
+          const prevLabel =
+            prev && prev.actualWeight != null ? `${prev.actualWeight}×${prev.actualReps ?? "–"}` : "—";
+
+          if (s === activeSet) {
+            return (
+              <div key={s.id} className="space-y-2 rounded-xl bg-bg/60 p-2.5">
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <span>
+                    Set {s.setIndex + 1} of {sets.length}
+                  </span>
+                  <span>
+                    prev <b className="text-inkSoft">{prevLabel}</b>
+                  </span>
+                </div>
+                <Stepper
+                  value={startWeight(s)}
+                  step={plateIncrement(units)}
+                  unit={units}
+                  onChange={(v) => updateSet(s.id, { actualWeight: v })}
+                />
+                <Stepper
+                  value={startReps(s)}
+                  step={1}
+                  unit="reps"
+                  onChange={(v) => updateSet(s.id, { actualReps: v })}
+                />
+                <CompleteButton onComplete={() => complete(s)} />
+              </div>
+            );
+          }
+
+          // compact row (completed or upcoming)
+          return (
+            <div
+              key={s.id}
+              className={`flex items-center gap-2 rounded-xl px-2 py-2 text-sm ${
+                s.completed ? "bg-green/15 animate-completeWipe" : "bg-surface2/50"
+              }`}
+            >
+              <span className="w-5 text-center text-xs text-muted tabular-nums">{s.setIndex + 1}</span>
+              <span className="w-14 shrink-0 text-center text-xs text-muted tabular-nums">{prevLabel}</span>
+              <span className="flex-1 text-center font-semibold tabular-nums text-ink">
+                {s.completed
+                  ? `${s.actualWeight ?? "–"} ${units} × ${s.actualReps ?? "–"}`
+                  : `${s.targetWeight ?? "–"} × ${s.targetReps ?? "–"}`}
+              </span>
+              {s.completed ? (
+                <button
+                  aria-label="undo set"
+                  onClick={() => !readOnly && updateSet(s.id, { completed: false })}
+                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-green text-onAccent"
+                >
+                  ✓
+                </button>
+              ) : (
+                <span className="h-7 w-7 rounded-lg border border-border" />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {!readOnly && (
-        <button
-          onClick={fillEmpty}
-          className="w-full rounded-lg bg-accentDim/30 px-3 py-2 text-left text-xs text-accent active:scale-[0.99]"
-        >
-          💡 <b>{suggestion.weight || "—"}{suggestion.weight ? units : ""}</b> × {suggestion.reps}
-          <span className="text-accent/70"> — tap to fill · {suggestion.reason}</span>
-        </button>
-      )}
-
-      <div className="flex items-center gap-2 px-1 text-[10px] uppercase tracking-wide text-muted">
-        <span className="w-5 text-center">#</span>
-        <span className="w-14 shrink-0 text-center">Prev</span>
-        <span className="flex-1 text-center">{units}</span>
-        <span className="w-3" />
-        <span className="flex-1 text-center">Reps</span>
-        <span className="w-[88px]" />
-      </div>
-
-      <div className="divide-y divide-border/60">
-        {sets.map((s) => (
-          <SetRow
-            key={s.id}
-            set={s}
-            restSeconds={restSeconds}
-            previous={
-              last?.sets[s.setIndex]
-                ? {
-                    weight: last.sets[s.setIndex].actualWeight,
-                    reps: last.sets[s.setIndex].actualReps,
-                  }
-                : undefined
-            }
-            onPr={onPr}
-          />
-        ))}
-      </div>
-
-      {!readOnly && (
-        <button className="btn-ghost w-full" onClick={() => addSet(sessionId, exerciseId)}>
-          + Add set
-        </button>
+        <div className="flex items-center justify-between">
+          <button className="text-sm text-accent" onClick={() => addSet(sessionId, exerciseId)}>
+            + Add set
+          </button>
+          <span className="text-xs text-muted">
+            {done}/{sets.length} done
+          </span>
+        </div>
       )}
     </section>
   );
