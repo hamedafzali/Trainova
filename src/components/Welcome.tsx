@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { isCloudEnabled, signIn, signUp } from "@/lib/auth";
+import { applySnapshot, pullState, pushState } from "@/lib/sync";
 
 /**
  * First screen: sign in / create an account (Supabase Auth when configured), or
@@ -24,9 +25,14 @@ export function Welcome() {
     setError(null);
     setBusy(true);
     try {
-      if (mode === "up") await signUp(email.trim(), password);
-      else await signIn(email.trim(), password);
-      enterAccount(email.trim());
+      const who =
+        mode === "up" ? await signUp(email.trim(), password) : await signIn(email.trim(), password);
+      // Sync: if the account already has data, load it; otherwise migrate this
+      // device's local data up to the new account.
+      const remote = await pullState();
+      if (remote) applySnapshot(remote);
+      else await pushState();
+      enterAccount(who);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {

@@ -1,27 +1,45 @@
 "use client";
 
-import { getSupabase, isCloudEnabled } from "./supabase/client";
-
-// Thin wrappers over Supabase Auth. When no Supabase project is configured these
-// throw a friendly error and the UI falls back to Guest mode.
+import { isCloudEnabled } from "./supabase/client";
 
 export { isCloudEnabled };
 
-export async function signUp(email: string, password: string): Promise<void> {
-  const sb = getSupabase();
-  if (!sb) throw new Error("Cloud accounts aren’t set up yet — continue as guest.");
-  const { error } = await sb.auth.signUp({ email, password });
-  if (error) throw new Error(error.message);
+const TOKEN_KEY = "trainova-token";
+
+export function getToken(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+export function setToken(t: string) {
+  localStorage.setItem(TOKEN_KEY, t);
+}
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
 }
 
-export async function signIn(email: string, password: string): Promise<void> {
-  const sb = getSupabase();
-  if (!sb) throw new Error("Cloud accounts aren’t set up yet — continue as guest.");
-  const { error } = await sb.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(error.message);
+async function post(path: string, body: unknown): Promise<{ token: string; email: string }> {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const j = await r.json().catch(() => ({}) as Record<string, string>);
+  if (!r.ok) throw new Error(j.error || "Request failed");
+  return j as { token: string; email: string };
+}
+
+export async function signUp(email: string, password: string): Promise<string> {
+  const j = await post("/api/auth/signup", { email, password });
+  setToken(j.token);
+  return j.email;
+}
+
+export async function signIn(email: string, password: string): Promise<string> {
+  const j = await post("/api/auth/login", { email, password });
+  setToken(j.token);
+  return j.email;
 }
 
 export async function signOut(): Promise<void> {
-  const sb = getSupabase();
-  if (sb) await sb.auth.signOut();
+  clearToken();
 }

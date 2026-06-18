@@ -13,13 +13,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 RUN corepack enable
 
-# NEXT_PUBLIC_* must be present at build time. They are optional — when unset
-# the app runs in local-only mode (no Supabase). Pass with --build-arg to bake
-# in cloud sync.
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+# NEXT_PUBLIC_* is baked at build time. "1" enables the login UI in the client;
+# the actual database connection is a runtime env (DATABASE_URL) on the server.
+ARG NEXT_PUBLIC_AUTH_ENABLED
+ENV NEXT_PUBLIC_AUTH_ENABLED=$NEXT_PUBLIC_AUTH_ENABLED
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules

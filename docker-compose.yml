@@ -4,9 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Optional Supabase cloud sync — leave empty to run in local-only mode.
-        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-}
-        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+        # "1" turns the login screen on in the client (server has a database).
+        - NEXT_PUBLIC_AUTH_ENABLED=${NEXT_PUBLIC_AUTH_ENABLED:-1}
     container_name: trainova-web
     ports:
       - "5008:3000"
@@ -14,7 +13,13 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
+      # Accounts + sync. Postgres is internal-only (never published / tunneled).
+      - DATABASE_URL=postgres://trainova:${POSTGRES_PASSWORD:-trainova}@trainova-db:5432/trainova
+      - JWT_SECRET=${JWT_SECRET:-dev-only-secret-change-me}
     restart: unless-stopped
+    depends_on:
+      trainova-db:
+        condition: service_healthy
     networks:
       - trainova-network
     healthcheck:
@@ -23,6 +28,29 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  trainova-db:
+    image: postgres:16-alpine
+    container_name: trainova-db
+    environment:
+      - POSTGRES_USER=trainova
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-trainova}
+      - POSTGRES_DB=trainova
+    volumes:
+      - trainova-db-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    networks:
+      - trainova-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trainova -d trainova"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  trainova-db-data:
 
 networks:
   trainova-network:
