@@ -124,6 +124,10 @@ export interface TrainovaState {
   lastPerformance: (exerciseId: string, beforeSessionId?: string) => LastPerformance | null;
   missStreak: (exerciseId: string, targetReps: number) => number;
   bestsFor: (exerciseId: string) => { e1rm: number; maxWeight: number; maxReps: number };
+  exercisesWithHistory: () => string[];
+  exerciseHistory: (
+    exerciseId: string
+  ) => { date: string; topWeight: number; e1rm: number; volume: number }[];
 }
 
 const now = () => new Date().toISOString();
@@ -630,6 +634,46 @@ export const useStore = create<TrainovaState>()(
           }
         }
         return { e1rm, maxWeight, maxReps };
+      },
+
+      exercisesWithHistory: () => {
+        const st = get();
+        const seen: string[] = [];
+        for (const x of st.sets) {
+          if (x.completed && x.actualWeight != null && !seen.includes(x.exerciseId)) {
+            seen.push(x.exerciseId);
+          }
+        }
+        return seen;
+      },
+
+      exerciseHistory: (exerciseId) => {
+        const st = get();
+        const sessions = st.sessions
+          .filter((s) => s.status !== "archived")
+          .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+        const out: { date: string; topWeight: number; e1rm: number; volume: number }[] = [];
+        for (const s of sessions) {
+          const sets = st.sets.filter(
+            (x) =>
+              x.sessionId === s.id &&
+              x.exerciseId === exerciseId &&
+              x.completed &&
+              x.actualWeight != null
+          );
+          if (sets.length === 0) continue;
+          let topWeight = 0;
+          let e1rm = 0;
+          let volume = 0;
+          for (const x of sets) {
+            const w = x.actualWeight as number;
+            topWeight = Math.max(topWeight, w);
+            volume += w * (x.actualReps ?? 1);
+            if (x.actualReps) e1rm = Math.max(e1rm, epley1rm(w, x.actualReps));
+          }
+          out.push({ date: s.date, topWeight, e1rm: Math.round(e1rm * 10) / 10, volume });
+        }
+        return out;
       },
     }),
     {

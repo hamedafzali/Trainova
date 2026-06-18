@@ -1,34 +1,34 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { LineChart } from "@/components/LineChart";
+import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function ProgressPage() {
   const hydrated = useHydrated();
   const units = useStore((s) => s.units);
   const setUnits = useStore((s) => s.setUnits);
-  const prs = useStore((s) => s.prs);
+  const exercisesWithHistory = useStore((s) => s.exercisesWithHistory);
+  const exerciseHistory = useStore((s) => s.exerciseHistory);
   const exerciseById = useStore((s) => s.exerciseById);
+  const deviceForExercise = useStore((s) => s.deviceForExercise);
+  const bestsFor = useStore((s) => s.bestsFor);
+  const [metric, setMetric] = useState<"topWeight" | "volume">("topWeight");
+  const [open, setOpen] = useState<string | null>(null);
 
-  const grouped = useMemo(() => {
-    const byExercise = new Map<string, typeof prs>();
-    for (const pr of prs) {
-      const list = byExercise.get(pr.exerciseId) ?? [];
-      list.push(pr);
-      byExercise.set(pr.exerciseId, list);
-    }
-    return [...byExercise.entries()];
-  }, [prs]);
-
-  const label = (k: string) =>
-    k === "e1rm" ? "Est. 1RM" : k === "max_weight" ? "Top weight" : "Most reps";
+  const exercises = useMemo(
+    () => (hydrated ? exercisesWithHistory() : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hydrated]
+  );
 
   return (
     <main className="space-y-4 p-4">
       <header className="flex items-center justify-between pt-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Progress</h1>
-          <p className="text-sm text-muted">Personal records.</p>
+          <p className="text-sm text-muted">Your trend on every exercise.</p>
         </div>
         <div className="flex overflow-hidden rounded-xl border border-border text-sm">
           {(["kg", "lb"] as const).map((u) => (
@@ -45,30 +45,80 @@ export default function ProgressPage() {
 
       {!hydrated ? (
         <div className="card animate-pulse text-muted">Loading…</div>
-      ) : grouped.length === 0 ? (
-        <div className="card text-center text-muted">
-          Complete some sets to start setting records.
+      ) : exercises.length === 0 ? (
+        <div className="card text-center text-sm text-muted">
+          Complete some workouts to see your progress.
         </div>
       ) : (
-        <ul className="space-y-2">
-          {grouped.map(([exerciseId, list]) => (
-            <li key={exerciseId} className="card">
-              <p className="mb-2 font-semibold">{exerciseById(exerciseId)?.name ?? "Exercise"}</p>
-              <div className="grid grid-cols-3 gap-2">
-                {list.map((pr) => (
-                  <div key={pr.kind} className="rounded-lg bg-surface2 p-2 text-center">
-                    <p className="text-[10px] uppercase tracking-wide text-muted">
-                      {label(pr.kind)}
-                    </p>
-                    <p className="text-lg font-bold tabular-nums">
-                      {pr.kind === "max_reps" ? pr.value : `${pr.value}${units}`}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className="flex gap-1.5">
+            {(["topWeight", "volume"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMetric(m)}
+                className={`rounded-full border px-3 py-1.5 text-xs ${
+                  metric === m
+                    ? "border-accent bg-accent text-onAccent"
+                    : "border-border bg-surface2 text-inkSoft"
+                }`}
+              >
+                {m === "topWeight" ? "Top weight" : "Volume"}
+              </button>
+            ))}
+          </div>
+
+          <ul className="space-y-2">
+            {exercises.map((exId) => {
+              const ex = exerciseById(exId);
+              const device = deviceForExercise(exId);
+              const hist = exerciseHistory(exId);
+              const bests = bestsFor(exId);
+              const series = hist.map((h) => ({
+                label: h.date,
+                value: metric === "topWeight" ? h.topWeight : Math.round(h.volume),
+              }));
+              const expanded = open === exId;
+              const first = hist[0];
+              const latest = hist[hist.length - 1];
+              const delta =
+                first && latest ? Math.round((latest.topWeight - first.topWeight) * 10) / 10 : 0;
+              return (
+                <li key={exId} className="card">
+                  <button
+                    className="flex w-full items-center gap-2.5 text-left"
+                    onClick={() => setOpen(expanded ? null : exId)}
+                  >
+                    <DeviceAvatar device={device} className="h-9 w-9 rounded-lg text-sm" />
+                    <div className="flex-1">
+                      <p className="font-semibold leading-tight">{ex?.name ?? "Exercise"}</p>
+                      <p className="text-xs text-muted">
+                        best {bests.maxWeight}
+                        {units}
+                        {bests.e1rm ? ` · est 1RM ${Math.round(bests.e1rm)}${units}` : ""} ·{" "}
+                        {hist.length} session{hist.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs font-semibold ${delta > 0 ? "text-green" : "text-muted"}`}
+                    >
+                      {delta > 0 ? `▲ ${delta}${units}` : expanded ? "▲" : "▼"}
+                    </span>
+                  </button>
+
+                  {expanded && (
+                    <div className="mt-3 border-t border-border pt-3">
+                      <LineChart data={series} unit={metric === "topWeight" ? units : ""} />
+                      <p className="mt-1 text-center text-[11px] text-muted">
+                        {metric === "topWeight" ? "Top weight" : "Volume"} per session ·{" "}
+                        {first?.date} → {latest?.date}
+                      </p>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </main>
   );
