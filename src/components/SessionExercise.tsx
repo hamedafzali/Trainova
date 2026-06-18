@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { SetRow } from "@/components/SetRow";
 import { suggestNextLoad } from "@/domain/progression";
 import { useStore } from "@/lib/store";
+import { cleanName, machineNo } from "@/lib/format";
 import type { WorkoutSet } from "@/domain/types";
 
 /** All sets for a single exercise within the active session, plus its suggestion. */
@@ -21,13 +22,20 @@ export function SessionExercise({
   const units = useStore((s) => s.units);
   const exerciseById = useStore((s) => s.exerciseById);
   const addSet = useStore((s) => s.addSet);
+  const updateSet = useStore((s) => s.updateSet);
   const lastPerformance = useStore((s) => s.lastPerformance);
   const missStreak = useStore((s) => s.missStreak);
 
   const ex = exerciseById(exerciseId);
+  const no = ex ? machineNo(ex.name) : null;
+
+  const last = useMemo(
+    () => lastPerformance(exerciseId, sessionId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [exerciseId, sessionId]
+  );
 
   const suggestion = useMemo(() => {
-    const last = lastPerformance(exerciseId, sessionId);
     const targetReps = sets[0]?.plannedReps ?? last?.targetReps ?? 8;
     return suggestNextLoad(last, units, {
       isCompound: ex?.isCompound ?? true,
@@ -37,19 +45,48 @@ export function SessionExercise({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exerciseId, sessionId, units, sets.length]);
 
+  const lastLabel = last?.sets
+    .map((s) => `${s.actualWeight ?? "–"}×${s.actualReps ?? "–"}`)
+    .join("  ·  ");
+
+  /** One tap: drop the suggested weight/reps into every set not yet completed. */
+  const fillEmpty = () => {
+    for (const s of sets) {
+      if (s.completed) continue;
+      updateSet(s.id, {
+        actualWeight: s.actualWeight ?? (suggestion.weight || null),
+        actualReps: s.actualReps ?? suggestion.reps,
+      });
+    }
+  };
+
+  const done = sets.filter((s) => s.completed).length;
+
   return (
     <section className="card space-y-2">
-      <div className="flex items-baseline justify-between">
-        <h3 className="font-semibold">{ex?.name ?? "Exercise"}</h3>
-        <span className="text-xs text-muted">
-          {sets.filter((s) => s.completed).length}/{sets.length} done
-        </span>
+      <div className="flex items-center gap-2.5">
+        {no && (
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-bold text-black">
+            {no}
+          </span>
+        )}
+        <h3 className="flex-1 font-semibold leading-tight">{ex ? cleanName(ex.name) : "Exercise"}</h3>
+        <span className="text-xs text-muted">{done}/{sets.length}</span>
       </div>
 
-      <p className="rounded-lg bg-accentDim/30 px-3 py-2 text-xs text-accent">
-        💡 Suggested: <b>{suggestion.weight || "—"}{suggestion.weight ? units : ""}</b> ×{" "}
-        {suggestion.reps} · {suggestion.reason}
-      </p>
+      {lastLabel && (
+        <p className="text-xs text-muted">
+          <span className="text-muted/70">Last time:</span> {lastLabel}
+        </p>
+      )}
+
+      <button
+        onClick={fillEmpty}
+        className="w-full rounded-lg bg-accentDim/30 px-3 py-2 text-left text-xs text-accent active:scale-[0.99]"
+      >
+        💡 <b>{suggestion.weight || "—"}{suggestion.weight ? units : ""}</b> × {suggestion.reps}
+        <span className="text-accent/70"> — tap to fill · {suggestion.reason}</span>
+      </button>
 
       <div className="divide-y divide-border/60">
         {sets.map((s) => (

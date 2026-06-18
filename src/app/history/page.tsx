@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
+import { cleanName, machineNo } from "@/lib/format";
+import type { WorkoutSet } from "@/domain/types";
 
 export default function HistoryPage() {
   const hydrated = useHydrated();
+  const units = useStore((s) => s.units);
   const sessions = useStore((s) => s.sessions);
   const sets = useStore((s) => s.sets);
+  const exerciseById = useStore((s) => s.exerciseById);
+  const [open, setOpen] = useState<string | null>(null);
 
   const rows = useMemo(
     () =>
@@ -19,7 +24,20 @@ export default function HistoryPage() {
             (acc, x) => acc + (x.actualWeight ?? 0) * (x.actualReps ?? 0),
             0
           );
-          return { session: s, count: mine.length, volume };
+          // Group sets by exercise, preserving order, keeping the top set.
+          const byExercise = new Map<string, WorkoutSet[]>();
+          for (const x of mine) {
+            const list = byExercise.get(x.exerciseId) ?? [];
+            list.push(x);
+            byExercise.set(x.exerciseId, list);
+          }
+          const mins = s.endedAt
+            ? Math.max(
+                1,
+                Math.round((+new Date(s.endedAt) - +new Date(s.startedAt)) / 60000)
+              )
+            : null;
+          return { session: s, count: mine.length, volume, byExercise, mins };
         }),
     [sessions, sets]
   );
@@ -28,7 +46,7 @@ export default function HistoryPage() {
     <main className="space-y-4 p-4">
       <header className="pt-2">
         <h1 className="text-2xl font-bold tracking-tight">History</h1>
-        <p className="text-sm text-muted">Every session you have logged.</p>
+        <p className="text-sm text-muted">Tap a workout to see what you lifted.</p>
       </header>
 
       {!hydrated ? (
@@ -37,23 +55,73 @@ export default function HistoryPage() {
         <div className="card text-center text-muted">No workouts logged yet.</div>
       ) : (
         <ul className="space-y-2">
-          {rows.map(({ session, count, volume }) => (
-            <li key={session.id}>
-              <Link href={`/session/${session.id}`} className="card flex items-center justify-between">
-                <div>
-                  <p className="font-semibold">{session.name}</p>
-                  <p className="text-xs text-muted">
-                    {new Date(session.startedAt).toLocaleDateString()} ·{" "}
-                    {session.endedAt ? `${count} sets` : "in progress"}
-                  </p>
-                </div>
-                <span className="text-right text-sm tabular-nums text-muted">
-                  {Math.round(volume).toLocaleString()}
-                  <span className="block text-[10px] uppercase">volume</span>
-                </span>
-              </Link>
-            </li>
-          ))}
+          {rows.map(({ session, count, volume, byExercise, mins }) => {
+            const expanded = open === session.id;
+            return (
+              <li key={session.id} className="card">
+                <button
+                  className="flex w-full items-center justify-between text-left"
+                  onClick={() => setOpen(expanded ? null : session.id)}
+                >
+                  <div>
+                    <p className="font-semibold">{session.name}</p>
+                    <p className="text-xs text-muted">
+                      {new Date(session.startedAt).toLocaleDateString(undefined, {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                      {mins ? ` · ${mins} min` : " · in progress"} · {byExercise.size} exercises
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold tabular-nums">
+                      {Math.round(volume).toLocaleString()}
+                      <span className="text-xs text-muted"> {units}·vol</span>
+                    </p>
+                    <p className="text-xs text-muted">{expanded ? "▲" : "▼"} {count} sets</p>
+                  </div>
+                </button>
+
+                {expanded && (
+                  <ul className="mt-3 space-y-2 border-t border-border pt-3">
+                    {[...byExercise.entries()].map(([exId, exSets]) => {
+                      const ex = exerciseById(exId);
+                      const no = ex ? machineNo(ex.name) : null;
+                      return (
+                        <li key={exId} className="flex items-start gap-2.5">
+                          <span
+                            className={`mt-0.5 flex h-7 min-w-7 items-center justify-center rounded-md px-1 text-xs font-bold ${
+                              no ? "bg-accent text-black" : "bg-border text-white"
+                            }`}
+                          >
+                            {no ?? "•"}
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium leading-tight">
+                              {ex ? cleanName(ex.name) : "Exercise"}
+                            </p>
+                            <p className="text-xs text-muted">
+                              {exSets
+                                .map((s) => `${s.actualWeight ?? "–"}×${s.actualReps ?? "–"}`)
+                                .join("  ·  ")}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                    {!session.endedAt && (
+                      <li>
+                        <Link href={`/session/${session.id}`} className="text-sm text-accent">
+                          Resume workout →
+                        </Link>
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </main>

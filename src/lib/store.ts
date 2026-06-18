@@ -56,6 +56,7 @@ export interface TrainovaState {
 
   // selectors
   exerciseById: (id: string) => Exercise | undefined;
+  recentExerciseIds: (limit?: number) => string[];
   setsForSession: (sessionId: string) => WorkoutSet[];
   lastPerformance: (exerciseId: string, beforeSessionId?: string) => LastPerformance | null;
   missStreak: (exerciseId: string, targetReps: number) => number;
@@ -243,6 +244,21 @@ export const useStore = create<TrainovaState>()(
         set((s) => ({ sets: s.sets.filter((x) => x.id !== setId) })),
 
       exerciseById: (id) => get().exercises.find((e) => e.id === id),
+
+      recentExerciseIds: (limit = 8) => {
+        const st = get();
+        const sessions = [...st.sessions].sort((a, b) =>
+          b.startedAt.localeCompare(a.startedAt)
+        );
+        const ordered: string[] = [];
+        for (const s of sessions) {
+          for (const x of st.sets.filter((set) => set.sessionId === s.id)) {
+            if (!ordered.includes(x.exerciseId)) ordered.push(x.exerciseId);
+            if (ordered.length >= limit) return ordered;
+          }
+        }
+        return ordered;
+      },
 
       setsForSession: (sessionId) =>
         get()
