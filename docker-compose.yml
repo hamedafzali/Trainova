@@ -1,0 +1,29 @@
+services:
+  trainova:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Optional Supabase cloud sync — leave empty to run in local-only mode.
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+    container_name: trainova-web
+    ports:
+      - "5008:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    restart: unless-stopped
+    networks:
+      - trainova-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+networks:
+  trainova-network:
+    driver: bridge
