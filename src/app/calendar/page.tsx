@@ -62,10 +62,7 @@ export default function CalendarPage() {
   const selectedSessions = useMemo(
     () =>
       sessions
-        .filter((s) => {
-          const d = new Date(s.startedAt);
-          return key(d.getFullYear(), d.getMonth(), d.getDate()) === selected;
-        })
+        .filter((s) => s.status !== "archived" && s.date === selected)
         .sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
     [sessions, selected]
   );
@@ -149,8 +146,10 @@ export default function CalendarPage() {
             ) : (
               selectedSessions.map((s) => (
                 <Link key={s.id} href={`/session/${s.id}`} className="card flex items-center justify-between">
-                  <span className="font-semibold">{s.name}</span>
-                  <span className="text-sm text-accent">{s.endedAt ? "View →" : "Resume →"}</span>
+                  <span className="font-semibold">{s.title}</span>
+                  <span className="text-sm text-accent">
+                    {s.status === "active" ? "Resume →" : "View →"}
+                  </span>
                 </Link>
               ))
             )}

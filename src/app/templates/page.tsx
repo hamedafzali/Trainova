@@ -17,7 +17,18 @@ export default function PlansPage() {
   const createTemplate = useStore((s) => s.createTemplate);
   const deleteTemplate = useStore((s) => s.deleteTemplate);
   const startSession = useStore((s) => s.startSession);
+  const getActiveSession = useStore((s) => s.getActiveSession);
   const [name, setName] = useState("");
+
+  const start = (templateId: string) => {
+    const { id, blocked } = startSession(templateId);
+    if (blocked) {
+      const a = getActiveSession();
+      if (a) router.push(`/session/${a.id}`);
+      return;
+    }
+    if (id) router.push(`/session/${id}`);
+  };
 
   // Templates not attached to any program show up as standalone plans.
   const inProgram = new Set(programs.flatMap((p) => p.dayTemplateIds));
@@ -110,10 +121,7 @@ export default function PlansPage() {
                           </span>
                           <button
                             className="btn-primary px-3 py-1.5 text-xs"
-                            onClick={() => {
-                              const sid = startSession(d.id);
-                              router.push(`/session/${sid}`);
-                            }}
+                            onClick={() => start(d.id)}
                           >
                             Start
                           </button>
@@ -149,13 +157,7 @@ export default function PlansPage() {
                     <p className="font-semibold">{t.name}</p>
                     <p className="text-xs text-muted">{t.exercises.length} exercises · tap to edit</p>
                   </Link>
-                  <button
-                    className="btn-primary px-3 py-1.5"
-                    onClick={() => {
-                      const sid = startSession(t.id);
-                      router.push(`/session/${sid}`);
-                    }}
-                  >
+                  <button className="btn-primary px-3 py-1.5" onClick={() => start(t.id)}>
                     Start
                   </button>
                   <button

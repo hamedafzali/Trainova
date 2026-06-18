@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import type {
+  Device,
   Exercise,
   PersonalRecord,
   Program,
+  TemplateSet,
   Units,
   WorkoutSession,
   WorkoutSet,
@@ -14,7 +16,22 @@ import type {
 } from "@/domain/types";
 import { detectPrs, epley1rm } from "@/domain/progression";
 import type { LastPerformance } from "@/domain/progression";
-import { SEED_EXERCISES, SEED_PLAN, SEED_PLAN_ID, SEED_PROGRAM, SEED_PROGRAM_ID } from "./seed";
+import {
+  activeSession,
+  canCreateSession,
+  canReopen,
+  dayKey,
+  isAbandoned,
+} from "@/domain/session";
+import {
+  SEED_DEVICES,
+  SEED_EXERCISES,
+  SEED_PLAN,
+  SEED_PLAN_ID,
+  SEED_PROGRAM,
+  SEED_PROGRAM_ID,
+} from "./seed";
+import { stripDate } from "./format";
 import { uid } from "./id";
 
 const LOCAL_OWNER = "local-user";
@@ -28,15 +45,16 @@ const memoryStorage: StateStorage = {
 
 export interface TrainovaState {
   units: Units;
+  devices: Device[];
   exercises: Exercise[];
   programs: Program[];
   templates: WorkoutTemplate[];
   sessions: WorkoutSession[];
   sets: WorkoutSet[];
   prs: PersonalRecord[];
-  activeSessionId: string | null;
 
   setUnits: (u: Units) => void;
+  addDevice: (input: Omit<Device, "id" | "owner">) => Device;
   addExercise: (input: Omit<Exercise, "id" | "owner">) => Exercise;
 
   createProgram: (name: string, source?: Program["source"]) => string;
@@ -46,15 +64,23 @@ export interface TrainovaState {
 
   createTemplate: (name: string) => string;
   deleteTemplate: (id: string) => void;
-  addTemplateExercise: (
-    templateId: string,
-    exerciseId: string,
-    opts?: Partial<{ targetSets: number; targetReps: number; targetWeight: number | null }>
-  ) => void;
+  addTemplateExercise: (templateId: string, exerciseId: string) => void;
   removeTemplateExercise: (templateId: string, templateExerciseId: string) => void;
+  setTemplateSetCount: (templateId: string, templateExerciseId: string, count: number) => void;
+  updateTemplateSet: (
+    templateId: string,
+    templateExerciseId: string,
+    setIndex: number,
+    patch: Partial<TemplateSet>
+  ) => void;
 
-  startSession: (templateId: string | null, name?: string) => string;
-  endSession: (id: string) => void;
+  // session lifecycle (see domain/session.ts)
+  startSession: (templateId: string | null) => { id: string | null; blocked: boolean };
+  finishSession: (id: string) => { discarded: boolean };
+  discardSession: (id: string) => void;
+  reopenSession: (id: string) => boolean;
+  archiveSession: (id: string) => void;
+  unarchiveSession: (id: string) => void;
 
   addSet: (sessionId: string, exerciseId: string) => string;
   updateSet: (setId: string, patch: Partial<WorkoutSet>) => void;
@@ -62,7 +88,10 @@ export interface TrainovaState {
   removeSet: (setId: string) => void;
 
   // selectors
+  getActiveSession: () => WorkoutSession | null;
+  deviceById: (id: string | null | undefined) => Device | undefined;
   exerciseById: (id: string) => Exercise | undefined;
+  deviceForExercise: (exerciseId: string) => Device | undefined;
   programById: (id: string) => Program | undefined;
   daysForProgram: (id: string) => WorkoutTemplate[];
   trainedDays: () => Set<string>;
@@ -73,19 +102,27 @@ export interface TrainovaState {
   bestsFor: (exerciseId: string) => { e1rm: number; maxWeight: number; maxReps: number };
 }
 
+const now = () => new Date().toISOString();
+
 export const useStore = create<TrainovaState>()(
   persist(
     (set, get) => ({
       units: "kg",
+      devices: SEED_DEVICES,
       exercises: SEED_EXERCISES,
       programs: [SEED_PROGRAM],
       templates: [SEED_PLAN],
       sessions: [],
       sets: [],
       prs: [],
-      activeSessionId: null,
 
       setUnits: (u) => set({ units: u }),
+
+      addDevice: (input) => {
+        const d: Device = { ...input, id: uid(), owner: LOCAL_OWNER };
+        set((s) => ({ devices: [...s.devices, d] }));
+        return d;
+      },
 
       addExercise: (input) => {
         const ex: Exercise = { ...input, id: uid(), owner: LOCAL_OWNER };
@@ -98,7 +135,7 @@ export const useStore = create<TrainovaState>()(
         const program: Program = {
           id,
           owner: LOCAL_OWNER,
-          name: name.trim() || "New program",
+          name: stripDate(name) || "New program",
           source,
           notes: null,
           dayTemplateIds: [],
@@ -134,10 +171,11 @@ export const useStore = create<TrainovaState>()(
 
       createTemplate: (name) => {
         const id = uid();
+        // INVARIANT: templates are undated.
         const tpl: WorkoutTemplate = {
           id,
           owner: LOCAL_OWNER,
-          name: name.trim() || "Untitled workout",
+          name: stripDate(name) || "Untitled plan",
           notes: null,
           exercises: [],
         };
@@ -148,7 +186,8 @@ export const useStore = create<TrainovaState>()(
       deleteTemplate: (id) =>
         set((s) => ({ templates: s.templates.filter((t) => t.id !== id) })),
 
-      addTemplateExercise: (templateId, exerciseId, opts) =>
+      addTemplateExercise: (templateId, exerciseId) => {
+        const ex = get().exercises.find((e) => e.id === exerciseId);
         set((s) => ({
           templates: s.templates.map((t) =>
             t.id !== templateId
@@ -160,16 +199,20 @@ export const useStore = create<TrainovaState>()(
                     {
                       id: uid(),
                       exerciseId,
+                      deviceId: ex?.defaultDeviceId ?? null,
                       position: t.exercises.length,
-                      targetSets: opts?.targetSets ?? 3,
-                      targetReps: opts?.targetReps ?? 8,
-                      targetWeight: opts?.targetWeight ?? null,
-                      restSeconds: 120,
+                      sets: [
+                        { targetReps: 10, targetWeight: null },
+                        { targetReps: 10, targetWeight: null },
+                        { targetReps: 10, targetWeight: null },
+                      ],
+                      restSeconds: 90,
                     },
                   ],
                 }
           ),
-        })),
+        }));
+      },
 
       removeTemplateExercise: (templateId, templateExerciseId) =>
         set((s) => ({
@@ -180,109 +223,194 @@ export const useStore = create<TrainovaState>()(
           ),
         })),
 
-      startSession: (templateId, name) => {
+      setTemplateSetCount: (templateId, templateExerciseId, count) =>
+        set((s) => ({
+          templates: s.templates.map((t) =>
+            t.id !== templateId
+              ? t
+              : {
+                  ...t,
+                  exercises: t.exercises.map((te) => {
+                    if (te.id !== templateExerciseId) return te;
+                    const n = Math.max(1, Math.min(10, count));
+                    const last = te.sets[te.sets.length - 1] ?? { targetReps: 10, targetWeight: null };
+                    const sets = [...te.sets];
+                    while (sets.length < n) sets.push({ ...last });
+                    sets.length = n;
+                    return { ...te, sets };
+                  }),
+                }
+          ),
+        })),
+
+      updateTemplateSet: (templateId, templateExerciseId, setIndex, patch) =>
+        set((s) => ({
+          templates: s.templates.map((t) =>
+            t.id !== templateId
+              ? t
+              : {
+                  ...t,
+                  exercises: t.exercises.map((te) =>
+                    te.id !== templateExerciseId
+                      ? te
+                      : {
+                          ...te,
+                          sets: te.sets.map((st, i) => (i === setIndex ? { ...st, ...patch } : st)),
+                        }
+                  ),
+                }
+          ),
+        })),
+
+      startSession: (templateId) => {
+        if (!canCreateSession(get().sessions)) return { id: null, blocked: true };
         const id = uid();
         const tpl = templateId ? get().templates.find((t) => t.id === templateId) : null;
+        const ts = now();
         const session: WorkoutSession = {
           id,
           owner: LOCAL_OWNER,
           templateId: templateId ?? null,
-          name: name ?? tpl?.name ?? "Quick workout",
-          startedAt: new Date().toISOString(),
-          endedAt: null,
+          title: tpl?.name ?? "Quick workout",
+          date: dayKey(new Date()),
+          status: "active",
+          startedAt: ts,
+          completedAt: null,
+          reopenedAt: null,
+          updatedAt: ts,
         };
 
-        // Pre-populate planned sets from the template, seeding suggested loads
-        // from each exercise's last performance.
-        const seededSets: WorkoutSet[] = [];
+        // Snapshot each template set's targets into a planned session set.
+        const seeded: WorkoutSet[] = [];
         if (tpl) {
           for (const te of tpl.exercises) {
-            for (let i = 0; i < te.targetSets; i++) {
-              seededSets.push({
+            te.sets.forEach((tset, i) => {
+              seeded.push({
                 id: uid(),
                 owner: LOCAL_OWNER,
                 sessionId: id,
                 exerciseId: te.exerciseId,
+                deviceId: te.deviceId,
                 setIndex: i,
-                plannedReps: te.targetReps,
-                plannedWeight: te.targetWeight,
+                targetReps: tset.targetReps,
+                targetWeight: tset.targetWeight,
                 actualReps: null,
                 actualWeight: null,
                 rpe: null,
                 completed: false,
+                completedAt: null,
               });
-            }
+            });
           }
         }
 
-        set((s) => ({
-          sessions: [session, ...s.sessions],
-          sets: [...s.sets, ...seededSets],
-          activeSessionId: id,
-        }));
-        return id;
+        set((s) => ({ sessions: [session, ...s.sessions], sets: [...s.sets, ...seeded] }));
+        return { id, blocked: false };
       },
 
-      endSession: (id) =>
+      finishSession: (id) => {
+        const st = get();
+        const session = st.sessions.find((s) => s.id === id);
+        if (!session) return { discarded: false };
+        // Abandoned (no logged sets) → discard rather than persist an empty record.
+        if (isAbandoned(session, st.sets)) {
+          get().discardSession(id);
+          return { discarded: true };
+        }
         set((s) => ({
           sessions: s.sessions.map((ss) =>
-            ss.id === id ? { ...ss, endedAt: new Date().toISOString() } : ss
+            ss.id === id
+              ? { ...ss, status: "completed", completedAt: now(), updatedAt: now() }
+              : ss
           ),
-          activeSessionId: s.activeSessionId === id ? null : s.activeSessionId,
+        }));
+        return { discarded: false };
+      },
+
+      discardSession: (id) =>
+        set((s) => ({
+          sessions: s.sessions.filter((ss) => ss.id !== id),
+          sets: s.sets.filter((x) => x.sessionId !== id),
+        })),
+
+      reopenSession: (id) => {
+        const st = get();
+        const session = st.sessions.find((s) => s.id === id);
+        if (!session || !canReopen(session, st.sessions)) return false;
+        set((s) => ({
+          sessions: s.sessions.map((ss) =>
+            ss.id === id
+              ? { ...ss, status: "active", reopenedAt: now(), completedAt: null, updatedAt: now() }
+              : ss
+          ),
+        }));
+        return true;
+      },
+
+      archiveSession: (id) =>
+        set((s) => ({
+          sessions: s.sessions.map((ss) =>
+            ss.id === id ? { ...ss, status: "archived", updatedAt: now() } : ss
+          ),
+        })),
+
+      unarchiveSession: (id) =>
+        set((s) => ({
+          sessions: s.sessions.map((ss) =>
+            ss.id === id ? { ...ss, status: "completed", updatedAt: now() } : ss
+          ),
         })),
 
       addSet: (sessionId, exerciseId) => {
         const id = uid();
-        const existing = get().sets.filter(
+        const st = get();
+        const existing = st.sets.filter(
           (x) => x.sessionId === sessionId && x.exerciseId === exerciseId
         );
+        const prev = existing[existing.length - 1];
+        const device = st.exercises.find((e) => e.id === exerciseId)?.defaultDeviceId ?? null;
         const newSet: WorkoutSet = {
           id,
           owner: LOCAL_OWNER,
           sessionId,
           exerciseId,
+          deviceId: prev?.deviceId ?? device,
           setIndex: existing.length,
-          plannedReps: existing[existing.length - 1]?.plannedReps ?? null,
-          plannedWeight: existing[existing.length - 1]?.actualWeight ?? null,
+          targetReps: prev?.targetReps ?? null,
+          targetWeight: prev?.actualWeight ?? prev?.targetWeight ?? null,
           actualReps: null,
           actualWeight: null,
           rpe: null,
           completed: false,
+          completedAt: null,
         };
         set((s) => ({ sets: [...s.sets, newSet] }));
         return id;
       },
 
       updateSet: (setId, patch) =>
-        set((s) => ({
-          sets: s.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x)),
-        })),
+        set((s) => ({ sets: s.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x)) })),
 
       completeSet: (setId) => {
         const st = get();
         const target = st.sets.find((x) => x.id === setId);
         if (!target) return { newPrs: [] };
-
         const bests = st.bestsFor(target.exerciseId);
         const prs = detectPrs(
           { actualReps: target.actualReps, actualWeight: target.actualWeight },
           bests
         );
-
         set((s) => {
-          const sets = s.sets.map((x) => (x.id === setId ? { ...x, completed: true } : x));
+          const sets = s.sets.map((x) =>
+            x.id === setId ? { ...x, completed: true, completedAt: now() } : x
+          );
           let nextPrs = s.prs;
           for (const pr of prs) {
             nextPrs = [
               ...nextPrs.filter(
                 (p) => !(p.exerciseId === target.exerciseId && p.kind === pr.kind)
               ),
-              {
-                exerciseId: target.exerciseId,
-                kind: pr.kind,
-                value: pr.value,
-                achievedAt: new Date().toISOString(),
-              },
+              { exerciseId: target.exerciseId, kind: pr.kind, value: pr.value, achievedAt: now() },
             ];
           }
           return { sets, prs: nextPrs };
@@ -290,10 +418,18 @@ export const useStore = create<TrainovaState>()(
         return { newPrs: prs.map((p) => p.kind) };
       },
 
-      removeSet: (setId) =>
-        set((s) => ({ sets: s.sets.filter((x) => x.id !== setId) })),
+      removeSet: (setId) => set((s) => ({ sets: s.sets.filter((x) => x.id !== setId) })),
+
+      getActiveSession: () => activeSession(get().sessions),
+
+      deviceById: (id) => (id ? get().devices.find((d) => d.id === id) : undefined),
 
       exerciseById: (id) => get().exercises.find((e) => e.id === id),
+
+      deviceForExercise: (exerciseId) => {
+        const ex = get().exercises.find((e) => e.id === exerciseId);
+        return ex?.defaultDeviceId ? get().devices.find((d) => d.id === ex.defaultDeviceId) : undefined;
+      },
 
       programById: (id) => get().programs.find((p) => p.id === id),
 
@@ -307,24 +443,14 @@ export const useStore = create<TrainovaState>()(
       },
 
       trainedDays: () => {
-        // Local YYYY-MM-DD keys for every session with logged work, for the calendar.
-        const st = get();
         const days = new Set<string>();
-        for (const s of st.sessions) {
-          const d = new Date(s.startedAt);
-          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-            d.getDate()
-          ).padStart(2, "0")}`;
-          days.add(key);
-        }
+        for (const s of get().sessions) if (s.status !== "archived") days.add(s.date);
         return days;
       },
 
       recentExerciseIds: (limit = 8) => {
         const st = get();
-        const sessions = [...st.sessions].sort((a, b) =>
-          b.startedAt.localeCompare(a.startedAt)
-        );
+        const sessions = [...st.sessions].sort((a, b) => b.startedAt.localeCompare(a.startedAt));
         const ordered: string[] = [];
         for (const s of sessions) {
           for (const x of st.sets.filter((set) => set.sessionId === s.id)) {
@@ -342,9 +468,8 @@ export const useStore = create<TrainovaState>()(
 
       lastPerformance: (exerciseId, beforeSessionId) => {
         const st = get();
-        // Sessions ordered most-recent first, optionally excluding the current one.
         const sessions = st.sessions
-          .filter((s) => s.id !== beforeSessionId && s.endedAt)
+          .filter((s) => s.id !== beforeSessionId && s.status !== "active")
           .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
         for (const s of sessions) {
           const sets = st.sets.filter(
@@ -352,7 +477,7 @@ export const useStore = create<TrainovaState>()(
           );
           if (sets.length > 0) {
             return {
-              targetReps: sets[0].plannedReps ?? 8,
+              targetReps: sets[0].targetReps ?? 8,
               sets: sets.map((x) => ({
                 actualReps: x.actualReps,
                 actualWeight: x.actualWeight,
@@ -368,7 +493,7 @@ export const useStore = create<TrainovaState>()(
       missStreak: (exerciseId, targetReps) => {
         const st = get();
         const sessions = st.sessions
-          .filter((s) => s.endedAt)
+          .filter((s) => s.status === "completed")
           .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
         let streak = 0;
         for (const s of sessions) {
@@ -405,55 +530,154 @@ export const useStore = create<TrainovaState>()(
     }),
     {
       name: "trainova-v1",
-      version: 3,
-      // Backfill seed data (machines, plan, sample program) into browsers that
-      // persisted state before these existed. Idempotent via stable seed ids.
-      migrate: (persisted, _version) => {
-        const s = persisted as Partial<TrainovaState> | undefined;
-        if (!s) return persisted as TrainovaState;
-        const exercises = s.exercises ?? [];
-        const haveIds = new Set(exercises.map((e) => e.id));
-        const mergedExercises = [
-          ...exercises,
-          ...SEED_EXERCISES.filter((e) => !haveIds.has(e.id)),
-        ];
-        const templates = s.templates ?? [];
-        const mergedTemplates = templates.some((t) => t.id === SEED_PLAN_ID)
-          ? templates
-          : [SEED_PLAN, ...templates];
-        const programs = s.programs ?? [];
-        const mergedPrograms = programs.some((p) => p.id === SEED_PROGRAM_ID)
-          ? programs
-          : [SEED_PROGRAM, ...programs];
-        return {
-          ...s,
-          exercises: mergedExercises,
-          templates: mergedTemplates,
-          programs: mergedPrograms,
-        } as TrainovaState;
-      },
+      version: 4,
+      migrate: migrateState,
       skipHydration: true,
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? window.localStorage : memoryStorage
       ),
       partialize: (s) => ({
         units: s.units,
+        devices: s.devices,
         exercises: s.exercises,
         programs: s.programs,
         templates: s.templates,
         sessions: s.sessions,
         sets: s.sets,
         prs: s.prs,
-        activeSessionId: s.activeSessionId,
       }),
     }
   )
 );
 
+// ---------------------------------------------------------------------------
+// Migration to v4: introduce Device/status/per-set targets, enforce one active
+// session, and reset the definitions layer to the clean seed. Best-effort and
+// idempotent; preserves logged sessions/sets/PRs and custom exercises.
+// ---------------------------------------------------------------------------
+function migrateState(persisted: unknown, _version: number): TrainovaState {
+  const s = persisted as Record<string, any> | undefined;
+  if (!s) return persisted as TrainovaState;
+
+  const mergeById = <T extends { id: string }>(seed: T[], existing: T[]): T[] => {
+    const have = new Set(seed.map((x) => x.id));
+    return [...seed, ...existing.filter((x) => !have.has(x.id))];
+  };
+
+  // Devices: seed library + any custom.
+  const devices = mergeById(SEED_DEVICES, (s.devices ?? []) as Device[]);
+
+  // Exercises: clean seed + custom (owner != null), remapped to the new shape.
+  const customExercises: Exercise[] = (s.exercises ?? [])
+    .filter((e: any) => e.owner && !String(e.id).startsWith("seed-") && !String(e.id).startsWith("m-"))
+    .map((e: any) => ({
+      id: e.id,
+      owner: e.owner,
+      name: stripDate(e.name ?? "Exercise"),
+      defaultDeviceId: e.defaultDeviceId ?? null,
+      isCompound: Boolean(e.isCompound),
+      primaryMuscle: e.primaryMuscle ?? null,
+    }));
+  const exercises = mergeById(SEED_EXERCISES, customExercises);
+
+  // Templates: drop the old dated seed plan; map any user templates to per-set shape.
+  const userTemplates: WorkoutTemplate[] = (s.templates ?? [])
+    .filter((t: any) => t.id !== "plan-gymplan-1606" && t.id !== SEED_PLAN_ID)
+    .map((t: any) => ({
+      id: t.id,
+      owner: t.owner ?? LOCAL_OWNER,
+      name: stripDate(t.name ?? "Plan"),
+      notes: t.notes ?? null,
+      exercises: (t.exercises ?? []).map((te: any, i: number) => ({
+        id: te.id ?? `${t.id}-${i}`,
+        exerciseId: te.exerciseId,
+        deviceId: te.deviceId ?? null,
+        position: te.position ?? i,
+        restSeconds: te.restSeconds ?? 90,
+        sets: Array.isArray(te.sets)
+          ? te.sets
+          : Array.from({ length: te.targetSets ?? 3 }, () => ({
+              targetReps: te.targetReps ?? 10,
+              targetWeight: te.targetWeight ?? null,
+            })),
+      })),
+    }));
+  const templates = [SEED_PLAN, ...userTemplates];
+
+  // Programs: drop old seed program; keep user programs; ensure seed program.
+  const userPrograms: Program[] = (s.programs ?? []).filter(
+    (p: any) => p.id !== "program-trainer-1606" && p.id !== SEED_PROGRAM_ID
+  );
+  const programs = [SEED_PROGRAM, ...userPrograms];
+
+  // Sets: rename planned → target, add device/completedAt.
+  const sets: WorkoutSet[] = (s.sets ?? []).map((x: any) => ({
+    id: x.id,
+    owner: x.owner ?? LOCAL_OWNER,
+    sessionId: x.sessionId,
+    exerciseId: x.exerciseId,
+    deviceId: x.deviceId ?? null,
+    setIndex: x.setIndex ?? 0,
+    targetReps: x.targetReps ?? x.plannedReps ?? null,
+    targetWeight: x.targetWeight ?? x.plannedWeight ?? null,
+    actualReps: x.actualReps ?? null,
+    actualWeight: x.actualWeight ?? null,
+    rpe: x.rpe ?? null,
+    completed: Boolean(x.completed),
+    completedAt: x.completedAt ?? null,
+  }));
+
+  // Sessions: derive status from endedAt; enforce a single active session.
+  let mapped: WorkoutSession[] = (s.sessions ?? []).map((x: any) => {
+    const started = x.startedAt ?? now();
+    const status: WorkoutSession["status"] =
+      x.status ?? (x.endedAt ? "completed" : "active");
+    return {
+      id: x.id,
+      owner: x.owner ?? LOCAL_OWNER,
+      templateId: x.templateId ?? null,
+      title: stripDate(x.title ?? x.name ?? "Workout"),
+      date: x.date ?? dayKey(new Date(started)),
+      status,
+      startedAt: started,
+      completedAt: x.completedAt ?? x.endedAt ?? null,
+      reopenedAt: x.reopenedAt ?? null,
+      updatedAt: x.updatedAt ?? x.endedAt ?? started,
+    };
+  });
+
+  // Discard abandoned actives (no completed sets); keep only the newest active.
+  const hasCompletedSet = (sid: string) => sets.some((x) => x.sessionId === sid && x.completed);
+  mapped = mapped.filter((m) => !(m.status === "active" && !hasCompletedSet(m.id)));
+  const actives = mapped
+    .filter((m) => m.status === "active")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  if (actives.length > 1) {
+    const keep = actives[0].id;
+    mapped = mapped.map((m) =>
+      m.status === "active" && m.id !== keep
+        ? { ...m, status: "completed", completedAt: m.completedAt ?? m.startedAt }
+        : m
+    );
+  }
+  const liveSessionIds = new Set(mapped.map((m) => m.id));
+  const liveSets = sets.filter((x) => liveSessionIds.has(x.sessionId));
+
+  return {
+    ...(s as object),
+    units: s.units ?? "kg",
+    devices,
+    exercises,
+    programs,
+    templates,
+    sessions: mapped,
+    sets: liveSets,
+    prs: s.prs ?? [],
+  } as TrainovaState;
+}
+
 /**
  * Rehydrates the persisted store on the client and reports when it's ready.
- * Because `skipHydration: true`, persistence never runs on the server, so SSR
- * prerendering is safe; we trigger `rehydrate()` exactly once after mount.
  */
 export function useHydrated(): boolean {
   const [hydrated, setHydrated] = useState(false);

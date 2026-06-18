@@ -1,76 +1,105 @@
-import type { Exercise, Program, WorkoutTemplate } from "@/domain/types";
+import type {
+  Device,
+  Exercise,
+  Program,
+  TemplateExercise,
+  WorkoutTemplate,
+} from "@/domain/types";
 
-/** Default shared exercise catalog used in local mode (mirrors supabase/seed.sql). */
-const GENERIC_EXERCISES: Omit<Exercise, "id" | "owner">[] = [
-  { name: "Back Squat", primaryMuscle: "quads", equipment: "barbell", isCompound: true },
-  { name: "Bench Press", primaryMuscle: "chest", equipment: "barbell", isCompound: true },
-  { name: "Deadlift", primaryMuscle: "back", equipment: "barbell", isCompound: true },
-  { name: "Overhead Press", primaryMuscle: "shoulders", equipment: "barbell", isCompound: true },
-  { name: "Barbell Row", primaryMuscle: "back", equipment: "barbell", isCompound: true },
-  { name: "Pull-up", primaryMuscle: "back", equipment: "bodyweight", isCompound: true },
-  { name: "Romanian Deadlift", primaryMuscle: "hamstrings", equipment: "barbell", isCompound: true },
-  { name: "Lat Pulldown", primaryMuscle: "back", equipment: "cable", isCompound: false },
-  { name: "Dumbbell Curl", primaryMuscle: "biceps", equipment: "dumbbell", isCompound: false },
-  { name: "Triceps Pushdown", primaryMuscle: "triceps", equipment: "cable", isCompound: false },
-  { name: "Leg Press", primaryMuscle: "quads", equipment: "machine", isCompound: true },
-  { name: "Lateral Raise", primaryMuscle: "shoulders", equipment: "dumbbell", isCompound: false },
+// ---------------------------------------------------------------------------
+// Devices — structured equipment library (machine numbers are data, not text).
+// ---------------------------------------------------------------------------
+const DEVICE_DEFS: Omit<Device, "owner" | "imageUrl">[] = [
+  { id: "d-22", name: "Leg Press", machineNumber: "22", category: "machine", primaryMuscle: "quads" },
+  { id: "d-25", name: "Seated Leg Curl", machineNumber: "25", category: "machine", primaryMuscle: "hamstrings" },
+  { id: "d-26", name: "Seated Leg Extension", machineNumber: "26", category: "machine", primaryMuscle: "quads" },
+  { id: "d-4", name: "Lat Pulldown", machineNumber: "4", category: "machine", primaryMuscle: "back" },
+  { id: "d-7", name: "Seated Row", machineNumber: "7", category: "machine", primaryMuscle: "back" },
+  { id: "d-1", name: "Chest Press", machineNumber: "1", category: "machine", primaryMuscle: "chest" },
+  { id: "d-12", name: "Back Extension", machineNumber: "12", category: "machine", primaryMuscle: "lower back" },
+  { id: "d-11", name: "Abdominal", machineNumber: "11", category: "machine", primaryMuscle: "abs" },
+  { id: "d-bb", name: "Barbell", machineNumber: null, category: "free_weight", primaryMuscle: null },
+  { id: "d-db", name: "Dumbbell", machineNumber: null, category: "free_weight", primaryMuscle: null },
+  { id: "d-cable", name: "Cable Tower", machineNumber: null, category: "cable", primaryMuscle: null },
+  { id: "d-pull", name: "Pull-up Bar", machineNumber: null, category: "bodyweight", primaryMuscle: null },
 ];
 
-/**
- * Machines from the user's gym, keyed by their floor number so the catalog matches
- * the equipment in front of them. Stable ids let the seed plan reference them.
- */
-export const GYM_MACHINES: Exercise[] = [
-  { id: "m-22", name: "Leg Press (No.22)", primaryMuscle: "quads", equipment: "machine", isCompound: true },
-  { id: "m-25", name: "Seated Leg Curl (No.25)", primaryMuscle: "hamstrings", equipment: "machine", isCompound: false },
-  { id: "m-26", name: "Seated Leg Extension (No.26)", primaryMuscle: "quads", equipment: "machine", isCompound: false },
-  { id: "m-4", name: "Pulldown (No.4)", primaryMuscle: "back", equipment: "machine", isCompound: false },
-  { id: "m-7", name: "Row (No.7)", primaryMuscle: "back", equipment: "machine", isCompound: false },
-  { id: "m-1", name: "Chest Press (No.1)", primaryMuscle: "chest", equipment: "machine", isCompound: true },
-  { id: "m-12", name: "Back Extension (No.12)", primaryMuscle: "lower back", equipment: "machine", isCompound: false },
-  { id: "m-11", name: "Abdominal (No.11)", primaryMuscle: "abs", equipment: "machine", isCompound: false },
-].map((e) => ({ ...e, owner: null }));
+export const SEED_DEVICES: Device[] = DEVICE_DEFS.map((d) => ({
+  ...d,
+  owner: null,
+  imageUrl: null,
+}));
 
-export const SEED_EXERCISES: Exercise[] = [
-  ...GENERIC_EXERCISES.map((e, i) => ({ ...e, id: `seed-${i + 1}`, owner: null })),
-  ...GYM_MACHINES,
+// ---------------------------------------------------------------------------
+// Exercises — movements linked to a default device.
+// ---------------------------------------------------------------------------
+type SeedEx = { id: string; name: string; deviceId: string | null; isCompound: boolean; muscle: string | null };
+const EXS: SeedEx[] = [
+  { id: "e-legpress", name: "Leg Press", deviceId: "d-22", isCompound: true, muscle: "quads" },
+  { id: "e-legcurl", name: "Seated Leg Curl", deviceId: "d-25", isCompound: false, muscle: "hamstrings" },
+  { id: "e-legext", name: "Seated Leg Extension", deviceId: "d-26", isCompound: false, muscle: "quads" },
+  { id: "e-pulldown", name: "Lat Pulldown", deviceId: "d-4", isCompound: false, muscle: "back" },
+  { id: "e-row", name: "Seated Row", deviceId: "d-7", isCompound: false, muscle: "back" },
+  { id: "e-chestpress", name: "Chest Press", deviceId: "d-1", isCompound: true, muscle: "chest" },
+  { id: "e-backext", name: "Back Extension", deviceId: "d-12", isCompound: false, muscle: "lower back" },
+  { id: "e-abs", name: "Abdominal", deviceId: "d-11", isCompound: false, muscle: "abs" },
+  { id: "e-squat", name: "Back Squat", deviceId: "d-bb", isCompound: true, muscle: "quads" },
+  { id: "e-bench", name: "Bench Press", deviceId: "d-bb", isCompound: true, muscle: "chest" },
+  { id: "e-deadlift", name: "Deadlift", deviceId: "d-bb", isCompound: true, muscle: "back" },
+  { id: "e-ohp", name: "Overhead Press", deviceId: "d-bb", isCompound: true, muscle: "shoulders" },
+  { id: "e-curl", name: "Dumbbell Curl", deviceId: "d-db", isCompound: false, muscle: "biceps" },
+  { id: "e-pullup", name: "Pull-up", deviceId: "d-pull", isCompound: true, muscle: "back" },
+  { id: "e-lateral", name: "Lateral Raise", deviceId: "d-db", isCompound: false, muscle: "shoulders" },
 ];
 
-/** Stable id so the seeding migration is idempotent. */
-export const SEED_PLAN_ID = "plan-gymplan-1606";
+export const SEED_EXERCISES: Exercise[] = EXS.map((e) => ({
+  id: e.id,
+  owner: null,
+  name: e.name,
+  defaultDeviceId: e.deviceId,
+  isCompound: e.isCompound,
+  primaryMuscle: e.muscle,
+}));
 
-/**
- * The user's current gym plan (16.06). Target weight is the top working set from
- * the plan so the first session starts there; reps default to 12 for machine work.
- */
+// ---------------------------------------------------------------------------
+// Template — reusable, UNDATED. Encodes the user's exact per-set ramps.
+// ---------------------------------------------------------------------------
+export const SEED_PLAN_ID = "plan-full-body-a";
+
+const ramp = (
+  exerciseId: string,
+  deviceId: string,
+  weights: number[],
+  reps = 12
+): Omit<TemplateExercise, "id" | "position"> => ({
+  exerciseId,
+  deviceId,
+  restSeconds: 90,
+  sets: weights.map((w) => ({ targetReps: reps, targetWeight: w })),
+});
+
 export const SEED_PLAN: WorkoutTemplate = {
   id: SEED_PLAN_ID,
   owner: "local-user",
-  name: "Gym Plan — 16.06",
-  notes: "Finisher: Cardio — 20 min, incline 10 → ~2.9 mi.",
+  name: "Full Body A",
+  notes: "From coach. Finisher: Cardio — 20 min, incline 10 → ~2.9 mi.",
   exercises: [
-    { exerciseId: "m-22", targetWeight: 50 },
-    { exerciseId: "m-25", targetWeight: 27.5 },
-    { exerciseId: "m-26", targetWeight: 27.5 },
-    { exerciseId: "m-4", targetWeight: 40 },
-    { exerciseId: "m-7", targetWeight: 42.5 },
-    { exerciseId: "m-1", targetWeight: 20 },
-    { exerciseId: "m-12", targetWeight: 57.5 },
-    { exerciseId: "m-11", targetWeight: 40 },
-  ].map((e, i) => ({
-    id: `${SEED_PLAN_ID}-${i}`,
-    exerciseId: e.exerciseId,
-    position: i,
-    targetSets: 3,
-    targetReps: 12,
-    targetWeight: e.targetWeight,
-    restSeconds: 90,
-  })),
+    ramp("e-legpress", "d-22", [50, 50, 50]),
+    ramp("e-legcurl", "d-25", [27.5, 27.5, 27.5]),
+    ramp("e-legext", "d-26", [27.5, 27.5, 27.5]),
+    ramp("e-pulldown", "d-4", [35, 40, 35]),
+    ramp("e-row", "d-7", [30, 35, 42.5]),
+    ramp("e-chestpress", "d-1", [12.5, 20, 20]),
+    ramp("e-backext", "d-12", [50, 57.5, 57.5]),
+    ramp("e-abs", "d-11", [35, 40, 40]),
+  ].map((e, i) => ({ ...e, id: `${SEED_PLAN_ID}-${i}`, position: i })),
 };
 
-export const SEED_PROGRAM_ID = "program-trainer-1606";
+// ---------------------------------------------------------------------------
+// Program — multi-day grouping (the trainer's plan).
+// ---------------------------------------------------------------------------
+export const SEED_PROGRAM_ID = "program-trainer";
 
-/** Sample trainer program wrapping the 16.06 plan as its first day. */
 export const SEED_PROGRAM: Program = {
   id: SEED_PROGRAM_ID,
   owner: "local-user",

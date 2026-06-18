@@ -4,31 +4,33 @@ import { useMemo } from "react";
 import { SetRow } from "@/components/SetRow";
 import { suggestNextLoad } from "@/domain/progression";
 import { useStore } from "@/lib/store";
-import { cleanName, machineNo } from "@/lib/format";
-import { defaultRest } from "@/lib/restTimer";
+import { deviceBadge } from "@/lib/format";
 import type { WorkoutSet } from "@/domain/types";
 
-/** All sets for a single exercise within the active session, plus its suggestion. */
+/** All sets for a single exercise within a session, plus its suggestion. */
 export function SessionExercise({
   sessionId,
   exerciseId,
   sets,
+  readOnly = false,
   onPr,
 }: {
   sessionId: string;
   exerciseId: string;
   sets: WorkoutSet[];
+  readOnly?: boolean;
   onPr: (kinds: string[]) => void;
 }) {
   const units = useStore((s) => s.units);
   const exerciseById = useStore((s) => s.exerciseById);
+  const deviceById = useStore((s) => s.deviceById);
   const addSet = useStore((s) => s.addSet);
   const updateSet = useStore((s) => s.updateSet);
   const lastPerformance = useStore((s) => s.lastPerformance);
   const missStreak = useStore((s) => s.missStreak);
 
   const ex = exerciseById(exerciseId);
-  const no = ex ? machineNo(ex.name) : null;
+  const device = deviceById(sets[0]?.deviceId ?? ex?.defaultDeviceId);
 
   const last = useMemo(
     () => lastPerformance(exerciseId, sessionId),
@@ -37,20 +39,18 @@ export function SessionExercise({
   );
 
   const suggestion = useMemo(() => {
-    const targetReps = sets[0]?.plannedReps ?? last?.targetReps ?? 8;
+    const targetReps = sets[0]?.targetReps ?? last?.targetReps ?? 8;
     return suggestNextLoad(last, units, {
       isCompound: ex?.isCompound ?? true,
-      templateWeight: sets[0]?.plannedWeight ?? null,
+      templateWeight: sets[0]?.targetWeight ?? null,
       missStreak: missStreak(exerciseId, targetReps),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exerciseId, sessionId, units, sets.length]);
 
-  const lastLabel = last?.sets
-    .map((s) => `${s.actualWeight ?? "–"}×${s.actualReps ?? "–"}`)
-    .join("  ·  ");
+  const restSeconds = ex?.isCompound ? 120 : 90;
+  const done = sets.filter((s) => s.completed).length;
 
-  /** One tap: drop the suggested weight/reps into every set not yet completed. */
   const fillEmpty = () => {
     for (const s of sets) {
       if (s.completed) continue;
@@ -61,33 +61,39 @@ export function SessionExercise({
     }
   };
 
-  const done = sets.filter((s) => s.completed).length;
-
   return (
     <section className="card space-y-2">
       <div className="flex items-center gap-2.5">
-        {no && (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-bold text-black">
-            {no}
-          </span>
-        )}
-        <h3 className="flex-1 font-semibold leading-tight">{ex ? cleanName(ex.name) : "Exercise"}</h3>
-        <span className="text-xs text-muted">{done}/{sets.length}</span>
+        <span
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
+            device?.category === "machine" ? "bg-accent text-black" : "bg-border text-white"
+          }`}
+        >
+          {deviceBadge(device)}
+        </span>
+        <div className="flex-1">
+          <h3 className="font-semibold leading-tight">{ex?.name ?? "Exercise"}</h3>
+          {device && (
+            <p className="text-[11px] text-muted">
+              {device.name}
+              {device.machineNumber ? ` · No.${device.machineNumber}` : ""}
+            </p>
+          )}
+        </div>
+        <span className="text-xs text-muted">
+          {done}/{sets.length}
+        </span>
       </div>
 
-      {lastLabel && (
-        <p className="text-xs text-muted">
-          <span className="text-muted/70">Last time:</span> {lastLabel}
-        </p>
+      {!readOnly && (
+        <button
+          onClick={fillEmpty}
+          className="w-full rounded-lg bg-accentDim/30 px-3 py-2 text-left text-xs text-accent active:scale-[0.99]"
+        >
+          💡 <b>{suggestion.weight || "—"}{suggestion.weight ? units : ""}</b> × {suggestion.reps}
+          <span className="text-accent/70"> — tap to fill · {suggestion.reason}</span>
+        </button>
       )}
-
-      <button
-        onClick={fillEmpty}
-        className="w-full rounded-lg bg-accentDim/30 px-3 py-2 text-left text-xs text-accent active:scale-[0.99]"
-      >
-        💡 <b>{suggestion.weight || "—"}{suggestion.weight ? units : ""}</b> × {suggestion.reps}
-        <span className="text-accent/70"> — tap to fill · {suggestion.reason}</span>
-      </button>
 
       <div className="flex items-center gap-2 px-1 text-[10px] uppercase tracking-wide text-muted">
         <span className="w-5 text-center">#</span>
@@ -103,7 +109,7 @@ export function SessionExercise({
           <SetRow
             key={s.id}
             set={s}
-            restSeconds={defaultRest(ex?.isCompound ?? false)}
+            restSeconds={restSeconds}
             previous={
               last?.sets[s.setIndex]
                 ? {
@@ -117,9 +123,11 @@ export function SessionExercise({
         ))}
       </div>
 
-      <button className="btn-ghost w-full" onClick={() => addSet(sessionId, exerciseId)}>
-        + Add set
-      </button>
+      {!readOnly && (
+        <button className="btn-ghost w-full" onClick={() => addSet(sessionId, exerciseId)}>
+          + Add set
+        </button>
+      )}
     </section>
   );
 }

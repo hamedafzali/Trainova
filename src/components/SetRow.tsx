@@ -31,8 +31,8 @@ export function SetRow({
   const startRest = useRestTimer((s) => s.start);
 
   const num = (v: string) => (v === "" ? null : Number(v));
-  const prevWeight = previous?.weight ?? set.plannedWeight;
-  const prevReps = previous?.reps ?? set.plannedReps;
+  const prevWeight = previous?.weight ?? set.targetWeight;
+  const prevReps = previous?.reps ?? set.targetReps;
   const prevLabel =
     previous && previous.weight != null
       ? `${previous.weight}×${previous.reps ?? "–"}`

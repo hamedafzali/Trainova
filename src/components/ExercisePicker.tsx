@@ -2,14 +2,21 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { cleanName, exerciseBadge, machineNo } from "@/lib/format";
-import type { Exercise } from "@/domain/types";
+import { categoryIcon, deviceBadge } from "@/lib/format";
+import type { Device, DeviceCategory, Exercise } from "@/domain/types";
+
+const CATEGORIES: { key: DeviceCategory | "all"; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "machine", label: "Machines" },
+  { key: "free_weight", label: "Free weight" },
+  { key: "cable", label: "Cable" },
+  { key: "bodyweight", label: "Bodyweight" },
+];
 
 /**
- * Fast device/exercise selector. Optimised for "tap the machine I always use":
- *  - Recently-used machines surface first as big buttons.
- *  - Muscle-group chips narrow the list in one tap.
- *  - Each row shows the machine number as a badge so it matches the gym floor.
+ * Structured device/exercise library. Visual cards (badge + name + category),
+ * searchable, with recents up top. Returns an exerciseId; the device comes from
+ * the exercise's structured link, never typed text.
  */
 export function ExercisePicker({
   onPick,
@@ -19,16 +26,17 @@ export function ExercisePicker({
   onClose: () => void;
 }) {
   const exercises = useStore((s) => s.exercises);
+  const devices = useStore((s) => s.devices);
   const addExercise = useStore((s) => s.addExercise);
   const recentIds = useStore((s) => s.recentExerciseIds(8));
   const [q, setQ] = useState("");
-  const [muscle, setMuscle] = useState<string | null>(null);
+  const [cat, setCat] = useState<DeviceCategory | "all">("all");
 
-  const muscles = useMemo(() => {
-    const set = new Set<string>();
-    for (const e of exercises) if (e.primaryMuscle) set.add(e.primaryMuscle);
-    return [...set].sort();
-  }, [exercises]);
+  const deviceOf = useMemo(() => {
+    const map = new Map<string, Device>();
+    for (const d of devices) map.set(d.id, d);
+    return (ex: Exercise) => (ex.defaultDeviceId ? map.get(ex.defaultDeviceId) : undefined);
+  }, [devices]);
 
   const recents = useMemo(
     () =>
@@ -41,15 +49,20 @@ export function ExercisePicker({
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return exercises
-      .filter((e) => !muscle || e.primaryMuscle === muscle)
+      .filter((e) => cat === "all" || deviceOf(e)?.category === cat)
       .filter((e) => !needle || e.name.toLowerCase().includes(needle))
-      .sort((a, b) => cleanName(a.name).localeCompare(cleanName(b.name)));
-  }, [exercises, q, muscle]);
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [exercises, q, cat, deviceOf]);
 
   const createAndPick = () => {
     const name = q.trim();
     if (!name) return;
-    const ex = addExercise({ name, primaryMuscle: muscle, equipment: null, isCompound: false });
+    const ex = addExercise({
+      name,
+      defaultDeviceId: null,
+      isCompound: false,
+      primaryMuscle: null,
+    });
     onPick(ex.id);
   };
 
@@ -65,7 +78,7 @@ export function ExercisePicker({
           autoFocus
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search machine or exercise…"
+          placeholder="Search device or exercise…"
           className="input mb-3"
           inputMode="search"
         />
@@ -80,8 +93,8 @@ export function ExercisePicker({
                   onClick={() => onPick(e.id)}
                   className="flex flex-col items-center gap-1 rounded-xl border border-border bg-surface2 p-2 active:scale-95"
                 >
-                  <Badge ex={e} />
-                  <span className="line-clamp-1 text-[10px] text-muted">{cleanName(e.name)}</span>
+                  <DeviceTile device={deviceOf(e)} />
+                  <span className="line-clamp-1 text-[10px] text-muted">{e.name}</span>
                 </button>
               ))}
             </div>
@@ -89,78 +102,68 @@ export function ExercisePicker({
         )}
 
         <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
-          <Chip active={muscle === null} onClick={() => setMuscle(null)}>
-            All
-          </Chip>
-          {muscles.map((m) => (
-            <Chip key={m} active={muscle === m} onClick={() => setMuscle(m)}>
-              {m}
-            </Chip>
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setCat(c.key)}
+              className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs ${
+                cat === c.key ? "border-accent bg-accent text-black" : "border-border bg-surface2 text-muted"
+              }`}
+            >
+              {c.label}
+            </button>
           ))}
         </div>
 
         <ul className="flex-1 space-y-1 overflow-y-auto">
-          {filtered.map((e) => (
-            <li key={e.id}>
-              <button
-                onClick={() => onPick(e.id)}
-                className="flex w-full items-center gap-3 rounded-2xl bg-surface2 px-3 py-3 text-left active:scale-[0.99]"
-              >
-                <Badge ex={e} />
-                <span className="flex-1">
-                  <span className="block font-semibold leading-tight">{cleanName(e.name)}</span>
-                  <span className="text-xs text-muted">
-                    {e.primaryMuscle ?? "—"}
-                    {e.isCompound ? " · compound" : ""}
+          {filtered.map((e) => {
+            const d = deviceOf(e);
+            return (
+              <li key={e.id}>
+                <button
+                  onClick={() => onPick(e.id)}
+                  className="flex w-full items-center gap-3 rounded-2xl bg-surface2 px-3 py-3 text-left active:scale-[0.99]"
+                >
+                  <DeviceTile device={d} />
+                  <span className="flex-1">
+                    <span className="block font-semibold leading-tight">{e.name}</span>
+                    <span className="text-xs text-muted">
+                      {d ? `${d.machineNumber ? `No.${d.machineNumber} · ` : ""}${d.category.replace("_", " ")}` : "no device"}
+                      {e.primaryMuscle ? ` · ${e.primaryMuscle}` : ""}
+                    </span>
                   </span>
-                </span>
-              </button>
-            </li>
-          ))}
-          {q.trim() &&
-            !filtered.some((e) => e.name.toLowerCase() === q.trim().toLowerCase()) && (
-              <li>
-                <button onClick={createAndPick} className="btn-ghost w-full">
-                  + Create “{q.trim()}”
                 </button>
               </li>
-            )}
+            );
+          })}
+          {q.trim() && !filtered.some((e) => e.name.toLowerCase() === q.trim().toLowerCase()) && (
+            <li>
+              <button onClick={createAndPick} className="btn-ghost w-full">
+                + Create “{q.trim()}”
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     </div>
   );
 }
 
-function Badge({ ex }: { ex: Exercise }) {
-  const no = machineNo(ex.name);
+/** Visual device card: image if present, else a category-coloured badge. */
+function DeviceTile({ device }: { device: Device | undefined }) {
+  const machine = device?.category === "machine";
   return (
     <span
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-bold ${
-        no ? "bg-accent text-black" : "bg-border text-white"
+      className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-base font-bold ${
+        machine ? "bg-accent text-black" : "bg-border text-white"
       }`}
     >
-      {exerciseBadge(ex)}
+      {device?.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={device.imageUrl} alt={device.name} className="h-full w-full object-cover" />
+      ) : (
+        <span>{device ? deviceBadge(device) : categoryIcon("free_weight")}</span>
+      )}
     </span>
-  );
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs capitalize ${
-        active ? "border-accent bg-accent text-black" : "border-border bg-surface2 text-muted"
-      }`}
-    >
-      {children}
-    </button>
   );
 }

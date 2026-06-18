@@ -17,7 +17,10 @@ export default function SessionPage() {
   const session = useStore((s) => s.sessions.find((x) => x.id === id));
   const allSets = useStore((s) => s.sets);
   const addSet = useStore((s) => s.addSet);
-  const endSession = useStore((s) => s.endSession);
+  const finishSession = useStore((s) => s.finishSession);
+  const discardSession = useStore((s) => s.discardSession);
+  const reopenSession = useStore((s) => s.reopenSession);
+  const archiveSession = useStore((s) => s.archiveSession);
 
   const [picking, setPicking] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -27,7 +30,6 @@ export default function SessionPage() {
     [allSets, id]
   );
 
-  // Preserve first-seen order of exercises in this session.
   const exerciseOrder = useMemo(() => {
     const seen: string[] = [];
     for (const s of sessionSets) if (!seen.includes(s.exerciseId)) seen.push(s.exerciseId);
@@ -46,6 +48,9 @@ export default function SessionPage() {
     );
   }
 
+  const isActive = session.status === "active";
+  const readOnly = !isActive;
+
   const showPr = (kinds: string[]) => {
     const label = kinds
       .map((k) => (k === "e1rm" ? "estimated 1RM" : k === "max_weight" ? "top weight" : "rep"))
@@ -55,23 +60,31 @@ export default function SessionPage() {
   };
 
   const finish = () => {
-    endSession(session.id);
-    router.push("/history");
+    const { discarded } = finishSession(session.id);
+    router.push(discarded ? "/" : "/history");
   };
 
   return (
     <main className="space-y-4 p-4">
       <header className="flex items-center justify-between pt-2">
         <div>
-          <p className="text-xs text-muted">{session.endedAt ? "Completed" : "In progress"}</p>
-          <h1 className="text-xl font-bold tracking-tight">{session.name}</h1>
+          <p className="text-xs uppercase tracking-wide text-muted">
+            {session.status === "active"
+              ? "In progress"
+              : session.status === "completed"
+                ? "Completed"
+                : "Archived"}
+            {" · "}
+            {new Date(session.startedAt).toLocaleDateString()}
+          </p>
+          <h1 className="text-xl font-bold tracking-tight">{session.title}</h1>
         </div>
         <OnlineBadge />
       </header>
 
       {exerciseOrder.length === 0 && (
         <div className="card text-center text-muted">
-          Empty workout — add your first exercise below.
+          {isActive ? "Empty workout — add your first exercise below." : "No sets were logged."}
         </div>
       )}
 
@@ -81,18 +94,55 @@ export default function SessionPage() {
           sessionId={session.id}
           exerciseId={exerciseId}
           sets={sessionSets.filter((s) => s.exerciseId === exerciseId)}
+          readOnly={readOnly}
           onPr={showPr}
         />
       ))}
 
-      <button className="btn-ghost w-full" onClick={() => setPicking(true)}>
-        + Add exercise
-      </button>
+      {isActive && (
+        <>
+          <button className="btn-ghost w-full" onClick={() => setPicking(true)}>
+            + Add exercise
+          </button>
+          <button className="btn-primary w-full py-4 text-base" onClick={finish}>
+            Finish workout
+          </button>
+          <button
+            className="btn-danger w-full"
+            onClick={() => {
+              if (confirm("Discard this workout? Logged sets will be deleted.")) {
+                discardSession(session.id);
+                router.push("/");
+              }
+            }}
+          >
+            Discard
+          </button>
+        </>
+      )}
 
-      {!session.endedAt && (
-        <button className="btn-primary w-full py-4 text-base" onClick={finish}>
-          Finish workout
-        </button>
+      {session.status === "completed" && (
+        <div className="flex gap-2">
+          <button
+            className="btn-ghost flex-1"
+            onClick={() => {
+              if (reopenSession(session.id)) setToast("Re-opened for editing");
+              else setToast("Finish the active workout first");
+              setTimeout(() => setToast(null), 2000);
+            }}
+          >
+            Edit workout
+          </button>
+          <button
+            className="btn-ghost flex-1"
+            onClick={() => {
+              archiveSession(session.id);
+              router.push("/history");
+            }}
+          >
+            Archive
+          </button>
+        </div>
       )}
 
       {picking && (
@@ -111,7 +161,7 @@ export default function SessionPage() {
         </div>
       )}
 
-      <RestTimerBar />
+      {isActive && <RestTimerBar />}
     </main>
   );
 }

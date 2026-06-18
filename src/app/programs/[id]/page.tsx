@@ -14,6 +14,17 @@ export default function ProgramEditPage() {
   const addDayToProgram = useStore((s) => s.addDayToProgram);
   const removeDayFromProgram = useStore((s) => s.removeDayFromProgram);
   const startSession = useStore((s) => s.startSession);
+  const getActiveSession = useStore((s) => s.getActiveSession);
+
+  const start = (templateId: string) => {
+    const { id: sid, blocked } = startSession(templateId);
+    if (blocked) {
+      const a = getActiveSession();
+      if (a) router.push(`/session/${a.id}`);
+      return;
+    }
+    if (sid) router.push(`/session/${sid}`);
+  };
 
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
   if (!program) {
@@ -59,13 +70,7 @@ export default function ProgramEditPage() {
                   </p>
                   <p className="text-xs text-muted">{d.exercises.length} exercises · tap to edit</p>
                 </Link>
-                <button
-                  className="btn-primary px-3 py-1.5"
-                  onClick={() => {
-                    const sid = startSession(d.id);
-                    router.push(`/session/${sid}`);
-                  }}
-                >
+                <button className="btn-primary px-3 py-1.5" onClick={() => start(d.id)}>
                   Start
                 </button>
                 <button

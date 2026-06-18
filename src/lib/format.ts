@@ -1,17 +1,27 @@
-import type { Exercise } from "@/domain/types";
+import type { Device, DeviceCategory } from "@/domain/types";
 
-/** Pulls a machine/floor number out of a name like "Leg Press (No.22)" → "22". */
-export function machineNo(name: string): string | null {
-  const m = name.match(/no\.?\s*(\d+)/i);
-  return m ? m[1] : null;
+const ICONS: Record<DeviceCategory, string> = {
+  machine: "🏋️",
+  free_weight: "🔩",
+  cable: "🪢",
+  bodyweight: "🤸",
+  cardio: "🏃",
+};
+
+export function categoryIcon(c: DeviceCategory): string {
+  return ICONS[c] ?? "🏋️";
 }
 
-/** Name without the "(No.x)" suffix, for cleaner display next to a number badge. */
-export function cleanName(name: string): string {
-  return name.replace(/\s*\(no\.?\s*\d+\)\s*/i, "").trim();
+/** Short badge for a device: its machine number, else a category icon. */
+export function deviceBadge(d: Device | undefined): string {
+  if (!d) return "•";
+  return d.machineNumber ?? categoryIcon(d.category);
 }
 
-/** Short label for an exercise: its machine number if present, else first letters. */
-export function exerciseBadge(ex: Pick<Exercise, "name">): string {
-  return machineNo(ex.name) ?? cleanName(ex.name).slice(0, 2).toUpperCase();
+/** Remove a trailing date suffix from a name (templates must be undated). */
+export function stripDate(name: string): string {
+  return name
+    .replace(/\s*[—–-]\s*\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?\s*$/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
