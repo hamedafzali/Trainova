@@ -13,7 +13,7 @@ import type {
 } from "@/domain/types";
 import { detectPrs, epley1rm } from "@/domain/progression";
 import type { LastPerformance } from "@/domain/progression";
-import { SEED_EXERCISES } from "./seed";
+import { SEED_EXERCISES, SEED_PLAN, SEED_PLAN_ID } from "./seed";
 import { uid } from "./id";
 
 const LOCAL_OWNER = "local-user";
@@ -67,7 +67,7 @@ export const useStore = create<TrainovaState>()(
     (set, get) => ({
       units: "kg",
       exercises: SEED_EXERCISES,
-      templates: [],
+      templates: [SEED_PLAN],
       sessions: [],
       sets: [],
       prs: [],
@@ -314,6 +314,24 @@ export const useStore = create<TrainovaState>()(
     }),
     {
       name: "trainova-v1",
+      version: 2,
+      // Backfill the seed plan + its machines into browsers that persisted state
+      // before the plan existed. Idempotent via the stable SEED_PLAN_ID.
+      migrate: (persisted, _version) => {
+        const s = persisted as Partial<TrainovaState> | undefined;
+        if (!s) return persisted as TrainovaState;
+        const exercises = s.exercises ?? [];
+        const haveIds = new Set(exercises.map((e) => e.id));
+        const mergedExercises = [
+          ...exercises,
+          ...SEED_EXERCISES.filter((e) => !haveIds.has(e.id)),
+        ];
+        const templates = s.templates ?? [];
+        const mergedTemplates = templates.some((t) => t.id === SEED_PLAN_ID)
+          ? templates
+          : [SEED_PLAN, ...templates];
+        return { ...s, exercises: mergedExercises, templates: mergedTemplates } as TrainovaState;
+      },
       skipHydration: true,
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? window.localStorage : memoryStorage
