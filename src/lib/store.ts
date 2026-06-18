@@ -6,6 +6,7 @@ import { persist, createJSONStorage, type StateStorage } from "zustand/middlewar
 import type {
   Exercise,
   PersonalRecord,
+  Program,
   Units,
   WorkoutSession,
   WorkoutSet,
@@ -13,7 +14,7 @@ import type {
 } from "@/domain/types";
 import { detectPrs, epley1rm } from "@/domain/progression";
 import type { LastPerformance } from "@/domain/progression";
-import { SEED_EXERCISES, SEED_PLAN, SEED_PLAN_ID } from "./seed";
+import { SEED_EXERCISES, SEED_PLAN, SEED_PLAN_ID, SEED_PROGRAM, SEED_PROGRAM_ID } from "./seed";
 import { uid } from "./id";
 
 const LOCAL_OWNER = "local-user";
@@ -28,6 +29,7 @@ const memoryStorage: StateStorage = {
 export interface TrainovaState {
   units: Units;
   exercises: Exercise[];
+  programs: Program[];
   templates: WorkoutTemplate[];
   sessions: WorkoutSession[];
   sets: WorkoutSet[];
@@ -36,6 +38,11 @@ export interface TrainovaState {
 
   setUnits: (u: Units) => void;
   addExercise: (input: Omit<Exercise, "id" | "owner">) => Exercise;
+
+  createProgram: (name: string, source?: Program["source"]) => string;
+  deleteProgram: (id: string) => void;
+  addDayToProgram: (programId: string, name: string) => string;
+  removeDayFromProgram: (programId: string, templateId: string) => void;
 
   createTemplate: (name: string) => string;
   deleteTemplate: (id: string) => void;
@@ -56,6 +63,9 @@ export interface TrainovaState {
 
   // selectors
   exerciseById: (id: string) => Exercise | undefined;
+  programById: (id: string) => Program | undefined;
+  daysForProgram: (id: string) => WorkoutTemplate[];
+  trainedDays: () => Set<string>;
   recentExerciseIds: (limit?: number) => string[];
   setsForSession: (sessionId: string) => WorkoutSet[];
   lastPerformance: (exerciseId: string, beforeSessionId?: string) => LastPerformance | null;
@@ -68,6 +78,7 @@ export const useStore = create<TrainovaState>()(
     (set, get) => ({
       units: "kg",
       exercises: SEED_EXERCISES,
+      programs: [SEED_PROGRAM],
       templates: [SEED_PLAN],
       sessions: [],
       sets: [],
@@ -81,6 +92,45 @@ export const useStore = create<TrainovaState>()(
         set((s) => ({ exercises: [...s.exercises, ex] }));
         return ex;
       },
+
+      createProgram: (name, source = "trainer") => {
+        const id = uid();
+        const program: Program = {
+          id,
+          owner: LOCAL_OWNER,
+          name: name.trim() || "New program",
+          source,
+          notes: null,
+          dayTemplateIds: [],
+        };
+        set((s) => ({ programs: [...s.programs, program] }));
+        return id;
+      },
+
+      deleteProgram: (id) =>
+        set((s) => ({ programs: s.programs.filter((p) => p.id !== id) })),
+
+      addDayToProgram: (programId, name) => {
+        const templateId = get().createTemplate(name);
+        set((s) => ({
+          programs: s.programs.map((p) =>
+            p.id === programId
+              ? { ...p, dayTemplateIds: [...p.dayTemplateIds, templateId] }
+              : p
+          ),
+        }));
+        return templateId;
+      },
+
+      removeDayFromProgram: (programId, templateId) =>
+        set((s) => ({
+          programs: s.programs.map((p) =>
+            p.id === programId
+              ? { ...p, dayTemplateIds: p.dayTemplateIds.filter((d) => d !== templateId) }
+              : p
+          ),
+          templates: s.templates.filter((t) => t.id !== templateId),
+        })),
 
       createTemplate: (name) => {
         const id = uid();
@@ -245,6 +295,31 @@ export const useStore = create<TrainovaState>()(
 
       exerciseById: (id) => get().exercises.find((e) => e.id === id),
 
+      programById: (id) => get().programs.find((p) => p.id === id),
+
+      daysForProgram: (id) => {
+        const st = get();
+        const program = st.programs.find((p) => p.id === id);
+        if (!program) return [];
+        return program.dayTemplateIds
+          .map((tid) => st.templates.find((t) => t.id === tid))
+          .filter((t): t is WorkoutTemplate => Boolean(t));
+      },
+
+      trainedDays: () => {
+        // Local YYYY-MM-DD keys for every session with logged work, for the calendar.
+        const st = get();
+        const days = new Set<string>();
+        for (const s of st.sessions) {
+          const d = new Date(s.startedAt);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+            d.getDate()
+          ).padStart(2, "0")}`;
+          days.add(key);
+        }
+        return days;
+      },
+
       recentExerciseIds: (limit = 8) => {
         const st = get();
         const sessions = [...st.sessions].sort((a, b) =>
@@ -330,9 +405,9 @@ export const useStore = create<TrainovaState>()(
     }),
     {
       name: "trainova-v1",
-      version: 2,
-      // Backfill the seed plan + its machines into browsers that persisted state
-      // before the plan existed. Idempotent via the stable SEED_PLAN_ID.
+      version: 3,
+      // Backfill seed data (machines, plan, sample program) into browsers that
+      // persisted state before these existed. Idempotent via stable seed ids.
       migrate: (persisted, _version) => {
         const s = persisted as Partial<TrainovaState> | undefined;
         if (!s) return persisted as TrainovaState;
@@ -346,7 +421,16 @@ export const useStore = create<TrainovaState>()(
         const mergedTemplates = templates.some((t) => t.id === SEED_PLAN_ID)
           ? templates
           : [SEED_PLAN, ...templates];
-        return { ...s, exercises: mergedExercises, templates: mergedTemplates } as TrainovaState;
+        const programs = s.programs ?? [];
+        const mergedPrograms = programs.some((p) => p.id === SEED_PROGRAM_ID)
+          ? programs
+          : [SEED_PROGRAM, ...programs];
+        return {
+          ...s,
+          exercises: mergedExercises,
+          templates: mergedTemplates,
+          programs: mergedPrograms,
+        } as TrainovaState;
       },
       skipHydration: true,
       storage: createJSONStorage(() =>
@@ -355,6 +439,7 @@ export const useStore = create<TrainovaState>()(
       partialize: (s) => ({
         units: s.units,
         exercises: s.exercises,
+        programs: s.programs,
         templates: s.templates,
         sessions: s.sessions,
         sets: s.sets,

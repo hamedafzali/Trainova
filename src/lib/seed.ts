@@ -1,4 +1,4 @@
-import type { Exercise, WorkoutTemplate } from "@/domain/types";
+import type { Exercise, Program, WorkoutTemplate } from "@/domain/types";
 
 /** Default shared exercise catalog used in local mode (mirrors supabase/seed.sql). */
 const GENERIC_EXERCISES: Omit<Exercise, "id" | "owner">[] = [
@@ -66,4 +66,16 @@ export const SEED_PLAN: WorkoutTemplate = {
     targetWeight: e.targetWeight,
     restSeconds: 90,
   })),
+};
+
+export const SEED_PROGRAM_ID = "program-trainer-1606";
+
+/** Sample trainer program wrapping the 16.06 plan as its first day. */
+export const SEED_PROGRAM: Program = {
+  id: SEED_PROGRAM_ID,
+  owner: "local-user",
+  name: "Trainer Program",
+  source: "trainer",
+  notes: "Full-body plan from coach — 3×/week.",
+  dayTemplateIds: [SEED_PLAN_ID],
 };

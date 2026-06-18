@@ -35,6 +35,20 @@ export interface WorkoutTemplate {
   exercises: TemplateExercise[];
 }
 
+/**
+ * A multi-day plan — e.g. the program a trainer hands you. Groups ordered day
+ * templates (Day A / B / C) under one name. `source` distinguishes a coach's
+ * plan from one you built yourself.
+ */
+export interface Program {
+  id: string;
+  owner: string;
+  name: string;
+  source: "trainer" | "self";
+  notes: string | null;
+  dayTemplateIds: string[];
+}
+
 export interface WorkoutSession {
   id: string;
   owner: string;

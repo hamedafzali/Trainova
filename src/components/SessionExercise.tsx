@@ -88,9 +88,30 @@ export function SessionExercise({
         <span className="text-accent/70"> — tap to fill · {suggestion.reason}</span>
       </button>
 
+      <div className="flex items-center gap-2 px-1 text-[10px] uppercase tracking-wide text-muted">
+        <span className="w-5 text-center">#</span>
+        <span className="w-14 shrink-0 text-center">Prev</span>
+        <span className="flex-1 text-center">{units}</span>
+        <span className="w-3" />
+        <span className="flex-1 text-center">Reps</span>
+        <span className="w-[88px]" />
+      </div>
+
       <div className="divide-y divide-border/60">
         {sets.map((s) => (
-          <SetRow key={s.id} set={s} onPr={onPr} />
+          <SetRow
+            key={s.id}
+            set={s}
+            previous={
+              last?.sets[s.setIndex]
+                ? {
+                    weight: last.sets[s.setIndex].actualWeight,
+                    reps: last.sets[s.setIndex].actualReps,
+                  }
+                : undefined
+            }
+            onPr={onPr}
+          />
         ))}
       </div>
 

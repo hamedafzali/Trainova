@@ -3,16 +3,36 @@
 import { useStore } from "@/lib/store";
 import type { WorkoutSet } from "@/domain/types";
 
+export interface PreviousSet {
+  weight: number | null;
+  reps: number | null;
+}
+
 /**
- * One logged set. Optimised for minimal taps: type weight, type reps, tap ✓.
- * The check both marks completion and triggers PR detection in the store.
+ * One logged set. Optimised for minimal taps: the "Previous" column shows what
+ * you did on this same set last time (ghosted as the input placeholder), so you
+ * just type to beat it, then tap ✓.
  */
-export function SetRow({ set, onPr }: { set: WorkoutSet; onPr: (kinds: string[]) => void }) {
+export function SetRow({
+  set,
+  previous,
+  onPr,
+}: {
+  set: WorkoutSet;
+  previous?: PreviousSet;
+  onPr: (kinds: string[]) => void;
+}) {
   const updateSet = useStore((s) => s.updateSet);
   const completeSet = useStore((s) => s.completeSet);
   const removeSet = useStore((s) => s.removeSet);
 
   const num = (v: string) => (v === "" ? null : Number(v));
+  const prevWeight = previous?.weight ?? set.plannedWeight;
+  const prevReps = previous?.reps ?? set.plannedReps;
+  const prevLabel =
+    previous && previous.weight != null
+      ? `${previous.weight}×${previous.reps ?? "–"}`
+      : "—";
 
   return (
     <div
@@ -20,13 +40,17 @@ export function SetRow({ set, onPr }: { set: WorkoutSet; onPr: (kinds: string[])
         set.completed ? "opacity-70" : ""
       }`}
     >
-      <span className="w-6 text-center text-sm text-muted tabular-nums">{set.setIndex + 1}</span>
+      <span className="w-5 text-center text-sm text-muted tabular-nums">{set.setIndex + 1}</span>
+
+      <span className="w-14 shrink-0 text-center text-xs text-muted tabular-nums" title="last time">
+        {prevLabel}
+      </span>
 
       <input
         type="number"
         inputMode="decimal"
         className="num flex-1"
-        placeholder={set.plannedWeight != null ? String(set.plannedWeight) : "kg"}
+        placeholder={prevWeight != null ? String(prevWeight) : "kg"}
         value={set.actualWeight ?? ""}
         onChange={(e) => updateSet(set.id, { actualWeight: num(e.target.value) })}
       />
@@ -35,7 +59,7 @@ export function SetRow({ set, onPr }: { set: WorkoutSet; onPr: (kinds: string[])
         type="number"
         inputMode="numeric"
         className="num flex-1"
-        placeholder={set.plannedReps != null ? String(set.plannedReps) : "reps"}
+        placeholder={prevReps != null ? String(prevReps) : "reps"}
         value={set.actualReps ?? ""}
         onChange={(e) => updateSet(set.id, { actualReps: num(e.target.value) })}
       />
@@ -47,8 +71,9 @@ export function SetRow({ set, onPr }: { set: WorkoutSet; onPr: (kinds: string[])
             updateSet(set.id, { completed: false });
             return;
           }
-          if (set.actualWeight == null) updateSet(set.id, { actualWeight: set.plannedWeight });
-          if (set.actualReps == null) updateSet(set.id, { actualReps: set.plannedReps });
+          // Empty fields fall back to last time's values, so a repeat set is one tap.
+          if (set.actualWeight == null) updateSet(set.id, { actualWeight: prevWeight });
+          if (set.actualReps == null) updateSet(set.id, { actualReps: prevReps });
           const { newPrs } = completeSet(set.id);
           if (newPrs.length) onPr(newPrs);
         }}

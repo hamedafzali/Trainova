@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/", label: "Home", icon: "🏠" },
   { href: "/templates", label: "Plans", icon: "📋" },
+  { href: "/calendar", label: "Calendar", icon: "📅" },
   { href: "/history", label: "History", icon: "🕘" },
   { href: "/progress", label: "Progress", icon: "📈" },
 ];
@@ -14,7 +15,7 @@ export function BottomNav() {
   const path = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-border bg-bg/95 backdrop-blur">
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {tabs.map((t) => {
           const active = t.href === "/" ? path === "/" : path.startsWith(t.href);
           return (
