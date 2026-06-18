@@ -3,8 +3,12 @@ import type {
   Exercise,
   Program,
   TemplateExercise,
+  WorkoutSession,
+  WorkoutSet,
   WorkoutTemplate,
 } from "@/domain/types";
+
+const OWNER = "local-user";
 
 // ---------------------------------------------------------------------------
 // Devices — structured equipment library (machine numbers are data, not text).
@@ -18,6 +22,7 @@ const DEVICE_DEFS: Omit<Device, "owner" | "imageUrl">[] = [
   { id: "d-1", name: "Chest Press", machineNumber: "1", category: "machine", primaryMuscle: "chest" },
   { id: "d-12", name: "Back Extension", machineNumber: "12", category: "machine", primaryMuscle: "lower back" },
   { id: "d-11", name: "Abdominal", machineNumber: "11", category: "machine", primaryMuscle: "abs" },
+  { id: "d-tm", name: "Treadmill", machineNumber: null, category: "cardio", primaryMuscle: "cardio" },
   { id: "d-bb", name: "Barbell", machineNumber: null, category: "free_weight", primaryMuscle: null },
   { id: "d-db", name: "Dumbbell", machineNumber: null, category: "free_weight", primaryMuscle: null },
   { id: "d-cable", name: "Cable Tower", machineNumber: null, category: "cable", primaryMuscle: null },
@@ -43,6 +48,7 @@ const EXS: SeedEx[] = [
   { id: "e-chestpress", name: "Chest Press", deviceId: "d-1", isCompound: true, muscle: "chest" },
   { id: "e-backext", name: "Back Extension", deviceId: "d-12", isCompound: false, muscle: "lower back" },
   { id: "e-abs", name: "Abdominal", deviceId: "d-11", isCompound: false, muscle: "abs" },
+  { id: "e-treadmill", name: "Treadmill", deviceId: "d-tm", isCompound: false, muscle: "cardio" },
   { id: "e-squat", name: "Back Squat", deviceId: "d-bb", isCompound: true, muscle: "quads" },
   { id: "e-bench", name: "Bench Press", deviceId: "d-bb", isCompound: true, muscle: "chest" },
   { id: "e-deadlift", name: "Deadlift", deviceId: "d-bb", isCompound: true, muscle: "back" },
@@ -62,37 +68,41 @@ export const SEED_EXERCISES: Exercise[] = EXS.map((e) => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Template — reusable, UNDATED. Encodes the user's exact per-set ramps.
+// The user's 16.06.2026 session, the single source of truth for both the plan
+// (targets) and the completed history (actuals). reps = 12 throughout.
+// ---------------------------------------------------------------------------
+const PLAN_REPS = 12;
+const PLAN: { exerciseId: string; deviceId: string; weights: number[] }[] = [
+  { exerciseId: "e-legpress", deviceId: "d-22", weights: [50, 50, 50] },
+  { exerciseId: "e-legcurl", deviceId: "d-25", weights: [27.5, 27.5, 27.5] },
+  { exerciseId: "e-legext", deviceId: "d-26", weights: [27.5, 27.5, 27.5] },
+  { exerciseId: "e-pulldown", deviceId: "d-4", weights: [35, 40, 35] },
+  { exerciseId: "e-row", deviceId: "d-7", weights: [30, 35, 42.5] },
+  { exerciseId: "e-chestpress", deviceId: "d-1", weights: [12.5, 20, 20] },
+  { exerciseId: "e-backext", deviceId: "d-12", weights: [50, 57.5, 57.5] },
+  { exerciseId: "e-abs", deviceId: "d-11", weights: [35, 40, 40] },
+];
+
+const CARDIO_NOTE = "Finisher: Treadmill — 20 min, incline 10 → 2.9 mi.";
+
+// ---------------------------------------------------------------------------
+// Template — reusable, UNDATED. Per-set ramps from the plan.
 // ---------------------------------------------------------------------------
 export const SEED_PLAN_ID = "plan-full-body-a";
 
-const ramp = (
-  exerciseId: string,
-  deviceId: string,
-  weights: number[],
-  reps = 12
-): Omit<TemplateExercise, "id" | "position"> => ({
-  exerciseId,
-  deviceId,
-  restSeconds: 90,
-  sets: weights.map((w) => ({ targetReps: reps, targetWeight: w })),
-});
-
 export const SEED_PLAN: WorkoutTemplate = {
   id: SEED_PLAN_ID,
-  owner: "local-user",
+  owner: OWNER,
   name: "Full Body A",
-  notes: "From coach. Finisher: Cardio — 20 min, incline 10 → ~2.9 mi.",
-  exercises: [
-    ramp("e-legpress", "d-22", [50, 50, 50]),
-    ramp("e-legcurl", "d-25", [27.5, 27.5, 27.5]),
-    ramp("e-legext", "d-26", [27.5, 27.5, 27.5]),
-    ramp("e-pulldown", "d-4", [35, 40, 35]),
-    ramp("e-row", "d-7", [30, 35, 42.5]),
-    ramp("e-chestpress", "d-1", [12.5, 20, 20]),
-    ramp("e-backext", "d-12", [50, 57.5, 57.5]),
-    ramp("e-abs", "d-11", [35, 40, 40]),
-  ].map((e, i) => ({ ...e, id: `${SEED_PLAN_ID}-${i}`, position: i })),
+  notes: CARDIO_NOTE,
+  exercises: PLAN.map((p, i): TemplateExercise => ({
+    id: `${SEED_PLAN_ID}-${i}`,
+    exerciseId: p.exerciseId,
+    deviceId: p.deviceId,
+    position: i,
+    restSeconds: 90,
+    sets: p.weights.map((w) => ({ targetReps: PLAN_REPS, targetWeight: w })),
+  })),
 };
 
 // ---------------------------------------------------------------------------
@@ -102,9 +112,47 @@ export const SEED_PROGRAM_ID = "program-trainer";
 
 export const SEED_PROGRAM: Program = {
   id: SEED_PROGRAM_ID,
-  owner: "local-user",
+  owner: OWNER,
   name: "Trainer Program",
   source: "trainer",
   notes: "Full-body plan from coach — 3×/week.",
   dayTemplateIds: [SEED_PLAN_ID],
 };
+
+// ---------------------------------------------------------------------------
+// Completed session for 16.06.2026 — gives real "previous" data to build on.
+// ---------------------------------------------------------------------------
+export const SEED_SESSION_ID = "session-2026-06-16";
+const STARTED = "2026-06-16T18:00:00.000Z";
+const ENDED = "2026-06-16T18:50:00.000Z";
+
+export const SEED_SESSION: WorkoutSession = {
+  id: SEED_SESSION_ID,
+  owner: OWNER,
+  templateId: SEED_PLAN_ID,
+  title: "Full Body A",
+  date: "2026-06-16",
+  status: "completed",
+  startedAt: STARTED,
+  completedAt: ENDED,
+  reopenedAt: null,
+  updatedAt: ENDED,
+};
+
+export const SEED_SESSION_SETS: WorkoutSet[] = PLAN.flatMap((p, exIdx) =>
+  p.weights.map((w, setIdx) => ({
+    id: `sess1606-${exIdx}-${setIdx}`,
+    owner: OWNER,
+    sessionId: SEED_SESSION_ID,
+    exerciseId: p.exerciseId,
+    deviceId: p.deviceId,
+    setIndex: setIdx,
+    targetReps: PLAN_REPS,
+    targetWeight: w,
+    actualReps: PLAN_REPS,
+    actualWeight: w,
+    rpe: null,
+    completed: true,
+    completedAt: ENDED,
+  }))
+);

@@ -30,6 +30,8 @@ import {
   SEED_PLAN_ID,
   SEED_PROGRAM,
   SEED_PROGRAM_ID,
+  SEED_SESSION,
+  SEED_SESSION_SETS,
 } from "./seed";
 import { stripDate } from "./format";
 import { uid } from "./id";
@@ -112,8 +114,8 @@ export const useStore = create<TrainovaState>()(
       exercises: SEED_EXERCISES,
       programs: [SEED_PROGRAM],
       templates: [SEED_PLAN],
-      sessions: [],
-      sets: [],
+      sessions: [SEED_SESSION],
+      sets: [...SEED_SESSION_SETS],
       prs: [],
 
       setUnits: (u) => set({ units: u }),
@@ -280,26 +282,26 @@ export const useStore = create<TrainovaState>()(
           updatedAt: ts,
         };
 
-        // Snapshot each template set's targets into a planned session set.
+        // Seed only the FIRST set per exercise; the user adds the rest one by one
+        // (and can exceed the template's set count). Targets come from the plan.
         const seeded: WorkoutSet[] = [];
         if (tpl) {
           for (const te of tpl.exercises) {
-            te.sets.forEach((tset, i) => {
-              seeded.push({
-                id: uid(),
-                owner: LOCAL_OWNER,
-                sessionId: id,
-                exerciseId: te.exerciseId,
-                deviceId: te.deviceId,
-                setIndex: i,
-                targetReps: tset.targetReps,
-                targetWeight: tset.targetWeight,
-                actualReps: null,
-                actualWeight: null,
-                rpe: null,
-                completed: false,
-                completedAt: null,
-              });
+            const first = te.sets[0];
+            seeded.push({
+              id: uid(),
+              owner: LOCAL_OWNER,
+              sessionId: id,
+              exerciseId: te.exerciseId,
+              deviceId: te.deviceId,
+              setIndex: 0,
+              targetReps: first?.targetReps ?? null,
+              targetWeight: first?.targetWeight ?? null,
+              actualReps: null,
+              actualWeight: null,
+              rpe: null,
+              completed: false,
+              completedAt: null,
             });
           }
         }
@@ -368,16 +370,26 @@ export const useStore = create<TrainovaState>()(
           (x) => x.sessionId === sessionId && x.exerciseId === exerciseId
         );
         const prev = existing[existing.length - 1];
+        const index = existing.length;
+
+        // Prefer the next ramp target from the session's template (e.g. set 3 of
+        // Row → 42.5), falling back to the previous logged set.
+        const session = st.sessions.find((s) => s.id === sessionId);
+        const tpl = session?.templateId
+          ? st.templates.find((t) => t.id === session.templateId)
+          : undefined;
+        const templateSet = tpl?.exercises.find((te) => te.exerciseId === exerciseId)?.sets[index];
         const device = st.exercises.find((e) => e.id === exerciseId)?.defaultDeviceId ?? null;
+
         const newSet: WorkoutSet = {
           id,
           owner: LOCAL_OWNER,
           sessionId,
           exerciseId,
           deviceId: prev?.deviceId ?? device,
-          setIndex: existing.length,
-          targetReps: prev?.targetReps ?? null,
-          targetWeight: prev?.actualWeight ?? prev?.targetWeight ?? null,
+          setIndex: index,
+          targetReps: templateSet?.targetReps ?? prev?.targetReps ?? null,
+          targetWeight: templateSet?.targetWeight ?? prev?.actualWeight ?? prev?.targetWeight ?? null,
           actualReps: null,
           actualWeight: null,
           rpe: null,
@@ -529,8 +541,10 @@ export const useStore = create<TrainovaState>()(
       },
     }),
     {
-      name: "trainova-v1",
-      version: 5, // v5: refresh device library with bundled images
+      // New key = hard reset of all existing data (local-first has no server DB).
+      // Old "trainova-v1" data is abandoned; the app starts from the seed below.
+      name: "trainova-2026-06",
+      version: 1,
       migrate: migrateState,
       skipHydration: true,
       storage: createJSONStorage(() =>
