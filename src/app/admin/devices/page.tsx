@@ -103,15 +103,49 @@ function DeviceForm({
   onSave: (d: Device) => void;
 }) {
   const [d, setD] = useState<Device>(device);
+  const [uploading, setUploading] = useState(false);
   const set = (patch: Partial<Device>) => setD((cur) => ({ ...cur, ...patch }));
+
+  const upload = async (file: File) => {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("deviceId", d.id);
+      fd.append("file", file);
+      const r = await fetch("/api/admin/devices/image", {
+        method: "POST",
+        headers: { authorization: `Bearer ${getToken()}` },
+        body: fd,
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) set({ imageUrl: j.url });
+      else alert(j.error ?? "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <li className="card space-y-2">
       <p className="text-sm font-semibold">Edit {device.name}</p>
+
+      <div className="flex items-center gap-3">
+        <DeviceAvatar device={d} className="h-16 w-16 rounded-xl text-2xl" />
+        <label className="btn-ghost cursor-pointer text-xs">
+          {uploading ? "Uploading…" : "Upload photo"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
+          />
+        </label>
+      </div>
+
       <Field label="Name">
         <input className="input" value={d.name} onChange={(e) => set({ name: e.target.value })} />
       </Field>
-      <Field label="Image URL">
+      <Field label="Image URL (or upload above)">
         <input
           className="input"
           placeholder="/devices/d-22.svg or https://…"
