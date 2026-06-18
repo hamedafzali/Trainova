@@ -32,7 +32,7 @@ export function Welcome() {
       const remote = await pullState();
       if (remote) applySnapshot(remote);
       else await pushState();
-      enterAccount(who);
+      enterAccount(who.email, who.role);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {

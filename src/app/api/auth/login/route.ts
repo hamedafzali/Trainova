@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/server/db";
 import { signToken, verifyPassword } from "@/server/auth";
+import { isBootstrapAdmin } from "@/server/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,15 +40,23 @@ export async function POST(req: Request) {
     );
   }
 
-  const r = await pool.query("select id, password_hash from users where email = $1", [
-    String(email).trim().toLowerCase(),
+  const normalized = String(email).trim().toLowerCase();
+  const r = await pool.query("select id, password_hash, role from users where email = $1", [
+    normalized,
   ]);
   const row = r.rows[0];
   if (!row || !(await verifyPassword(String(password), row.password_hash))) {
     return NextResponse.json({ error: "Wrong email or password." }, { status: 401 });
   }
 
+  // Promote the configured bootstrap admin on login.
+  let role = row.role as string;
+  if (isBootstrapAdmin(normalized) && role !== "admin") {
+    await pool.query("update users set role = 'admin' where id = $1", [row.id]);
+    role = "admin";
+  }
+
   tries.delete(key); // success clears the counter
-  const token = await signToken(row.id, String(email));
-  return NextResponse.json({ token, email: String(email).trim().toLowerCase() });
+  const token = await signToken(row.id, normalized, role);
+  return NextResponse.json({ token, email: normalized, role });
 }

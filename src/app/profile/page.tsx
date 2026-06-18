@@ -128,6 +128,12 @@ export default function ProfilePage() {
           {session?.mode === "account" ? "Sign out" : "Switch account / sign in"}
         </button>
       </section>
+
+      {session?.role === "admin" && (
+        <Link href="/admin" className="btn-primary w-full">
+          ⚙️ Admin panel
+        </Link>
+      )}
     </main>
   );
 }

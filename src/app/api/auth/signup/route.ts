@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/server/db";
 import { hashPassword, signToken } from "@/server/auth";
+import { isBootstrapAdmin } from "@/server/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,13 +16,15 @@ export async function POST(req: Request) {
   }
 
   try {
+    const normalized = String(email).trim().toLowerCase();
+    const role = isBootstrapAdmin(normalized) ? "admin" : "user";
     const hash = await hashPassword(String(password));
     const r = await pool.query(
-      "insert into users (email, password_hash) values ($1, $2) returning id",
-      [String(email).trim().toLowerCase(), hash]
+      "insert into users (email, password_hash, role) values ($1, $2, $3) returning id",
+      [normalized, hash, role]
     );
-    const token = await signToken(r.rows[0].id, String(email));
-    return NextResponse.json({ token, email: String(email).trim().toLowerCase() });
+    const token = await signToken(r.rows[0].id, normalized, role);
+    return NextResponse.json({ token, email: normalized, role });
   } catch (e) {
     if ((e as { code?: string }).code === "23505") {
       return NextResponse.json({ error: "That email is already registered." }, { status: 409 });

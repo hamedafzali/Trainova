@@ -18,6 +18,8 @@ services:
       # variables (ACM detects required vars from this compose and prompts you).
       - DATABASE_URL=postgres://trainova:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in project variables}@trainova-db:5432/trainova
       - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in project variables}
+      # Optional: this email becomes admin on signup/login (set in ACM variables).
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
     restart: unless-stopped
     depends_on:
       trainova-db:

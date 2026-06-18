@@ -50,6 +50,7 @@ const memoryStorage: StateStorage = {
 export interface AppSession {
   mode: "guest" | "account";
   email: string | null;
+  role?: "user" | "trainer" | "admin";
 }
 
 export interface TrainovaState {
@@ -66,7 +67,7 @@ export interface TrainovaState {
   prs: PersonalRecord[];
 
   enterGuest: () => void;
-  enterAccount: (email: string) => void;
+  enterAccount: (email: string, role?: AppSession["role"]) => void;
   leaveSession: () => void;
   setUnits: (u: Units) => void;
   completeOnboarding: (p: Partial<UserProfile>) => void;
@@ -148,7 +149,7 @@ export const useStore = create<TrainovaState>()(
       prs: [],
 
       enterGuest: () => set({ session: { mode: "guest", email: null } }),
-      enterAccount: (email) => set({ session: { mode: "account", email } }),
+      enterAccount: (email, role = "user") => set({ session: { mode: "account", email, role } }),
       leaveSession: () => set({ session: null }),
 
       setUnits: (u) => set({ units: u }),

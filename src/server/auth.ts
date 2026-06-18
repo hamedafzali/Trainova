@@ -12,8 +12,8 @@ export function verifyPassword(plain: string, hash: string): Promise<boolean> {
   return bcrypt.compare(plain, hash);
 }
 
-export function signToken(userId: string, email: string): Promise<string> {
-  return new SignJWT({ email })
+export function signToken(userId: string, email: string, role = "user"): Promise<string> {
+  return new SignJWT({ email, role })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setIssuedAt()
@@ -23,10 +23,14 @@ export function signToken(userId: string, email: string): Promise<string> {
 
 export async function verifyToken(
   token: string
-): Promise<{ userId: string; email: string } | null> {
+): Promise<{ userId: string; email: string; role: string } | null> {
   try {
     const { payload } = await jwtVerify(token, secret());
-    return { userId: String(payload.sub), email: String(payload.email ?? "") };
+    return {
+      userId: String(payload.sub),
+      email: String(payload.email ?? ""),
+      role: String(payload.role ?? "user"),
+    };
   } catch {
     return null;
   }
