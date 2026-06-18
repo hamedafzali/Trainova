@@ -96,6 +96,7 @@ export default function SessionPage() {
           exerciseIds={exerciseOrder}
           sets={sessionSets}
           readOnly={readOnly}
+          editable={session.status === "completed"}
           onPr={showPr}
         />
       )}

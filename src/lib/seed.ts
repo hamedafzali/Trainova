@@ -14,19 +14,19 @@ const OWNER = "local-user";
 // Devices — structured equipment library (machine numbers are data, not text).
 // ---------------------------------------------------------------------------
 const DEVICE_DEFS: Omit<Device, "owner" | "imageUrl">[] = [
-  { id: "d-22", name: "Leg Press", machineNumber: "22", category: "machine", primaryMuscle: "quads" },
-  { id: "d-25", name: "Seated Leg Curl", machineNumber: "25", category: "machine", primaryMuscle: "hamstrings" },
-  { id: "d-26", name: "Seated Leg Extension", machineNumber: "26", category: "machine", primaryMuscle: "quads" },
-  { id: "d-4", name: "Lat Pulldown", machineNumber: "4", category: "machine", primaryMuscle: "back" },
-  { id: "d-7", name: "Seated Row", machineNumber: "7", category: "machine", primaryMuscle: "back" },
-  { id: "d-1", name: "Chest Press", machineNumber: "1", category: "machine", primaryMuscle: "chest" },
-  { id: "d-12", name: "Back Extension", machineNumber: "12", category: "machine", primaryMuscle: "lower back" },
-  { id: "d-11", name: "Abdominal", machineNumber: "11", category: "machine", primaryMuscle: "abs" },
-  { id: "d-tm", name: "Treadmill", machineNumber: null, category: "cardio", primaryMuscle: "cardio" },
-  { id: "d-bb", name: "Barbell", machineNumber: null, category: "free_weight", primaryMuscle: null },
-  { id: "d-db", name: "Dumbbell", machineNumber: null, category: "free_weight", primaryMuscle: null },
-  { id: "d-cable", name: "Cable Tower", machineNumber: null, category: "cable", primaryMuscle: null },
-  { id: "d-pull", name: "Pull-up Bar", machineNumber: null, category: "bodyweight", primaryMuscle: null },
+  { id: "d-22", name: "Leg Press", machineNumber: "22", category: "machine", primaryMuscle: "quads", difficulty: "beginner", guidance: "Push the platform away with both feet; don't lock your knees." },
+  { id: "d-25", name: "Seated Leg Curl", machineNumber: "25", category: "machine", primaryMuscle: "hamstrings", difficulty: "beginner", guidance: "Curl the pad down with your heels; control the way back up." },
+  { id: "d-26", name: "Seated Leg Extension", machineNumber: "26", category: "machine", primaryMuscle: "quads", difficulty: "beginner", guidance: "Straighten your legs to lift the pad; pause at the top." },
+  { id: "d-4", name: "Lat Pulldown", machineNumber: "4", category: "machine", primaryMuscle: "back", difficulty: "beginner", guidance: "Pull the bar to your upper chest; lead with the elbows." },
+  { id: "d-7", name: "Seated Row", machineNumber: "7", category: "machine", primaryMuscle: "back", difficulty: "beginner", guidance: "Pull the handle to your stomach; squeeze the shoulder blades." },
+  { id: "d-1", name: "Chest Press", machineNumber: "1", category: "machine", primaryMuscle: "chest", difficulty: "beginner", guidance: "Press the handles forward; don't shrug your shoulders." },
+  { id: "d-12", name: "Back Extension", machineNumber: "12", category: "machine", primaryMuscle: "lower back", difficulty: "intermediate", guidance: "Bend at the hips and rise to a straight back; no over-arching." },
+  { id: "d-11", name: "Abdominal", machineNumber: "11", category: "machine", primaryMuscle: "abs", difficulty: "beginner", guidance: "Crunch forward with your abs, not your arms." },
+  { id: "d-tm", name: "Treadmill", machineNumber: null, category: "cardio", primaryMuscle: "cardio", difficulty: "beginner", guidance: "Start slow; use incline to raise effort without running faster." },
+  { id: "d-bb", name: "Barbell", machineNumber: null, category: "free_weight", primaryMuscle: null, difficulty: "intermediate", guidance: null },
+  { id: "d-db", name: "Dumbbell", machineNumber: null, category: "free_weight", primaryMuscle: null, difficulty: "beginner", guidance: null },
+  { id: "d-cable", name: "Cable Tower", machineNumber: null, category: "cable", primaryMuscle: null, difficulty: "beginner", guidance: null },
+  { id: "d-pull", name: "Pull-up Bar", machineNumber: null, category: "bodyweight", primaryMuscle: null, difficulty: "advanced", guidance: null },
 ];
 
 export const SEED_DEVICES: Device[] = DEVICE_DEFS.map((d) => ({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Stepper } from "@/components/Stepper";
 import { CompleteButton } from "@/components/CompleteButton";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
@@ -20,12 +20,14 @@ export function SessionExercise({
   exerciseId,
   sets,
   readOnly = false,
+  editable = false,
   onPr,
 }: {
   sessionId: string;
   exerciseId: string;
   sets: WorkoutSet[];
   readOnly?: boolean;
+  editable?: boolean; // completed session → allow safe correction of logged rounds
   onPr: (kinds: string[]) => void;
 }) {
   const units = useStore((s) => s.units);
@@ -34,8 +36,11 @@ export function SessionExercise({
   const addSet = useStore((s) => s.addSet);
   const updateSet = useStore((s) => s.updateSet);
   const completeSet = useStore((s) => s.completeSet);
+  const editSet = useStore((s) => s.editSet);
+  const revertSet = useStore((s) => s.revertSet);
   const lastPerformance = useStore((s) => s.lastPerformance);
   const startRest = useRestTimer((s) => s.start);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const ex = exerciseById(exerciseId);
   const device = deviceById(sets[0]?.deviceId ?? ex?.defaultDeviceId);
@@ -130,12 +135,32 @@ export function SessionExercise({
             );
           }
 
+          if (editable && editingId === s.id) {
+            return (
+              <EditRoundRow
+                key={s.id}
+                set={s}
+                units={units}
+                onCancel={() => setEditingId(null)}
+                onRevert={() => {
+                  revertSet(s.id);
+                  setEditingId(null);
+                }}
+                onSave={(w, r) => {
+                  editSet(s.id, { actualWeight: w, actualReps: r > 0 ? r : null });
+                  setEditingId(null);
+                }}
+              />
+            );
+          }
+
           return (
             <div
               key={s.id}
+              onClick={() => editable && s.completed && setEditingId(s.id)}
               className={`flex items-center gap-2 rounded-xl px-2 py-2.5 text-sm ${
                 s.completed ? "bg-green/15 animate-completeWipe" : "bg-surface2/50"
-              }`}
+              } ${editable && s.completed ? "cursor-pointer" : ""}`}
             >
               <span className="w-12 shrink-0 text-xs text-muted">Round {s.setIndex + 1}</span>
               <span className="flex-1 text-center text-base font-bold tabular-nums text-ink">
@@ -143,8 +168,13 @@ export function SessionExercise({
                 {s.completed && s.actualReps ? (
                   <span className="text-sm font-normal text-muted"> × {s.actualReps}</span>
                 ) : null}
+                {s.editedAt && (
+                  <span className="ml-1 align-middle text-[10px] uppercase text-amber">edited</span>
+                )}
               </span>
-              {s.completed ? (
+              {editable && s.completed ? (
+                <span className="text-xs text-accent">Edit</span>
+              ) : s.completed ? (
                 <button
                   aria-label="undo round"
                   onClick={() => !readOnly && updateSet(s.id, { completed: false })}
@@ -168,6 +198,51 @@ export function SessionExercise({
           <span className="text-xs text-muted">{done} done</span>
         </div>
       )}
+      {editable && <p className="text-center text-[11px] text-muted">Tap a round to correct it</p>}
     </section>
+  );
+}
+
+/** Inline corrector for a logged round; saving writes an audit entry. */
+function EditRoundRow({
+  set,
+  units,
+  onSave,
+  onRevert,
+  onCancel,
+}: {
+  set: WorkoutSet;
+  units: string;
+  onSave: (weight: number, reps: number) => void;
+  onRevert: () => void;
+  onCancel: () => void;
+}) {
+  const [w, setW] = useState(set.actualWeight ?? 0);
+  const [r, setR] = useState(set.actualReps ?? 0);
+  const step = units === "kg" ? 2.5 : 5;
+  return (
+    <div className="space-y-2 rounded-xl border border-accent/40 bg-bg/60 p-2.5">
+      <div className="flex items-center justify-between text-xs text-muted">
+        <span>Correct round {set.setIndex + 1}</span>
+        {set.editedAt && (
+          <button className="text-accent" onClick={onRevert}>
+            Revert to original
+          </button>
+        )}
+      </div>
+      <Stepper value={w} step={step} unit={units} onChange={setW} />
+      <div className="space-y-1">
+        <p className="text-[11px] text-muted">How many times? (optional)</p>
+        <Stepper value={r} step={1} min={0} unit="reps" onChange={setR} />
+      </div>
+      <div className="flex gap-2">
+        <button className="btn-ghost flex-1" onClick={onCancel}>
+          Cancel
+        </button>
+        <button className="btn-primary flex-1" onClick={() => onSave(w, r)}>
+          Save
+        </button>
+      </div>
+    </div>
   );
 }

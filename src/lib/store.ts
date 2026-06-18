@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import type {
+  AuditEvent,
   Device,
   Exercise,
   PersonalRecord,
   Program,
   TemplateSet,
   Units,
+  UserProfile,
   WorkoutSession,
   WorkoutSet,
   WorkoutTemplate,
@@ -47,6 +49,8 @@ const memoryStorage: StateStorage = {
 
 export interface TrainovaState {
   units: Units;
+  profile: UserProfile;
+  audit: AuditEvent[];
   devices: Device[];
   exercises: Exercise[];
   programs: Program[];
@@ -56,6 +60,15 @@ export interface TrainovaState {
   prs: PersonalRecord[];
 
   setUnits: (u: Units) => void;
+  completeOnboarding: (p: Partial<UserProfile>) => void;
+  updateProfile: (p: Partial<UserProfile>) => void;
+  editSet: (
+    setId: string,
+    patch: { actualWeight?: number | null; actualReps?: number | null },
+    reason?: string
+  ) => void;
+  revertSet: (setId: string) => void;
+  auditForSet: (setId: string) => AuditEvent[];
   addDevice: (input: Omit<Device, "id" | "owner">) => Device;
   addExercise: (input: Omit<Exercise, "id" | "owner">) => Exercise;
 
@@ -110,6 +123,8 @@ export const useStore = create<TrainovaState>()(
   persist(
     (set, get) => ({
       units: "kg",
+      profile: { displayName: null, role: "user", goal: null, experience: null, onboarded: false },
+      audit: [],
       devices: SEED_DEVICES,
       exercises: SEED_EXERCISES,
       programs: [SEED_PROGRAM],
@@ -119,6 +134,71 @@ export const useStore = create<TrainovaState>()(
       prs: [],
 
       setUnits: (u) => set({ units: u }),
+
+      completeOnboarding: (p) =>
+        set((s) => ({ profile: { ...s.profile, ...p, onboarded: true } })),
+
+      updateProfile: (p) => set((s) => ({ profile: { ...s.profile, ...p } })),
+
+      editSet: (setId, patch, reason) => {
+        const st = get();
+        const target = st.sets.find((x) => x.id === setId);
+        if (!target) return;
+        const before = { actualWeight: target.actualWeight, actualReps: target.actualReps };
+        const after = { ...before, ...patch };
+        if (before.actualWeight === after.actualWeight && before.actualReps === after.actualReps)
+          return;
+        const event: AuditEvent = {
+          id: uid(),
+          actor: LOCAL_OWNER,
+          entity: "workout_set",
+          entityId: setId,
+          action: "edit",
+          before,
+          after,
+          reason: reason ?? null,
+          at: now(),
+        };
+        set((s) => ({
+          sets: s.sets.map((x) => (x.id === setId ? { ...x, ...patch, editedAt: now() } : x)),
+          audit: [event, ...s.audit],
+        }));
+      },
+
+      revertSet: (setId) => {
+        const st = get();
+        const events = st.audit
+          .filter((e) => e.entityId === setId && e.action === "edit")
+          .sort((a, b) => a.at.localeCompare(b.at));
+        const original = events[0]?.before;
+        if (!original) return;
+        const target = st.sets.find((x) => x.id === setId);
+        if (!target) return;
+        const event: AuditEvent = {
+          id: uid(),
+          actor: LOCAL_OWNER,
+          entity: "workout_set",
+          entityId: setId,
+          action: "revert",
+          before: { actualWeight: target.actualWeight, actualReps: target.actualReps },
+          after: original,
+          reason: "revert to original",
+          at: now(),
+        };
+        set((s) => ({
+          sets: s.sets.map((x) =>
+            x.id === setId
+              ? { ...x, actualWeight: original.actualWeight, actualReps: original.actualReps, editedAt: null }
+              : x
+          ),
+          audit: [event, ...s.audit],
+        }));
+      },
+
+      auditForSet: (setId) =>
+        get()
+          .audit.filter((e) => e.entityId === setId)
+          .sort((a, b) => b.at.localeCompare(a.at)),
 
       addDevice: (input) => {
         const d: Device = { ...input, id: uid(), owner: LOCAL_OWNER };
@@ -550,6 +630,8 @@ export const useStore = create<TrainovaState>()(
       ),
       partialize: (s) => ({
         units: s.units,
+        profile: s.profile,
+        audit: s.audit,
         devices: s.devices,
         exercises: s.exercises,
         programs: s.programs,

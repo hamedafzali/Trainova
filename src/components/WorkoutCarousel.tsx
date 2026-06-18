@@ -14,12 +14,14 @@ export function WorkoutCarousel({
   exerciseIds,
   sets,
   readOnly = false,
+  editable = false,
   onPr,
 }: {
   sessionId: string;
   exerciseIds: string[];
   sets: WorkoutSet[];
   readOnly?: boolean;
+  editable?: boolean;
   onPr: (kinds: string[]) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -107,6 +109,7 @@ export function WorkoutCarousel({
               exerciseId={exId}
               sets={setsByExercise.get(exId) ?? []}
               readOnly={readOnly}
+              editable={editable}
               onPr={onPr}
             />
           </div>

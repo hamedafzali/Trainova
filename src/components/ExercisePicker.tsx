@@ -127,6 +127,7 @@ export function ExercisePicker({
               <button
                 key={e.id}
                 onClick={() => onPick(e.id)}
+                title={d?.guidance ?? undefined}
                 className="flex w-32 shrink-0 snap-start flex-col gap-2 rounded-2xl border border-border bg-surface2 p-3 text-left active:scale-[0.98]"
               >
                 <DeviceAvatar device={d} className="h-20 w-full rounded-xl text-3xl" />
@@ -138,6 +139,14 @@ export function ExercisePicker({
                   />
                   {d?.machineNumber ? `No.${d.machineNumber}` : e.primaryMuscle ?? d?.category.replace("_", " ") ?? "—"}
                 </span>
+                {d?.difficulty && (
+                  <span className="rounded-md bg-bg px-1.5 py-0.5 text-[10px] capitalize text-inkSoft">
+                    {d.difficulty}
+                  </span>
+                )}
+                {d?.guidance && (
+                  <span className="line-clamp-2 text-[10px] leading-snug text-muted">{d.guidance}</span>
+                )}
               </button>
             );
           })}

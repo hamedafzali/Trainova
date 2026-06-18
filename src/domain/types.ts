@@ -22,6 +22,8 @@ export interface Device {
   category: DeviceCategory;
   imageUrl: string | null;
   primaryMuscle: string | null;
+  difficulty?: "beginner" | "intermediate" | "advanced" | null;
+  guidance?: string | null; // short beginner how-to
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +108,30 @@ export interface WorkoutSet {
   rpe: number | null;
   completed: boolean;
   completedAt: string | null;
+  editedAt?: string | null; // set when a logged value is corrected after the fact
+}
+
+// Append-only correction trail (see PLATFORM.md §F).
+export interface AuditEvent {
+  id: string;
+  actor: string;
+  entity: "workout_set";
+  entityId: string;
+  action: "edit" | "revert";
+  before: { actualWeight: number | null; actualReps: number | null };
+  after: { actualWeight: number | null; actualReps: number | null };
+  reason: string | null;
+  at: string;
+}
+
+export type UserRole = "user" | "trainer";
+
+export interface UserProfile {
+  displayName: string | null;
+  role: UserRole;
+  goal: "strength" | "hypertrophy" | "fat_loss" | "health" | null;
+  experience: "beginner" | "intermediate" | "advanced" | null;
+  onboarded: boolean;
 }
 
 export type PrKind = "e1rm" | "max_weight" | "max_reps";
