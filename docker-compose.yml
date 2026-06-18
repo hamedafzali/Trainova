@@ -14,8 +14,10 @@ services:
       - PORT=3000
       - HOSTNAME=0.0.0.0
       # Accounts + sync. Postgres is internal-only (never published / tunneled).
-      - DATABASE_URL=postgres://trainova:${POSTGRES_PASSWORD:-trainova}@trainova-db:5432/trainova
-      - JWT_SECRET=${JWT_SECRET:-dev-only-secret-change-me}
+      # POSTGRES_PASSWORD & JWT_SECRET are required — set them in the ACM project
+      # variables (ACM detects required vars from this compose and prompts you).
+      - DATABASE_URL=postgres://trainova:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in project variables}@trainova-db:5432/trainova
+      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in project variables}
     restart: unless-stopped
     depends_on:
       trainova-db:
@@ -34,7 +36,7 @@ services:
     container_name: trainova-db
     environment:
       - POSTGRES_USER=trainova
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-trainova}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in project variables}
       - POSTGRES_DB=trainova
     volumes:
       - trainova-db-data:/var/lib/postgresql/data
