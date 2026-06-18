@@ -6,6 +6,8 @@ services:
       args:
         # "1" turns the login screen on in the client (server has a database).
         - NEXT_PUBLIC_AUTH_ENABLED=${NEXT_PUBLIC_AUTH_ENABLED:-1}
+        # "1" shows the AI plan generator (set when ANTHROPIC_API_KEY is present).
+        - NEXT_PUBLIC_AI_ENABLED=${NEXT_PUBLIC_AI_ENABLED:-}
     container_name: trainova-web
     ports:
       - "5008:3000"
@@ -20,6 +22,8 @@ services:
       - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in project variables}
       # Optional: this email becomes admin on signup/login (set in ACM variables).
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      # Optional: enables AI plan generation (set in ACM variables).
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     restart: unless-stopped
     depends_on:
       trainova-db:

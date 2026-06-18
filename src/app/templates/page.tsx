@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
+import { AiPlanButton } from "@/components/AiPlanButton";
+import { isAiEnabled } from "@/lib/supabase/client";
 
 export default function PlansPage() {
   const hydrated = useHydrated();
@@ -71,6 +73,8 @@ export default function PlansPage() {
           + Program
         </button>
       </div>
+
+      {isAiEnabled() && <AiPlanButton />}
 
       {!hydrated ? (
         <div className="card animate-pulse text-muted">Loading…</div>

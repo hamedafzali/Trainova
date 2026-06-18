@@ -89,6 +89,11 @@ export interface TrainovaState {
   removeDayFromProgram: (programId: string, templateId: string) => void;
 
   createTemplate: (name: string) => string;
+  importGeneratedPlan: (plan: {
+    name: string;
+    notes: string | null;
+    exercises: { name: string; muscle: string | null; sets: number; reps: number }[];
+  }) => string;
   deleteTemplate: (id: string) => void;
   addTemplateExercise: (templateId: string, exerciseId: string) => void;
   removeTemplateExercise: (templateId: string, templateExerciseId: string) => void;
@@ -288,6 +293,42 @@ export const useStore = create<TrainovaState>()(
           name: stripDate(name) || "Untitled plan",
           notes: null,
           exercises: [],
+        };
+        set((s) => ({ templates: [...s.templates, tpl] }));
+        return id;
+      },
+
+      importGeneratedPlan: (plan) => {
+        const id = uid();
+        const exercises = plan.exercises.map((ex, i) => {
+          let exer = get().exercises.find(
+            (e) => e.name.toLowerCase() === ex.name.trim().toLowerCase()
+          );
+          if (!exer) {
+            exer = get().addExercise({
+              name: ex.name.trim(),
+              defaultDeviceId: null,
+              isCompound: false,
+              primaryMuscle: ex.muscle ?? null,
+            });
+          }
+          const count = Math.max(1, Math.min(8, Math.round(ex.sets) || 3));
+          const reps = Math.max(1, Math.round(ex.reps) || 10);
+          return {
+            id: `${id}-${i}`,
+            exerciseId: exer.id,
+            deviceId: exer.defaultDeviceId,
+            position: i,
+            restSeconds: 90,
+            sets: Array.from({ length: count }, () => ({ targetReps: reps, targetWeight: null })),
+          };
+        });
+        const tpl: WorkoutTemplate = {
+          id,
+          owner: LOCAL_OWNER,
+          name: stripDate(plan.name) || "AI Plan",
+          notes: plan.notes ?? null,
+          exercises,
         };
         set((s) => ({ templates: [...s.templates, tpl] }));
         return id;

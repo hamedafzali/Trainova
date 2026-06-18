@@ -17,6 +17,8 @@ RUN corepack enable
 # the actual database connection is a runtime env (DATABASE_URL) on the server.
 ARG NEXT_PUBLIC_AUTH_ENABLED
 ENV NEXT_PUBLIC_AUTH_ENABLED=$NEXT_PUBLIC_AUTH_ENABLED
+ARG NEXT_PUBLIC_AI_ENABLED
+ENV NEXT_PUBLIC_AI_ENABLED=$NEXT_PUBLIC_AI_ENABLED
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules
