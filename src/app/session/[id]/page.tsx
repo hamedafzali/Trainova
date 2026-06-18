@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { OnlineBadge } from "@/components/OnlineBadge";
-import { SessionExercise } from "@/components/SessionExercise";
+import { WorkoutCarousel } from "@/components/WorkoutCarousel";
 import { RestTimerBar } from "@/components/RestTimerBar";
 import { haptic } from "@/lib/haptics";
 import { useHydrated, useStore } from "@/lib/store";
@@ -90,16 +90,15 @@ export default function SessionPage() {
         </div>
       )}
 
-      {exerciseOrder.map((exerciseId) => (
-        <SessionExercise
-          key={exerciseId}
+      {exerciseOrder.length > 0 && (
+        <WorkoutCarousel
           sessionId={session.id}
-          exerciseId={exerciseId}
-          sets={sessionSets.filter((s) => s.exerciseId === exerciseId)}
+          exerciseIds={exerciseOrder}
+          sets={sessionSets}
           readOnly={readOnly}
           onPr={showPr}
         />
-      ))}
+      )}
 
       {isActive && (
         <>
