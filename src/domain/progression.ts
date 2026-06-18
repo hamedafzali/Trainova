@@ -127,13 +127,17 @@ export function detectPrs(
 ): { kind: "e1rm" | "max_weight" | "max_reps"; value: number }[] {
   const reps = set.actualReps ?? 0;
   const weight = set.actualWeight ?? 0;
-  if (reps <= 0 || weight <= 0) return [];
+  if (weight <= 0) return [];
 
   const prs: { kind: "e1rm" | "max_weight" | "max_reps"; value: number }[] = [];
-  const e1rm = epley1rm(weight, reps);
-  if (e1rm > bests.e1rm) prs.push({ kind: "e1rm", value: round1(e1rm) });
+  // Top weight is the meaningful PR when only weight is tracked.
   if (weight > bests.maxWeight) prs.push({ kind: "max_weight", value: weight });
-  if (reps > bests.maxReps) prs.push({ kind: "max_reps", value: reps });
+  // 1RM and rep PRs only make sense when reps were recorded.
+  if (reps > 0) {
+    const e1rm = epley1rm(weight, reps);
+    if (e1rm > bests.e1rm) prs.push({ kind: "e1rm", value: round1(e1rm) });
+    if (reps > bests.maxReps) prs.push({ kind: "max_reps", value: reps });
+  }
   return prs;
 }
 

@@ -90,11 +90,11 @@ export default function TemplateEditPage() {
                   </button>
                 </div>
 
-                {/* Per-set targets (supports ramps) */}
+                {/* Per-round target weight (each round can differ — a ramp) */}
                 <div className="space-y-1">
                   {te.sets.map((st, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="w-5 text-center text-xs text-muted">{i + 1}</span>
+                      <span className="w-16 text-xs text-muted">Round {i + 1}</span>
                       <input
                         type="number"
                         inputMode="decimal"
@@ -107,19 +107,7 @@ export default function TemplateEditPage() {
                           })
                         }
                       />
-                      <span className="text-muted">×</span>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        className="num flex-1"
-                        placeholder="reps"
-                        value={st.targetReps ?? ""}
-                        onChange={(e) =>
-                          updateTemplateSet(template.id, te.id, i, {
-                            targetReps: Number(e.target.value || 0),
-                          })
-                        }
-                      />
+                      <span className="w-8 text-xs text-muted">{units}</span>
                     </div>
                   ))}
                 </div>
@@ -129,14 +117,14 @@ export default function TemplateEditPage() {
                     className="btn-ghost px-3 py-1"
                     onClick={() => setTemplateSetCount(template.id, te.id, te.sets.length - 1)}
                   >
-                    − set
+                    − round
                   </button>
-                  <span className="text-muted">{te.sets.length} sets</span>
+                  <span className="text-muted">{te.sets.length} rounds</span>
                   <button
                     className="btn-ghost px-3 py-1"
                     onClick={() => setTemplateSetCount(template.id, te.id, te.sets.length + 1)}
                   >
-                    + set
+                    + round
                   </button>
                 </div>
               </li>

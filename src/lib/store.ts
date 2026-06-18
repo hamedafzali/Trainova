@@ -523,19 +523,17 @@ export const useStore = create<TrainovaState>()(
       bestsFor: (exerciseId) => {
         const st = get();
         const sets = st.sets.filter(
-          (x) =>
-            x.exerciseId === exerciseId &&
-            x.completed &&
-            x.actualReps != null &&
-            x.actualWeight != null
+          (x) => x.exerciseId === exerciseId && x.completed && x.actualWeight != null
         );
         let e1rm = 0;
         let maxWeight = 0;
         let maxReps = 0;
         for (const x of sets) {
-          e1rm = Math.max(e1rm, epley1rm(x.actualWeight as number, x.actualReps as number));
           maxWeight = Math.max(maxWeight, x.actualWeight as number);
-          maxReps = Math.max(maxReps, x.actualReps as number);
+          if (x.actualReps != null) {
+            e1rm = Math.max(e1rm, epley1rm(x.actualWeight as number, x.actualReps));
+            maxReps = Math.max(maxReps, x.actualReps);
+          }
         }
         return { e1rm, maxWeight, maxReps };
       },

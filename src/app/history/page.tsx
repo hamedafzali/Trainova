@@ -112,8 +112,13 @@ export default function HistoryPage() {
                             <p className="text-sm font-medium leading-tight">{ex?.name ?? "Exercise"}</p>
                             <p className="text-xs text-muted">
                               {exSets
-                                .map((s) => `${s.actualWeight ?? "–"}×${s.actualReps ?? "–"}`)
-                                .join("  ·  ")}
+                                .map((s) =>
+                                  s.actualReps
+                                    ? `${s.actualWeight ?? "–"}×${s.actualReps}`
+                                    : `${s.actualWeight ?? "–"}`
+                                )
+                                .join(" · ")}{" "}
+                              {units} · {exSets.length} {exSets.length === 1 ? "round" : "rounds"}
                             </p>
                           </div>
                         </li>
