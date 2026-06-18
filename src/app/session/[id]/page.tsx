@@ -22,6 +22,7 @@ export default function SessionPage() {
   const discardSession = useStore((s) => s.discardSession);
   const reopenSession = useStore((s) => s.reopenSession);
   const archiveSession = useStore((s) => s.archiveSession);
+  const unarchiveSession = useStore((s) => s.unarchiveSession);
 
   const [picking, setPicking] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -124,25 +125,63 @@ export default function SessionPage() {
       )}
 
       {session.status === "completed" && (
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <button
+              className="btn-ghost flex-1"
+              onClick={() => {
+                if (reopenSession(session.id)) setToast("Re-opened for editing");
+                else setToast("Finish the active workout first");
+                setTimeout(() => setToast(null), 2000);
+              }}
+            >
+              Edit workout
+            </button>
+            <button
+              className="btn-ghost flex-1"
+              onClick={() => {
+                archiveSession(session.id);
+                router.push("/history");
+              }}
+            >
+              Archive
+            </button>
+          </div>
+          <button
+            className="btn-danger w-full"
+            onClick={() => {
+              if (confirm("Delete this workout permanently? This can’t be undone.")) {
+                discardSession(session.id);
+                router.push("/history");
+              }
+            }}
+          >
+            Delete workout
+          </button>
+        </div>
+      )}
+
+      {session.status === "archived" && (
         <div className="flex gap-2">
           <button
             className="btn-ghost flex-1"
             onClick={() => {
-              if (reopenSession(session.id)) setToast("Re-opened for editing");
-              else setToast("Finish the active workout first");
-              setTimeout(() => setToast(null), 2000);
-            }}
-          >
-            Edit workout
-          </button>
-          <button
-            className="btn-ghost flex-1"
-            onClick={() => {
-              archiveSession(session.id);
+              unarchiveSession(session.id);
               router.push("/history");
             }}
           >
-            Archive
+            Unarchive
+          </button>
+          <button
+            className="btn-danger flex-1"
+            onClick={() => {
+              if (confirm("Delete this workout permanently? This can’t be undone.")) {
+                discardSession(session.id);
+                router.push("/history");
+              }
+            }}
+          >
+            Delete
           </button>
         </div>
       )}
