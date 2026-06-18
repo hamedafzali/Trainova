@@ -530,7 +530,7 @@ export const useStore = create<TrainovaState>()(
     }),
     {
       name: "trainova-v1",
-      version: 4,
+      version: 5, // v5: refresh device library with bundled images
       migrate: migrateState,
       skipHydration: true,
       storage: createJSONStorage(() =>

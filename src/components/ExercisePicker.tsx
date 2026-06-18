@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { categoryIcon, deviceBadge } from "@/lib/format";
+import { DeviceAvatar } from "@/components/DeviceAvatar";
 import type { Device, DeviceCategory, Exercise } from "@/domain/types";
 
 const CATEGORIES: { key: DeviceCategory | "all"; label: string }[] = [
@@ -93,7 +93,7 @@ export function ExercisePicker({
                   onClick={() => onPick(e.id)}
                   className="flex flex-col items-center gap-1 rounded-xl border border-border bg-surface2 p-2 active:scale-95"
                 >
-                  <DeviceTile device={deviceOf(e)} />
+                  <DeviceAvatar device={deviceOf(e)} />
                   <span className="line-clamp-1 text-[10px] text-muted">{e.name}</span>
                 </button>
               ))}
@@ -124,7 +124,7 @@ export function ExercisePicker({
                   onClick={() => onPick(e.id)}
                   className="flex w-full items-center gap-3 rounded-2xl bg-surface2 px-3 py-3 text-left active:scale-[0.99]"
                 >
-                  <DeviceTile device={d} />
+                  <DeviceAvatar device={d} />
                   <span className="flex-1">
                     <span className="block font-semibold leading-tight">{e.name}</span>
                     <span className="text-xs text-muted">
@@ -146,24 +146,5 @@ export function ExercisePicker({
         </ul>
       </div>
     </div>
-  );
-}
-
-/** Visual device card: image if present, else a category-coloured badge. */
-function DeviceTile({ device }: { device: Device | undefined }) {
-  const machine = device?.category === "machine";
-  return (
-    <span
-      className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-base font-bold ${
-        machine ? "bg-accent text-black" : "bg-border text-white"
-      }`}
-    >
-      {device?.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={device.imageUrl} alt={device.name} className="h-full w-full object-cover" />
-      ) : (
-        <span>{device ? deviceBadge(device) : categoryIcon("free_weight")}</span>
-      )}
-    </span>
   );
 }

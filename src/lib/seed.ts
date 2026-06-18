@@ -27,7 +27,7 @@ const DEVICE_DEFS: Omit<Device, "owner" | "imageUrl">[] = [
 export const SEED_DEVICES: Device[] = DEVICE_DEFS.map((d) => ({
   ...d,
   owner: null,
-  imageUrl: null,
+  imageUrl: `/devices/${d.id}.svg`,
 }));
 
 // ---------------------------------------------------------------------------

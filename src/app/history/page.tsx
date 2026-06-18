@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
-import { deviceBadge } from "@/lib/format";
+import { DeviceAvatar } from "@/components/DeviceAvatar";
 import type { WorkoutSet } from "@/domain/types";
 
 export default function HistoryPage() {
@@ -107,13 +107,7 @@ export default function HistoryPage() {
                       const device = deviceForExercise(exId);
                       return (
                         <li key={exId} className="flex items-start gap-2.5">
-                          <span
-                            className={`mt-0.5 flex h-7 min-w-7 items-center justify-center rounded-md px-1 text-xs font-bold ${
-                              device?.category === "machine" ? "bg-accent text-black" : "bg-border text-white"
-                            }`}
-                          >
-                            {deviceBadge(device)}
-                          </span>
+                          <DeviceAvatar device={device} className="mt-0.5 h-8 w-8 rounded-md text-xs" />
                           <div className="flex-1">
                             <p className="text-sm font-medium leading-tight">{ex?.name ?? "Exercise"}</p>
                             <p className="text-xs text-muted">

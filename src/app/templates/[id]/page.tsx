@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ExercisePicker } from "@/components/ExercisePicker";
+import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { useHydrated, useStore } from "@/lib/store";
-import { deviceBadge } from "@/lib/format";
 
 export default function TemplateEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -72,13 +72,7 @@ export default function TemplateEditPage() {
             return (
               <li key={te.id} className="card space-y-2">
                 <div className="flex items-center gap-2.5">
-                  <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
-                      device?.category === "machine" ? "bg-accent text-black" : "bg-border text-white"
-                    }`}
-                  >
-                    {deviceBadge(device)}
-                  </span>
+                  <DeviceAvatar device={device} className="h-10 w-10 rounded-lg text-sm" />
                   <div className="flex-1">
                     <p className="font-semibold leading-tight">{ex?.name ?? "Exercise"}</p>
                     {device && (
