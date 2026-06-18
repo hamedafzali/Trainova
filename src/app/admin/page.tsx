@@ -13,24 +13,42 @@ type AdminUser = {
   has_state: string;
 };
 
+type Stats = {
+  users: number;
+  admins: number;
+  trainers: number;
+  withData: number;
+  new7d: number;
+  new30d: number;
+  workouts: number;
+  setsLogged: number;
+  active7d: number;
+  devices: number;
+};
+
 export default function AdminPage() {
   const hydrated = useHydrated();
   const isAdmin = useStore((s) => s.session?.role === "admin");
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const t = getToken();
     if (!t) return;
-    const r = await fetch("/api/admin/users", { headers: { authorization: `Bearer ${t}` } });
-    if (!r.ok) {
+    const auth = { authorization: `Bearer ${t}` };
+    const [u, s] = await Promise.all([
+      fetch("/api/admin/users", { headers: auth }),
+      fetch("/api/admin/stats", { headers: auth }),
+    ]);
+    if (!u.ok) {
       setError("Not authorized.");
       setLoading(false);
       return;
     }
-    const j = await r.json();
-    setUsers(j.users ?? []);
+    setUsers((await u.json()).users ?? []);
+    if (s.ok) setStats(await s.json());
     setLoading(false);
   }, []);
 
@@ -88,6 +106,17 @@ export default function AdminPage() {
         </Link>
       </header>
 
+      {stats && (
+        <div className="grid grid-cols-3 gap-2">
+          <Stat label="Users" value={stats.users} sub={`+${stats.new7d} this wk`} />
+          <Stat label="Active 7d" value={stats.active7d} sub="trained" />
+          <Stat label="Workouts" value={stats.workouts} sub="completed" />
+          <Stat label="Sets" value={stats.setsLogged} sub="logged" />
+          <Stat label="Trainers" value={stats.trainers} sub={`${stats.admins} admin`} />
+          <Stat label="Devices" value={stats.devices} sub="in library" />
+        </div>
+      )}
+
       <Link href="/admin/devices" className="btn-ghost w-full">
         🏋️ Manage device library
       </Link>
@@ -120,5 +149,15 @@ export default function AdminPage() {
         ))}
       </ul>
     </main>
+  );
+}
+
+function Stat({ label, value, sub }: { label: string; value: number; sub: string }) {
+  return (
+    <div className="card p-3 text-center">
+      <p className="text-2xl font-bold tabular-nums">{value.toLocaleString()}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-inkSoft">{label}</p>
+      <p className="text-[10px] text-muted">{sub}</p>
+    </div>
   );
 }
