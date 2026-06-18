@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MonthCalendar, dayKey } from "@/components/MonthCalendar";
 import { Onboarding } from "@/components/Onboarding";
+import { Welcome } from "@/components/Welcome";
 import { OnlineBadge } from "@/components/OnlineBadge";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function HomePage() {
   const hydrated = useHydrated();
   const router = useRouter();
+  const session = useStore((s) => s.session);
   const onboarded = useStore((s) => s.profile.onboarded);
   const programs = useStore((s) => s.programs);
   const templates = useStore((s) => s.templates);
@@ -24,6 +26,7 @@ export default function HomePage() {
   const [selected, setSelected] = useState(todayKey);
 
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
+  if (!session) return <Welcome />;
   if (!onboarded) return <Onboarding />;
 
   const active = getActiveSession();

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useHydrated, useStore } from "@/lib/store";
+import { signOut } from "@/lib/auth";
 import type { UserProfile, Units } from "@/domain/types";
 
 const GOALS: { key: NonNullable<UserProfile["goal"]>; label: string }[] = [
@@ -18,12 +20,21 @@ const LEVELS: { key: NonNullable<UserProfile["experience"]>; label: string }[] =
 
 export default function ProfilePage() {
   const hydrated = useHydrated();
+  const router = useRouter();
   const profile = useStore((s) => s.profile);
+  const session = useStore((s) => s.session);
+  const leaveSession = useStore((s) => s.leaveSession);
   const units = useStore((s) => s.units);
   const setUnits = useStore((s) => s.setUnits);
   const updateProfile = useStore((s) => s.updateProfile);
 
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
+
+  const exit = async () => {
+    await signOut();
+    leaveSession();
+    router.push("/");
+  };
 
   return (
     <main className="space-y-5 p-4">
@@ -99,12 +110,23 @@ export default function ProfilePage() {
         </div>
       </section>
 
-      <section className="card space-y-1">
-        <p className="text-sm font-semibold">Account &amp; sync</p>
+      <section className="card space-y-2">
+        <p className="text-sm font-semibold">Account</p>
         <p className="text-xs text-muted">
-          Your data is stored on this device. Cloud accounts, cross-device sync, and trainer
-          coaching arrive in the backend phase. Role: <b>{profile.role}</b>.
+          {session?.mode === "account" ? (
+            <>
+              Signed in as <b>{session.email}</b>.
+            </>
+          ) : (
+            <>
+              <b>Guest</b> — data is stored on this device only. Sign in to sync across devices
+              (available once Supabase is connected). Role: <b>{profile.role}</b>.
+            </>
+          )}
         </p>
+        <button className="btn-ghost w-full" onClick={exit}>
+          {session?.mode === "account" ? "Sign out" : "Switch account / sign in"}
+        </button>
       </section>
     </main>
   );

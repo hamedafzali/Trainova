@@ -47,7 +47,13 @@ const memoryStorage: StateStorage = {
   removeItem: () => {},
 };
 
+export interface AppSession {
+  mode: "guest" | "account";
+  email: string | null;
+}
+
 export interface TrainovaState {
+  session: AppSession | null;
   units: Units;
   profile: UserProfile;
   audit: AuditEvent[];
@@ -59,6 +65,9 @@ export interface TrainovaState {
   sets: WorkoutSet[];
   prs: PersonalRecord[];
 
+  enterGuest: () => void;
+  enterAccount: (email: string) => void;
+  leaveSession: () => void;
   setUnits: (u: Units) => void;
   completeOnboarding: (p: Partial<UserProfile>) => void;
   updateProfile: (p: Partial<UserProfile>) => void;
@@ -122,6 +131,7 @@ const now = () => new Date().toISOString();
 export const useStore = create<TrainovaState>()(
   persist(
     (set, get) => ({
+      session: null,
       units: "kg",
       profile: { displayName: null, role: "user", goal: null, experience: null, onboarded: false },
       audit: [],
@@ -132,6 +142,10 @@ export const useStore = create<TrainovaState>()(
       sessions: [SEED_SESSION],
       sets: [...SEED_SESSION_SETS],
       prs: [],
+
+      enterGuest: () => set({ session: { mode: "guest", email: null } }),
+      enterAccount: (email) => set({ session: { mode: "account", email } }),
+      leaveSession: () => set({ session: null }),
 
       setUnits: (u) => set({ units: u }),
 
@@ -629,6 +643,7 @@ export const useStore = create<TrainovaState>()(
         typeof window !== "undefined" ? window.localStorage : memoryStorage
       ),
       partialize: (s) => ({
+        session: s.session,
         units: s.units,
         profile: s.profile,
         audit: s.audit,
