@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { AiPlanButton } from "@/components/AiPlanButton";
+import { AssignmentsInbox } from "@/components/AssignmentsInbox";
 import { isAiEnabled } from "@/lib/supabase/client";
 
 export default function PlansPage() {
@@ -75,6 +76,8 @@ export default function PlansPage() {
       </div>
 
       {isAiEnabled() && <AiPlanButton />}
+
+      <AssignmentsInbox />
 
       {!hydrated ? (
         <div className="card animate-pulse text-muted">Loading…</div>

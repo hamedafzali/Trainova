@@ -53,6 +53,17 @@ export interface AppSession {
   role?: "user" | "trainer" | "admin";
 }
 
+/** A portable plan snapshot used for trainer assignments. */
+export interface AssignedPlan {
+  name: string;
+  notes: string | null;
+  exercises: {
+    name: string;
+    muscle: string | null;
+    sets: { targetReps: number; targetWeight: number | null }[];
+  }[];
+}
+
 export interface TrainovaState {
   session: AppSession | null;
   units: Units;
@@ -94,6 +105,8 @@ export interface TrainovaState {
     notes: string | null;
     exercises: { name: string; muscle: string | null; sets: number; reps: number }[];
   }) => string;
+  serializeTemplate: (templateId: string) => AssignedPlan | null;
+  importAssignedPlan: (payload: AssignedPlan) => string;
   deleteTemplate: (id: string) => void;
   addTemplateExercise: (templateId: string, exerciseId: string) => void;
   removeTemplateExercise: (templateId: string, templateExerciseId: string) => void;
@@ -328,6 +341,61 @@ export const useStore = create<TrainovaState>()(
           owner: LOCAL_OWNER,
           name: stripDate(plan.name) || "AI Plan",
           notes: plan.notes ?? null,
+          exercises,
+        };
+        set((s) => ({ templates: [...s.templates, tpl] }));
+        return id;
+      },
+
+      serializeTemplate: (templateId) => {
+        const t = get().templates.find((x) => x.id === templateId);
+        if (!t) return null;
+        return {
+          name: t.name,
+          notes: t.notes,
+          exercises: t.exercises.map((te) => {
+            const ex = get().exercises.find((e) => e.id === te.exerciseId);
+            return {
+              name: ex?.name ?? "Exercise",
+              muscle: ex?.primaryMuscle ?? null,
+              sets: te.sets.map((s) => ({ targetReps: s.targetReps, targetWeight: s.targetWeight })),
+            };
+          }),
+        };
+      },
+
+      importAssignedPlan: (payload) => {
+        const id = uid();
+        const exercises = payload.exercises.map((ex, i) => {
+          let exer = get().exercises.find(
+            (e) => e.name.toLowerCase() === ex.name.trim().toLowerCase()
+          );
+          if (!exer) {
+            exer = get().addExercise({
+              name: ex.name.trim(),
+              defaultDeviceId: null,
+              isCompound: false,
+              primaryMuscle: ex.muscle ?? null,
+            });
+          }
+          const sets =
+            Array.isArray(ex.sets) && ex.sets.length
+              ? ex.sets.map((s) => ({ targetReps: s.targetReps ?? 10, targetWeight: s.targetWeight ?? null }))
+              : [{ targetReps: 10, targetWeight: null }];
+          return {
+            id: `${id}-${i}`,
+            exerciseId: exer.id,
+            deviceId: exer.defaultDeviceId,
+            position: i,
+            restSeconds: 90,
+            sets,
+          };
+        });
+        const tpl: WorkoutTemplate = {
+          id,
+          owner: LOCAL_OWNER,
+          name: stripDate(payload.name) || "Assigned plan",
+          notes: payload.notes ?? null,
           exercises,
         };
         set((s) => ({ templates: [...s.templates, tpl] }));

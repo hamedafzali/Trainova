@@ -129,6 +129,11 @@ export default function ProfilePage() {
         </button>
       </section>
 
+      {(session?.role === "trainer" || session?.role === "admin") && (
+        <Link href="/trainer" className="btn-ghost w-full">
+          🧑‍🏫 Trainer · clients
+        </Link>
+      )}
       {session?.role === "admin" && (
         <Link href="/admin" className="btn-primary w-full">
           ⚙️ Admin panel

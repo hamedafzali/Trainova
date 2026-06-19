@@ -80,6 +80,16 @@ export default function AdminPage() {
     else alert("Failed to delete user.");
   };
 
+  const setRole = async (u: AdminUser, role: string) => {
+    const r = await fetch("/api/admin/set-role", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ userId: u.id, role }),
+    });
+    if (r.ok) load();
+    else alert("Failed to change role.");
+  };
+
   if (!hydrated || loading) return <main className="p-4 text-muted">Loading…</main>;
 
   if (!isAdmin) {
@@ -137,12 +147,21 @@ export default function AdminPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <select
+                className="input flex-1 py-1.5 text-xs"
+                value={u.role}
+                onChange={(e) => setRole(u, e.target.value)}
+              >
+                <option value="user">user</option>
+                <option value="trainer">trainer</option>
+                <option value="admin">admin</option>
+              </select>
               <button className="btn-ghost flex-1 text-xs" onClick={() => resetPassword(u)}>
-                Reset password
+                Reset pw
               </button>
               <button className="btn-danger flex-1 text-xs" onClick={() => deleteUser(u)}>
-                Delete user
+                Delete
               </button>
             </div>
           </li>
