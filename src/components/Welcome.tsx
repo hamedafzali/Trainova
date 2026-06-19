@@ -19,7 +19,25 @@ export function Welcome() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const forgot = async () => {
+    setError(null);
+    setNote(null);
+    if (!email.trim()) {
+      setError("Enter your email first.");
+      return;
+    }
+    const r = await fetch("/api/auth/forgot", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok) setNote("If that email is registered, a reset link is on its way.");
+    else setError(j.error || "Couldn’t start a reset.");
+  };
 
   const submit = async () => {
     setError(null);
@@ -88,6 +106,7 @@ export function Welcome() {
           </p>
         )}
         {error && <p className="text-xs text-danger">{error}</p>}
+        {note && <p className="text-xs text-accent">{note}</p>}
 
         <button
           className="btn-primary w-full py-3"
@@ -96,6 +115,12 @@ export function Welcome() {
         >
           {busy ? "…" : mode === "in" ? "Sign in" : "Create account"}
         </button>
+
+        {cloud && mode === "in" && (
+          <button onClick={forgot} className="w-full text-center text-xs text-muted underline">
+            Forgot password?
+          </button>
+        )}
       </div>
 
       <button
