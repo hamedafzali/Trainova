@@ -148,9 +148,15 @@ export interface TrainovaState {
   missStreak: (exerciseId: string, targetReps: number) => number;
   bestsFor: (exerciseId: string) => { e1rm: number; maxWeight: number; maxReps: number };
   exercisesWithHistory: () => string[];
-  exerciseHistory: (
-    exerciseId: string
-  ) => { date: string; topWeight: number; e1rm: number; volume: number }[];
+  exerciseHistory: (exerciseId: string) => {
+    date: string;
+    topWeight: number;
+    e1rm: number;
+    volume: number;
+    durationMin: number;
+    distance: number;
+    durationSec: number;
+  }[];
 }
 
 const now = () => new Date().toISOString();
@@ -783,9 +789,9 @@ export const useStore = create<TrainovaState>()(
         const st = get();
         const seen: string[] = [];
         for (const x of st.sets) {
-          if (x.completed && x.actualWeight != null && !seen.includes(x.exerciseId)) {
-            seen.push(x.exerciseId);
-          }
+          const hasData =
+            x.actualWeight != null || x.durationMin != null || x.durationSec != null;
+          if (x.completed && hasData && !seen.includes(x.exerciseId)) seen.push(x.exerciseId);
         }
         return seen;
       },
@@ -795,26 +801,38 @@ export const useStore = create<TrainovaState>()(
         const sessions = st.sessions
           .filter((s) => s.status !== "archived")
           .sort((a, b) => a.startedAt.localeCompare(b.startedAt));
-        const out: { date: string; topWeight: number; e1rm: number; volume: number }[] = [];
+        const out = [];
         for (const s of sessions) {
           const sets = st.sets.filter(
-            (x) =>
-              x.sessionId === s.id &&
-              x.exerciseId === exerciseId &&
-              x.completed &&
-              x.actualWeight != null
+            (x) => x.sessionId === s.id && x.exerciseId === exerciseId && x.completed
           );
           if (sets.length === 0) continue;
           let topWeight = 0;
           let e1rm = 0;
           let volume = 0;
+          let durationMin = 0;
+          let distance = 0;
+          let durationSec = 0;
           for (const x of sets) {
-            const w = x.actualWeight as number;
-            topWeight = Math.max(topWeight, w);
-            volume += w * (x.actualReps ?? 1);
-            if (x.actualReps) e1rm = Math.max(e1rm, epley1rm(w, x.actualReps));
+            if (x.actualWeight != null) {
+              const w = x.actualWeight;
+              topWeight = Math.max(topWeight, w);
+              volume += w * (x.actualReps ?? 1);
+              if (x.actualReps) e1rm = Math.max(e1rm, epley1rm(w, x.actualReps));
+            }
+            durationMin += x.durationMin ?? 0;
+            distance += x.distance ?? 0;
+            durationSec += x.durationSec ?? 0;
           }
-          out.push({ date: s.date, topWeight, e1rm: Math.round(e1rm * 10) / 10, volume });
+          out.push({
+            date: s.date,
+            topWeight,
+            e1rm: Math.round(e1rm * 10) / 10,
+            volume,
+            durationMin: Math.round(durationMin * 10) / 10,
+            distance: Math.round(distance * 100) / 100,
+            durationSec,
+          });
         }
         return out;
       },

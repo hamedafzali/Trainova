@@ -73,15 +73,45 @@ export default function ProgressPage() {
               const device = deviceForExercise(exId);
               const hist = exerciseHistory(exId);
               const bests = bestsFor(exId);
-              const series = hist.map((h) => ({
-                label: h.date,
-                value: metric === "topWeight" ? h.topWeight : Math.round(h.volume),
-              }));
               const expanded = open === exId;
               const first = hist[0];
               const latest = hist[hist.length - 1];
-              const delta =
-                first && latest ? Math.round((latest.topWeight - first.topWeight) * 10) / 10 : 0;
+
+              // Pick the metric per exercise type.
+              const isCardio = device?.category === "cardio";
+              const isTime = ex?.mode === "time";
+              const hasDistance = hist.some((h) => h.distance > 0);
+
+              let series: { label: string; value: number }[];
+              let chartUnit = "";
+              let label: string;
+              let subtitle: string;
+              if (isTime) {
+                series = hist.map((h) => ({ label: h.date, value: h.durationSec }));
+                chartUnit = "s";
+                label = "Longest holds";
+                const best = Math.max(0, ...hist.map((h) => h.durationSec));
+                subtitle = `best ${best}s · ${hist.length} sessions`;
+              } else if (isCardio) {
+                series = hist.map((h) => ({
+                  label: h.date,
+                  value: hasDistance ? h.distance : h.durationMin,
+                }));
+                label = hasDistance ? "Distance" : "Minutes";
+                const best = Math.max(0, ...series.map((s) => s.value));
+                subtitle = `best ${best}${hasDistance ? "" : " min"} · ${hist.length} sessions`;
+              } else {
+                series = hist.map((h) => ({
+                  label: h.date,
+                  value: metric === "topWeight" ? h.topWeight : Math.round(h.volume),
+                }));
+                chartUnit = metric === "topWeight" ? units : "";
+                label = metric === "topWeight" ? "Top weight" : "Volume";
+                subtitle = `best ${bests.maxWeight}${units}${
+                  bests.e1rm ? ` · est 1RM ${Math.round(bests.e1rm)}${units}` : ""
+                } · ${hist.length} sessions`;
+              }
+
               return (
                 <li key={exId} className="card">
                   <button
@@ -91,26 +121,16 @@ export default function ProgressPage() {
                     <DeviceAvatar device={device} className="h-9 w-9 rounded-lg text-sm" />
                     <div className="flex-1">
                       <p className="font-semibold leading-tight">{ex?.name ?? "Exercise"}</p>
-                      <p className="text-xs text-muted">
-                        best {bests.maxWeight}
-                        {units}
-                        {bests.e1rm ? ` · est 1RM ${Math.round(bests.e1rm)}${units}` : ""} ·{" "}
-                        {hist.length} session{hist.length === 1 ? "" : "s"}
-                      </p>
+                      <p className="text-xs text-muted">{subtitle}</p>
                     </div>
-                    <span
-                      className={`text-xs font-semibold ${delta > 0 ? "text-green" : "text-muted"}`}
-                    >
-                      {delta > 0 ? `▲ ${delta}${units}` : expanded ? "▲" : "▼"}
-                    </span>
+                    <span className="text-xs text-muted">{expanded ? "▲" : "▼"}</span>
                   </button>
 
                   {expanded && (
                     <div className="mt-3 border-t border-border pt-3">
-                      <LineChart data={series} unit={metric === "topWeight" ? units : ""} />
+                      <LineChart data={series} unit={chartUnit} />
                       <p className="mt-1 text-center text-[11px] text-muted">
-                        {metric === "topWeight" ? "Top weight" : "Volume"} per session ·{" "}
-                        {first?.date} → {latest?.date}
+                        {label} per session · {first?.date} → {latest?.date}
                       </p>
                     </div>
                   )}

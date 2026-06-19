@@ -36,6 +36,7 @@ export interface Exercise {
   defaultDeviceId: string | null; // structured link, not text
   isCompound: boolean;
   primaryMuscle: string | null;
+  mode?: "time"; // a timed hold (plank, dead-hang) instead of weight × reps
 }
 
 // ---------------------------------------------------------------------------
@@ -114,6 +115,7 @@ export interface WorkoutSet {
   speed?: number | null;
   incline?: number | null;
   distance?: number | null;
+  durationSec?: number | null; // a timed hold (time-mode exercises)
 }
 
 // Append-only correction trail (see PLATFORM.md §F).

@@ -106,6 +106,20 @@ export function SessionExercise({
     haptic("tick");
   };
 
+  // ── Timed holds (plank, dead-hang): duration in seconds, no weight ──
+  const isTime = ex?.mode === "time" && !isCardio;
+  const lastHold = (() => {
+    const d = sets.filter((x) => x.completed && x.durationSec != null);
+    return d.length ? d[d.length - 1] : null;
+  })();
+  const startHold = (s: WorkoutSet) => s.durationSec ?? lastHold?.durationSec ?? 30;
+  const completeTime = (s: WorkoutSet) => {
+    updateSet(s.id, { durationSec: startHold(s) });
+    completeSet(s.id);
+    startRest(60);
+    haptic("tick");
+  };
+
   return (
     <section className="card space-y-3">
       {/* header */}
@@ -136,6 +150,27 @@ export function SessionExercise({
       <div className="space-y-1.5">
         {sets.map((s) => {
           const prev = prevWeight(s.setIndex);
+
+          if (s === activeSet && isTime) {
+            return (
+              <div key={s.id} className="space-y-2 rounded-xl bg-bg/60 p-2.5">
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <span>
+                    Hold {s.setIndex + 1} · last{" "}
+                    <b className="text-inkSoft">
+                      {lastHold?.durationSec ? `${lastHold.durationSec}s` : "—"}
+                    </b>
+                  </span>
+                  <button className="text-danger" onClick={() => removeSet(s.id)}>
+                    ✕ remove
+                  </button>
+                </div>
+                <CardioField label="Seconds" value={startHold(s)} step={5} min={5} unit="sec"
+                  onChange={(v) => updateSet(s.id, { durationSec: v })} />
+                <CompleteButton onComplete={() => completeTime(s)} />
+              </div>
+            );
+          }
 
           if (s === activeSet && isCardio) {
             return (
@@ -225,10 +260,12 @@ export function SessionExercise({
               } ${editable && s.completed ? "cursor-pointer" : ""}`}
             >
               <span className="w-12 shrink-0 text-xs text-muted">
-                {isCardio ? "Cardio" : `Round ${s.setIndex + 1}`}
+                {isCardio ? "Cardio" : isTime ? "Hold" : `Round ${s.setIndex + 1}`}
               </span>
               <span className="flex-1 text-center text-base font-bold tabular-nums text-ink">
-                {isCardio ? (
+                {isTime ? (
+                  <span className="text-base">{s.durationSec ?? "–"}s</span>
+                ) : isCardio ? (
                   <span className="text-sm">
                     {s.durationMin ?? "–"} min
                     {s.incline ? ` · ${s.incline}% incline` : ""}

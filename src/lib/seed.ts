@@ -58,14 +58,32 @@ const EXS: SeedEx[] = [
   { id: "e-lateral", name: "Lateral Raise", deviceId: "d-db", isCompound: false, muscle: "shoulders" },
 ];
 
-export const SEED_EXERCISES: Exercise[] = EXS.map((e) => ({
-  id: e.id,
-  owner: null,
-  name: e.name,
-  defaultDeviceId: e.deviceId,
-  isCompound: e.isCompound,
-  primaryMuscle: e.muscle,
-}));
+// Timed holds (logged as duration × sets, no weight).
+const TIME_EXS: SeedEx[] = [
+  { id: "e-plank", name: "Plank", deviceId: null, isCompound: false, muscle: "abs" },
+  { id: "e-hollow", name: "Hollow Hold", deviceId: null, isCompound: false, muscle: "abs" },
+  { id: "e-deadhang", name: "Dead Hang", deviceId: "d-pull", isCompound: false, muscle: "back" },
+];
+
+export const SEED_EXERCISES: Exercise[] = [
+  ...EXS.map((e) => ({
+    id: e.id,
+    owner: null,
+    name: e.name,
+    defaultDeviceId: e.deviceId,
+    isCompound: e.isCompound,
+    primaryMuscle: e.muscle,
+  })),
+  ...TIME_EXS.map((e) => ({
+    id: e.id,
+    owner: null,
+    name: e.name,
+    defaultDeviceId: e.deviceId,
+    isCompound: e.isCompound,
+    primaryMuscle: e.muscle,
+    mode: "time" as const,
+  })),
+];
 
 // ---------------------------------------------------------------------------
 // The user's 16.06.2026 session, the single source of truth for both the plan

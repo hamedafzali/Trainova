@@ -110,7 +110,12 @@ export default function HistoryPage() {
                           <DeviceAvatar device={device} className="mt-0.5 h-8 w-8 rounded-md text-xs" />
                           <div className="flex-1">
                             <p className="text-sm font-medium leading-tight">{ex?.name ?? "Exercise"}</p>
-                            {exSets[0]?.durationMin != null ? (
+                            {exSets[0]?.durationSec != null ? (
+                              <p className="text-xs text-muted">
+                                {exSets.map((s) => `${s.durationSec ?? "–"}s`).join(" · ")} ·{" "}
+                                {exSets.length} {exSets.length === 1 ? "hold" : "holds"}
+                              </p>
+                            ) : exSets[0]?.durationMin != null ? (
                               <p className="text-xs text-muted">
                                 {exSets
                                   .map(
