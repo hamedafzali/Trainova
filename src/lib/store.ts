@@ -119,7 +119,10 @@ export interface TrainovaState {
   ) => void;
 
   // session lifecycle (see domain/session.ts)
-  startSession: (templateId: string | null) => { id: string | null; blocked: boolean };
+  startSession: (
+    templateId: string | null,
+    dateKey?: string
+  ) => { id: string | null; blocked: boolean };
   finishSession: (id: string) => { discarded: boolean };
   discardSession: (id: string) => void;
   reopenSession: (id: string) => boolean;
@@ -481,17 +484,20 @@ export const useStore = create<TrainovaState>()(
           ),
         })),
 
-      startSession: (templateId) => {
+      startSession: (templateId, dateKey) => {
         if (!canCreateSession(get().sessions)) return { id: null, blocked: true };
         const id = uid();
         const tpl = templateId ? get().templates.find((t) => t.id === templateId) : null;
-        const ts = now();
+        const today = dayKey(new Date());
+        const date = dateKey ?? today;
+        // Backdated entries get a noon timestamp on that day so they sort correctly.
+        const ts = date === today ? now() : `${date}T12:00:00.000Z`;
         const session: WorkoutSession = {
           id,
           owner: LOCAL_OWNER,
           templateId: templateId ?? null,
           title: tpl?.name ?? "Quick workout",
-          date: dayKey(new Date()),
+          date,
           status: "active",
           startedAt: ts,
           completedAt: null,
@@ -536,11 +542,14 @@ export const useStore = create<TrainovaState>()(
           get().discardSession(id);
           return { discarded: true };
         }
+        // A backdated session finishes on its own day (≈30 min), not "now".
+        const backdated = session.date !== dayKey(new Date());
+        const completedAt = backdated
+          ? new Date(new Date(session.startedAt).getTime() + 30 * 60000).toISOString()
+          : now();
         set((s) => ({
           sessions: s.sessions.map((ss) =>
-            ss.id === id
-              ? { ...ss, status: "completed", completedAt: now(), updatedAt: now() }
-              : ss
+            ss.id === id ? { ...ss, status: "completed", completedAt, updatedAt: now() } : ss
           ),
         }));
         return { discarded: false };

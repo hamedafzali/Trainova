@@ -1,7 +1,7 @@
 // Minimal app-shell service worker. Data lives in localStorage, so offline support
 // here just means: keep the app loadable without a network. Network-first with a
 // cache fallback for navigations and static assets.
-const CACHE = "trainova-shell-v15";
+const CACHE = "trainova-shell-v16";
 const SHELL = ["/", "/templates", "/history", "/progress", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {

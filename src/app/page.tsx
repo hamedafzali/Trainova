@@ -31,7 +31,7 @@ export default function HomePage() {
 
   const active = getActiveSession();
   const start = (templateId: string | null) => {
-    const { id, blocked } = startSession(templateId);
+    const { id, blocked } = startSession(templateId, selected);
     if (blocked) {
       const a = getActiveSession();
       if (a) router.push(`/session/${a.id}`);
@@ -44,6 +44,7 @@ export default function HomePage() {
     .filter((s) => s.status !== "archived" && s.date === selected)
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   const isToday = selected === todayKey;
+  const isPastOrToday = selected <= todayKey; // can log a workout for today or earlier
 
   const inProgram = new Set(programs.flatMap((p) => p.dayTemplateIds));
   const standalone = templates.filter((t) => !inProgram.has(t.id));
@@ -91,8 +92,18 @@ export default function HomePage() {
               </span>
             </Link>
           ))
-        ) : isToday && !active ? (
+        ) : isPastOrToday && !active ? (
           <>
+            {!isToday && (
+              <p className="text-xs text-muted">
+                Logging a workout for{" "}
+                {new Date(selected + "T00:00:00").toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+                .
+              </p>
+            )}
             {programs.map((p) => {
               const days = daysForProgram(p.id);
               if (days.length === 0) return null;
@@ -131,7 +142,11 @@ export default function HomePage() {
           </>
         ) : (
           <div className="card text-center text-sm text-muted">
-            {isToday ? "Finish your active workout to start another." : "No workout on this day."}
+            {active
+              ? "Finish your active workout to start another."
+              : isPastOrToday
+                ? "No workout on this day."
+                : "You can’t log a workout for a future date."}
           </div>
         )}
       </section>
