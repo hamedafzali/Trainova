@@ -656,7 +656,22 @@ export const useStore = create<TrainovaState>()(
         return { newPrs: prs.map((p) => p.kind) };
       },
 
-      removeSet: (setId) => set((s) => ({ sets: s.sets.filter((x) => x.id !== setId) })),
+      removeSet: (setId) =>
+        set((s) => {
+          const target = s.sets.find((x) => x.id === setId);
+          if (!target) return {};
+          const remaining = s.sets.filter((x) => x.id !== setId);
+          // Re-number the remaining rounds of the same exercise so labels stay 1..N.
+          const siblings = remaining
+            .filter((x) => x.sessionId === target.sessionId && x.exerciseId === target.exerciseId)
+            .sort((a, b) => a.setIndex - b.setIndex);
+          return {
+            sets: remaining.map((x) => {
+              if (x.sessionId !== target.sessionId || x.exerciseId !== target.exerciseId) return x;
+              return { ...x, setIndex: siblings.findIndex((y) => y.id === x.id) };
+            }),
+          };
+        }),
 
       getActiveSession: () => activeSession(get().sessions),
 

@@ -35,6 +35,7 @@ export function SessionExercise({
   const deviceById = useStore((s) => s.deviceById);
   const addSet = useStore((s) => s.addSet);
   const updateSet = useStore((s) => s.updateSet);
+  const removeSet = useStore((s) => s.removeSet);
   const completeSet = useStore((s) => s.completeSet);
   const editSet = useStore((s) => s.editSet);
   const revertSet = useStore((s) => s.revertSet);
@@ -140,13 +141,15 @@ export function SessionExercise({
             return (
               <div key={s.id} className="space-y-2 rounded-xl bg-bg/60 p-2.5">
                 <div className="flex items-center justify-between text-xs text-muted">
-                  <span>Cardio</span>
                   <span>
-                    last time{" "}
+                    Cardio · last{" "}
                     <b className="text-inkSoft">
                       {lastCardio?.durationMin ? `${lastCardio.durationMin} min` : "—"}
                     </b>
                   </span>
+                  <button className="text-danger" onClick={() => removeSet(s.id)}>
+                    ✕ remove
+                  </button>
                 </div>
                 <CardioField label="Minutes" value={startDur(s)} step={1} min={1} unit="min"
                   onChange={(v) => updateSet(s.id, { durationMin: v })} />
@@ -165,10 +168,13 @@ export function SessionExercise({
             return (
               <div key={s.id} className="space-y-2 rounded-xl bg-bg/60 p-2.5">
                 <div className="flex items-center justify-between text-xs text-muted">
-                  <span>Round {s.setIndex + 1}</span>
                   <span>
-                    last time <b className="text-inkSoft">{prev != null ? `${prev} ${units}` : "—"}</b>
+                    Round {s.setIndex + 1} · last{" "}
+                    <b className="text-inkSoft">{prev != null ? `${prev} ${units}` : "—"}</b>
                   </span>
+                  <button className="text-danger" onClick={() => removeSet(s.id)}>
+                    ✕ remove
+                  </button>
                 </div>
                 <Stepper
                   value={startWeight(s)}
@@ -241,6 +247,15 @@ export function SessionExercise({
                   <span className="ml-1 align-middle text-[10px] uppercase text-amber">edited</span>
                 )}
               </span>
+              {!readOnly && (
+                <button
+                  aria-label="delete round"
+                  onClick={() => removeSet(s.id)}
+                  className="px-1 text-muted"
+                >
+                  ✕
+                </button>
+              )}
               {editable && s.completed ? (
                 <span className="text-xs text-accent">Edit</span>
               ) : s.completed ? (
