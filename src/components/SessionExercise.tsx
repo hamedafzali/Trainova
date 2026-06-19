@@ -55,14 +55,22 @@ export function SessionExercise({
   const done = sets.filter((s) => s.completed).length;
   const activeSet = readOnly ? undefined : sets.find((s) => !s.completed);
 
+  const DEFAULT_REPS = 10;
   const prevWeight = (idx: number) => last?.sets[idx]?.actualWeight ?? null;
+  // The weight you used on your last completed round this session.
+  const lastRoundWeight = (() => {
+    const doneSets = sets.filter((x) => x.completed && x.actualWeight != null);
+    return doneSets.length ? (doneSets[doneSets.length - 1].actualWeight as number) : null;
+  })();
   const startWeight = (s: WorkoutSet) =>
-    s.actualWeight ?? prevWeight(s.setIndex) ?? s.targetWeight ?? 0;
+    s.actualWeight ?? lastRoundWeight ?? s.targetWeight ?? prevWeight(s.setIndex) ?? 0;
+  const startReps = (s: WorkoutSet) => s.actualReps ?? DEFAULT_REPS;
 
   const complete = (s: WorkoutSet) => {
     const w = s.actualWeight ?? startWeight(s);
-    // reps are optional; 0 / untouched means "not counted"
-    const reps = s.actualReps && s.actualReps > 0 ? s.actualReps : null;
+    // reps default to 10; set the stepper to 0 to record "not counted".
+    const r = s.actualReps ?? DEFAULT_REPS;
+    const reps = r > 0 ? r : null;
     updateSet(s.id, { actualWeight: w, actualReps: reps });
     const { newPrs } = completeSet(s.id);
     startRest(defaultRest(isCompound));
@@ -121,9 +129,9 @@ export function SessionExercise({
                   onChange={(v) => updateSet(s.id, { actualWeight: v })}
                 />
                 <div className="space-y-1">
-                  <p className="text-[11px] text-muted">How many times? (optional)</p>
+                  <p className="text-[11px] text-muted">Reps (defaults to 10 — set 0 to skip)</p>
                   <Stepper
-                    value={s.actualReps ?? 0}
+                    value={startReps(s)}
                     step={1}
                     min={0}
                     unit="reps"
@@ -218,7 +226,7 @@ function EditRoundRow({
   onCancel: () => void;
 }) {
   const [w, setW] = useState(set.actualWeight ?? 0);
-  const [r, setR] = useState(set.actualReps ?? 0);
+  const [r, setR] = useState(set.actualReps ?? 10);
   const step = units === "kg" ? 2.5 : 5;
   return (
     <div className="space-y-2 rounded-xl border border-accent/40 bg-bg/60 p-2.5">
