@@ -109,6 +109,11 @@ export interface WorkoutSet {
   completed: boolean;
   completedAt: string | null;
   editedAt?: string | null; // set when a logged value is corrected after the fact
+  // Cardio fields (used instead of weight/reps for cardio-category devices).
+  durationMin?: number | null;
+  speed?: number | null;
+  incline?: number | null;
+  distance?: number | null;
 }
 
 // Append-only correction trail (see PLATFORM.md §F).

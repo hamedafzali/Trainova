@@ -95,14 +95,27 @@ export const SEED_PLAN: WorkoutTemplate = {
   owner: OWNER,
   name: "Full Body A",
   notes: CARDIO_NOTE,
-  exercises: PLAN.map((p, i): TemplateExercise => ({
-    id: `${SEED_PLAN_ID}-${i}`,
-    exerciseId: p.exerciseId,
-    deviceId: p.deviceId,
-    position: i,
-    restSeconds: 90,
-    sets: p.weights.map((w) => ({ targetReps: PLAN_REPS, targetWeight: w })),
-  })),
+  exercises: [
+    ...PLAN.map(
+      (p, i): TemplateExercise => ({
+        id: `${SEED_PLAN_ID}-${i}`,
+        exerciseId: p.exerciseId,
+        deviceId: p.deviceId,
+        position: i,
+        restSeconds: 90,
+        sets: p.weights.map((w) => ({ targetReps: PLAN_REPS, targetWeight: w })),
+      })
+    ),
+    // Cardio finisher — logged with minutes/speed/incline (cardio device).
+    {
+      id: `${SEED_PLAN_ID}-cardio`,
+      exerciseId: "e-treadmill",
+      deviceId: "d-tm",
+      position: PLAN.length,
+      restSeconds: 0,
+      sets: [{ targetReps: 20, targetWeight: null }],
+    },
+  ],
 };
 
 // ---------------------------------------------------------------------------

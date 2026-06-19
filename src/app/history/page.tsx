@@ -110,16 +110,29 @@ export default function HistoryPage() {
                           <DeviceAvatar device={device} className="mt-0.5 h-8 w-8 rounded-md text-xs" />
                           <div className="flex-1">
                             <p className="text-sm font-medium leading-tight">{ex?.name ?? "Exercise"}</p>
-                            <p className="text-xs text-muted">
-                              {exSets
-                                .map((s) =>
-                                  s.actualReps
-                                    ? `${s.actualWeight ?? "–"}×${s.actualReps}`
-                                    : `${s.actualWeight ?? "–"}`
-                                )
-                                .join(" · ")}{" "}
-                              {units} · {exSets.length} {exSets.length === 1 ? "round" : "rounds"}
-                            </p>
+                            {exSets[0]?.durationMin != null ? (
+                              <p className="text-xs text-muted">
+                                {exSets
+                                  .map(
+                                    (s) =>
+                                      `${s.durationMin ?? "–"} min${
+                                        s.incline ? ` · ${s.incline}%` : ""
+                                      }${s.distance ? ` · ${s.distance}` : ""}`
+                                  )
+                                  .join("  ·  ")}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-muted">
+                                {exSets
+                                  .map((s) =>
+                                    s.actualReps
+                                      ? `${s.actualWeight ?? "–"}×${s.actualReps}`
+                                      : `${s.actualWeight ?? "–"}`
+                                  )
+                                  .join(" · ")}{" "}
+                                {units} · {exSets.length} {exSets.length === 1 ? "round" : "rounds"}
+                              </p>
+                            )}
                           </div>
                         </li>
                       );

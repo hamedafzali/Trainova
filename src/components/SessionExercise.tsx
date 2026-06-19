@@ -82,6 +82,29 @@ export function SessionExercise({
     }
   };
 
+  // ── Cardio (treadmill etc.): minutes / speed / incline / distance ──
+  const isCardio = device?.category === "cardio";
+  const lastCardio = (() => {
+    const d = sets.filter((x) => x.completed && x.durationMin != null);
+    return d.length ? d[d.length - 1] : null;
+  })();
+  const startDur = (s: WorkoutSet) => s.durationMin ?? lastCardio?.durationMin ?? 20;
+  const startSpeed = (s: WorkoutSet) => s.speed ?? lastCardio?.speed ?? 6;
+  const startIncline = (s: WorkoutSet) => s.incline ?? lastCardio?.incline ?? 0;
+  const startDistance = (s: WorkoutSet) => s.distance ?? lastCardio?.distance ?? 0;
+
+  const completeCardio = (s: WorkoutSet) => {
+    const dist = startDistance(s);
+    updateSet(s.id, {
+      durationMin: startDur(s),
+      speed: startSpeed(s) || null,
+      incline: startIncline(s) || null,
+      distance: dist > 0 ? dist : null,
+    });
+    completeSet(s.id);
+    haptic("tick");
+  };
+
   return (
     <section className="card space-y-3">
       {/* header */}
@@ -112,6 +135,31 @@ export function SessionExercise({
       <div className="space-y-1.5">
         {sets.map((s) => {
           const prev = prevWeight(s.setIndex);
+
+          if (s === activeSet && isCardio) {
+            return (
+              <div key={s.id} className="space-y-2 rounded-xl bg-bg/60 p-2.5">
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <span>Cardio</span>
+                  <span>
+                    last time{" "}
+                    <b className="text-inkSoft">
+                      {lastCardio?.durationMin ? `${lastCardio.durationMin} min` : "—"}
+                    </b>
+                  </span>
+                </div>
+                <CardioField label="Minutes" value={startDur(s)} step={1} min={1} unit="min"
+                  onChange={(v) => updateSet(s.id, { durationMin: v })} />
+                <CardioField label="Speed" value={startSpeed(s)} step={0.5} min={0} unit="spd"
+                  onChange={(v) => updateSet(s.id, { speed: v })} />
+                <CardioField label="Incline" value={startIncline(s)} step={0.5} min={0} unit="%"
+                  onChange={(v) => updateSet(s.id, { incline: v })} />
+                <CardioField label="Distance (optional)" value={startDistance(s)} step={0.1} min={0} unit="dist"
+                  onChange={(v) => updateSet(s.id, { distance: v })} />
+                <CompleteButton onComplete={() => completeCardio(s)} />
+              </div>
+            );
+          }
 
           if (s === activeSet) {
             return (
@@ -170,12 +218,25 @@ export function SessionExercise({
                 s.completed ? "bg-green/15 animate-completeWipe" : "bg-surface2/50"
               } ${editable && s.completed ? "cursor-pointer" : ""}`}
             >
-              <span className="w-12 shrink-0 text-xs text-muted">Round {s.setIndex + 1}</span>
+              <span className="w-12 shrink-0 text-xs text-muted">
+                {isCardio ? "Cardio" : `Round ${s.setIndex + 1}`}
+              </span>
               <span className="flex-1 text-center text-base font-bold tabular-nums text-ink">
-                {(s.completed ? s.actualWeight : s.targetWeight) ?? "–"} {units}
-                {s.completed && s.actualReps ? (
-                  <span className="text-sm font-normal text-muted"> × {s.actualReps}</span>
-                ) : null}
+                {isCardio ? (
+                  <span className="text-sm">
+                    {s.durationMin ?? "–"} min
+                    {s.incline ? ` · ${s.incline}% incline` : ""}
+                    {s.distance ? ` · ${s.distance}` : ""}
+                    {s.speed ? ` · ${s.speed} spd` : ""}
+                  </span>
+                ) : (
+                  <>
+                    {(s.completed ? s.actualWeight : s.targetWeight) ?? "–"} {units}
+                    {s.completed && s.actualReps ? (
+                      <span className="text-sm font-normal text-muted"> × {s.actualReps}</span>
+                    ) : null}
+                  </>
+                )}
                 {s.editedAt && (
                   <span className="ml-1 align-middle text-[10px] uppercase text-amber">edited</span>
                 )}
@@ -208,6 +269,30 @@ export function SessionExercise({
       )}
       {editable && <p className="text-center text-[11px] text-muted">Tap a round to correct it</p>}
     </section>
+  );
+}
+
+/** A labelled stepper for a cardio metric. */
+function CardioField({
+  label,
+  value,
+  step,
+  min,
+  unit,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  step: number;
+  min: number;
+  unit: string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-[11px] text-muted">{label}</p>
+      <Stepper value={value} step={step} min={min} unit={unit} onChange={onChange} />
+    </div>
   );
 }
 
