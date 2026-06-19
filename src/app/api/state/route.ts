@@ -39,11 +39,25 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Bad payload" }, { status: 400 });
   }
 
-  await pool.query(
+  // Optimistic concurrency: if the server copy changed since the client last
+  // pulled (base), return 409 with the current data so the client can merge.
+  const cur = await pool.query("select data, updated_at from user_state where user_id = $1", [
+    user.userId,
+  ]);
+  const storedAt = cur.rows[0]?.updated_at;
+  if (storedAt && body.base && new Date(storedAt).toISOString() !== new Date(body.base).toISOString()) {
+    return NextResponse.json(
+      { conflict: true, data: cur.rows[0].data, updatedAt: storedAt },
+      { status: 409 }
+    );
+  }
+
+  const r = await pool.query(
     `insert into user_state (user_id, data, updated_at)
      values ($1, $2, now())
-     on conflict (user_id) do update set data = excluded.data, updated_at = now()`,
+     on conflict (user_id) do update set data = excluded.data, updated_at = now()
+     returning updated_at`,
     [user.userId, body.data]
   );
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, updatedAt: r.rows[0].updated_at });
 }
