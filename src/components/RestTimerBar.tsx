@@ -55,12 +55,14 @@ export function RestTimerBar() {
             style={{ width: `${pct}%` }}
           />
         )}
-        <div className="flex items-center gap-2 px-3 py-2.5">
-          <span className={`text-sm font-medium ${over ? "" : "text-inkSoft"}`}>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span
+            className={`text-base font-semibold ${over ? "" : "text-inkSoft"}`}
+          >
             {over ? "💪 Rest over" : "Resting"}
           </span>
           <span
-            className={`flex-1 text-center text-2xl font-bold tabular-nums ${
+            className={`flex-1 text-center text-3xl font-bold tabular-nums ${
               over ? "" : "text-accentDim animate-breathe"
             }`}
           >
@@ -70,13 +72,13 @@ export function RestTimerBar() {
             <>
               <button
                 onClick={() => add(-15)}
-                className="rounded-lg bg-surface2 px-4 py-2 text-sm font-semibold text-ink active:scale-95"
+                className="rounded-xl bg-surface2 px-5 py-3 text-base font-bold text-ink active:scale-95"
               >
                 −15
               </button>
               <button
                 onClick={() => add(15)}
-                className="rounded-lg bg-surface2 px-4 py-2 text-sm font-semibold text-ink active:scale-95"
+                className="rounded-xl bg-surface2 px-5 py-3 text-base font-bold text-ink active:scale-95"
               >
                 +15
               </button>
@@ -84,7 +86,7 @@ export function RestTimerBar() {
           )}
           <button
             onClick={stop}
-            className={`rounded-lg px-3 py-1 text-xs font-bold ${
+            className={`rounded-xl px-4 py-2 text-sm font-bold ${
               over ? "bg-black/10" : "bg-accentDim text-onAccent"
             }`}
           >
