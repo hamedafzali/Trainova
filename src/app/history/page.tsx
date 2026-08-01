@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
+import { WorkoutAnalysis } from "@/components/WorkoutAnalysis";
 import type { WorkoutSet } from "@/domain/types";
 
 export default function HistoryPage() {
@@ -70,120 +71,126 @@ export default function HistoryPage() {
           No workouts logged yet.
         </div>
       ) : (
-        <ul className="space-y-3">
-          {rows.map(({ session, count, volume, byExercise, mins }) => {
-            const expanded = open === session.id;
-            return (
-              <li key={session.id} className="card">
-                <button
-                  className="flex w-full items-center justify-between text-left p-4"
-                  onClick={() => setOpen(expanded ? null : session.id)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-base">
-                      {session.title}
-                      {session.status === "active" && (
-                        <span className="ml-2 text-sm text-accent">
-                          ● in progress
-                        </span>
-                      )}
-                      {session.status === "archived" && (
-                        <span className="ml-2 text-sm text-muted">
-                          archived
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-sm text-muted mt-1">
-                      {new Date(session.startedAt).toLocaleDateString(
-                        undefined,
-                        {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                        },
-                      )}
-                      {mins ? ` · ${mins} min` : ""} · {byExercise.size}{" "}
-                      exercises
-                    </p>
-                  </div>
-                  <div className="text-right ml-3">
-                    <p className="text-base font-semibold tabular-nums">
-                      {Math.round(volume).toLocaleString()}
-                      <span className="text-sm text-muted"> {units}·vol</span>
-                    </p>
-                    <p className="text-sm text-muted mt-1">
-                      {expanded ? "▲" : "▼"} {count} sets
-                    </p>
-                  </div>
-                </button>
+        <>
+          {/* AI Analysis Section */}
+          <WorkoutAnalysis />
 
-                {expanded && (
-                  <ul className="mt-3 space-y-3 border-t border-border pt-3 px-4 pb-4">
-                    {[...byExercise.entries()].map(([exId, exSets]) => {
-                      const ex = exerciseById(exId);
-                      const device = deviceForExercise(exId);
-                      return (
-                        <li key={exId} className="flex items-start gap-3">
-                          <DeviceAvatar
-                            device={device}
-                            className="mt-0.5 h-10 w-10 rounded-md text-sm"
-                          />
-                          <div className="flex-1">
-                            <p className="text-base font-medium leading-tight">
-                              {ex?.name ?? "Exercise"}
-                            </p>
-                            {exSets[0]?.durationSec != null ? (
-                              <p className="text-sm text-muted mt-1">
-                                {exSets
-                                  .map((s) => `${s.durationSec ?? "–"}s`)
-                                  .join(" · ")}{" "}
-                                · {exSets.length}{" "}
-                                {exSets.length === 1 ? "hold" : "holds"}
+          {/* Workout History */}
+          <ul className="space-y-3">
+            {rows.map(({ session, count, volume, byExercise, mins }) => {
+              const expanded = open === session.id;
+              return (
+                <li key={session.id} className="card">
+                  <button
+                    className="flex w-full items-center justify-between text-left p-4"
+                    onClick={() => setOpen(expanded ? null : session.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-base">
+                        {session.title}
+                        {session.status === "active" && (
+                          <span className="ml-2 text-sm text-accent">
+                            ● in progress
+                          </span>
+                        )}
+                        {session.status === "archived" && (
+                          <span className="ml-2 text-sm text-muted">
+                            archived
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-sm text-muted mt-1">
+                        {new Date(session.startedAt).toLocaleDateString(
+                          undefined,
+                          {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
+                        {mins ? ` · ${mins} min` : ""} · {byExercise.size}{" "}
+                        exercises
+                      </p>
+                    </div>
+                    <div className="text-right ml-3">
+                      <p className="text-base font-semibold tabular-nums">
+                        {Math.round(volume).toLocaleString()}
+                        <span className="text-sm text-muted"> {units}·vol</span>
+                      </p>
+                      <p className="text-sm text-muted mt-1">
+                        {expanded ? "▲" : "▼"} {count} sets
+                      </p>
+                    </div>
+                  </button>
+
+                  {expanded && (
+                    <ul className="mt-3 space-y-3 border-t border-border pt-3 px-4 pb-4">
+                      {[...byExercise.entries()].map(([exId, exSets]) => {
+                        const ex = exerciseById(exId);
+                        const device = deviceForExercise(exId);
+                        return (
+                          <li key={exId} className="flex items-start gap-3">
+                            <DeviceAvatar
+                              device={device}
+                              className="mt-0.5 h-10 w-10 rounded-md text-sm"
+                            />
+                            <div className="flex-1">
+                              <p className="text-base font-medium leading-tight">
+                                {ex?.name ?? "Exercise"}
                               </p>
-                            ) : exSets[0]?.durationMin != null ? (
-                              <p className="text-sm text-muted mt-1">
-                                {exSets
-                                  .map(
-                                    (s) =>
-                                      `${s.durationMin ?? "–"} min${
-                                        s.incline ? ` · ${s.incline}%` : ""
-                                      }${s.distance ? ` · ${s.distance}` : ""}`,
-                                  )
-                                  .join("  ·  ")}
-                              </p>
-                            ) : (
-                              <p className="text-sm text-muted mt-1">
-                                {exSets
-                                  .map((s) =>
-                                    s.actualReps
-                                      ? `${s.actualWeight ?? "–"}×${s.actualReps}`
-                                      : `${s.actualWeight ?? "–"}`,
-                                  )
-                                  .join(" · ")}{" "}
-                                {units} · {exSets.length}{" "}
-                                {exSets.length === 1 ? "round" : "rounds"}
-                              </p>
-                            )}
-                          </div>
+                              {exSets[0]?.durationSec != null ? (
+                                <p className="text-sm text-muted mt-1">
+                                  {exSets
+                                    .map((s) => `${s.durationSec ?? "–"}s`)
+                                    .join(" · ")}{" "}
+                                  · {exSets.length}{" "}
+                                  {exSets.length === 1 ? "hold" : "holds"}
+                                </p>
+                              ) : exSets[0]?.durationMin != null ? (
+                                <p className="text-sm text-muted mt-1">
+                                  {exSets
+                                    .map(
+                                      (s) =>
+                                        `${s.durationMin ?? "–"} min${
+                                          s.incline ? ` · ${s.incline}%` : ""
+                                        }${s.distance ? ` · ${s.distance}` : ""}`,
+                                    )
+                                    .join("  ·  ")}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-muted mt-1">
+                                  {exSets
+                                    .map((s) =>
+                                      s.actualReps
+                                        ? `${s.actualWeight ?? "–"}×${s.actualReps}`
+                                        : `${s.actualWeight ?? "–"}`,
+                                    )
+                                    .join(" · ")}{" "}
+                                  {units} · {exSets.length}{" "}
+                                  {exSets.length === 1 ? "round" : "rounds"}
+                                </p>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                      {session.status === "active" && (
+                        <li>
+                          <Link
+                            href={`/session/${session.id}`}
+                            className="text-base text-accent font-semibold"
+                          >
+                            Resume workout →
+                          </Link>
                         </li>
-                      );
-                    })}
-                    {session.status === "active" && (
-                      <li>
-                        <Link
-                          href={`/session/${session.id}`}
-                          className="text-base text-accent font-semibold"
-                        >
-                          Resume workout →
-                        </Link>
-                      </li>
-                    )}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                      )}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </main>
   );
