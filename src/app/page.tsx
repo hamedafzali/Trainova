@@ -69,127 +69,155 @@ export default function HomePage() {
   const standalone = templates.filter((t) => !inProgram.has(t.id));
 
   return (
-    <main className="space-y-6 p-4 md:p-6 lg:p-8 pb-24 md:pb-28">
-      <header className="flex items-start justify-between pt-2">
+    <main className="space-y-8">
+      <header className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
             Today
           </h1>
-          <p className="text-base text-muted mt-1 md:text-lg">
+          <p className="text-lg text-muted mt-2 md:text-xl">
             Tap a workout to see what you lifted.
           </p>
         </div>
       </header>
 
-      <MonthCalendar selected={selected} onSelect={setSelected} />
-
-      {active && (
-        <Link
-          href={`/session/${active.id}`}
-          className="card block border-accent/60 p-4"
-        >
-          <p className="text-xs uppercase tracking-wide text-accent font-semibold">
-            Workout in progress
-          </p>
-          <p className="mt-1 text-xl font-bold">{active.title}</p>
-          <p className="text-base text-muted mt-1">Tap to continue →</p>
-        </Link>
-      )}
-
-      <MonthCalendar selected={selected} onSelect={setSelected} />
-
-      {/* Selected-day panel */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-          {isToday
-            ? "Today"
-            : new Date(selected + "T00:00:00").toLocaleDateString(undefined, {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
-        </h2>
-
-        {daySessions.length > 0 ? (
-          daySessions.map((s) => (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          {active && (
             <Link
-              key={s.id}
-              href={`/session/${s.id}`}
-              className="card flex items-center justify-between p-4"
+              href={`/session/${active.id}`}
+              className="card block border-accent/60 p-4"
             >
-              <span className="font-semibold text-base">{s.title}</span>
-              <span className="text-base text-accent font-semibold">
-                {s.status === "active" ? "Resume →" : "View / edit →"}
-              </span>
-            </Link>
-          ))
-        ) : isPastOrToday && !active ? (
-          <>
-            {!isToday && (
-              <p className="text-xs text-muted">
-                Logging a workout for{" "}
-                {new Date(selected + "T00:00:00").toLocaleDateString(
-                  undefined,
-                  {
-                    month: "short",
-                    day: "numeric",
-                  },
-                )}
-                .
+              <p className="text-xs uppercase tracking-wide text-accent font-semibold">
+                Workout in progress
               </p>
-            )}
-            {programs.map((p) => {
-              const days = daysForProgram(p.id);
-              if (days.length === 0) return null;
-              return (
-                <div key={p.id} className="card space-y-3">
-                  <p className="text-sm uppercase tracking-wide text-muted font-semibold">
-                    {p.name}
+              <p className="mt-1 text-xl font-bold">{active.title}</p>
+              <p className="text-base text-muted mt-1">Tap to continue →</p>
+            </Link>
+          )}
+
+          <MonthCalendar selected={selected} onSelect={setSelected} />
+
+          {/* Selected-day panel */}
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+              {isToday
+                ? "Today"
+                : new Date(selected + "T00:00:00").toLocaleDateString(
+                    undefined,
+                    {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    },
+                  )}
+            </h2>
+
+            {daySessions.length > 0 ? (
+              daySessions.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/session/${s.id}`}
+                  className="card flex items-center justify-between p-4"
+                >
+                  <span className="font-semibold text-base">{s.title}</span>
+                  <span className="text-base text-accent font-semibold">
+                    {s.status === "active" ? "Resume →" : "View / edit →"}
+                  </span>
+                </Link>
+              ))
+            ) : isPastOrToday && !active ? (
+              <>
+                {!isToday && (
+                  <p className="text-xs text-muted">
+                    Logging a workout for{" "}
+                    {new Date(selected + "T00:00:00").toLocaleDateString(
+                      undefined,
+                      {
+                        month: "short",
+                        day: "numeric",
+                      },
+                    )}
+                    .
                   </p>
-                  {days.map((d) => (
-                    <button
-                      key={d.id}
-                      onClick={() => start(d.id)}
-                      className="flex w-full items-center justify-between rounded-xl bg-surface2 px-4 py-4 active:scale-[0.99]"
-                    >
-                      <span className="font-semibold text-base">{d.name}</span>
-                      <span className="text-base text-accent font-semibold">
-                        {d.exercises.length} ex · Start →
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              );
-            })}
-            {standalone.map((t) => (
+                )}
+                {programs.map((p) => {
+                  const days = daysForProgram(p.id);
+                  if (days.length === 0) return null;
+                  return (
+                    <div key={p.id} className="card space-y-3">
+                      <p className="text-sm uppercase tracking-wide text-muted font-semibold">
+                        {p.name}
+                      </p>
+                      {days.map((d) => (
+                        <button
+                          key={d.id}
+                          onClick={() => start(d.id)}
+                          className="flex w-full items-center justify-between rounded-xl bg-surface2 px-4 py-4 active:scale-[0.99]"
+                        >
+                          <span className="font-semibold text-base">
+                            {d.name}
+                          </span>
+                          <span className="text-base text-accent font-semibold">
+                            {d.exercises.length} ex · Start →
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
+                {standalone.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => start(t.id)}
+                    className="card flex w-full items-center justify-between p-4 active:scale-[0.99]"
+                  >
+                    <span className="font-semibold text-base">{t.name}</span>
+                    <span className="text-base text-accent font-semibold">
+                      Start →
+                    </span>
+                  </button>
+                ))}
+                <button
+                  onClick={() => start(null)}
+                  className="w-full py-4 text-center text-base text-muted underline underline-offset-4"
+                >
+                  or start an empty workout
+                </button>
+              </>
+            ) : (
+              <div className="card text-center py-8 text-base text-muted">
+                {active
+                  ? "Finish your active workout to start another."
+                  : isPastOrToday
+                    ? "No workout on this day."
+                    : "You can't log a workout for a future date."}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="space-y-6">
+          {/* Quick stats or additional info could go here */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+            <div className="space-y-3">
               <button
-                key={t.id}
-                onClick={() => start(t.id)}
-                className="card flex w-full items-center justify-between p-4 active:scale-[0.99]"
+                onClick={() => start(null)}
+                className="w-full btn-primary py-3 text-base font-semibold"
               >
-                <span className="font-semibold text-base">{t.name}</span>
-                <span className="text-base text-accent font-semibold">
-                  Start →
-                </span>
+                Start Empty Workout
               </button>
-            ))}
-            <button
-              onClick={() => start(null)}
-              className="w-full py-4 text-center text-base text-muted underline underline-offset-4"
-            >
-              or start an empty workout
-            </button>
-          </>
-        ) : (
-          <div className="card text-center py-8 text-base text-muted">
-            {active
-              ? "Finish your active workout to start another."
-              : isPastOrToday
-                ? "No workout on this day."
-                : "You can't log a workout for a future date."}
+              <Link
+                href="/templates"
+                className="w-full btn-ghost py-3 text-base font-semibold block text-center"
+              >
+                Browse Plans →
+              </Link>
+            </div>
           </div>
-        )}
-      </section>
+        </div>
+      </div>
     </main>
   );
 }
