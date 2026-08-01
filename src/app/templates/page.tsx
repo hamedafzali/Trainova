@@ -37,43 +37,45 @@ export default function PlansPage() {
   const standalone = templates.filter((t) => !inProgram.has(t.id));
 
   return (
-    <main className="space-y-5 p-4">
+    <main className="space-y-6 p-4 pb-20">
       <header className="pt-2">
-        <h1 className="text-2xl font-bold tracking-tight">Plans</h1>
-        <p className="text-sm text-muted">
+        <h1 className="text-3xl font-bold tracking-tight">Plans</h1>
+        <p className="mt-1 text-sm text-muted">
           Trainer programs and your own routines.
         </p>
       </header>
 
       {/* Create */}
-      <div className="flex gap-2">
+      <div className="space-y-3">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="New name…"
-          className="input"
+          placeholder="New plan name…"
+          className="input w-full text-base"
         />
-        <button
-          className="btn-ghost shrink-0"
-          onClick={() => {
-            if (!name.trim()) return;
-            createTemplate(name);
-            setName("");
-          }}
-        >
-          + Plan
-        </button>
-        <button
-          className="btn-primary shrink-0"
-          onClick={() => {
-            if (!name.trim()) return;
-            const id = createProgram(name, "trainer");
-            setName("");
-            router.push(`/programs/${id}`);
-          }}
-        >
-          + Program
-        </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            className="btn-primary py-3 text-base font-semibold"
+            onClick={() => {
+              if (!name.trim()) return;
+              createTemplate(name);
+              setName("");
+            }}
+          >
+            + Plan
+          </button>
+          <button
+            className="btn-ghost py-3 text-base font-semibold"
+            onClick={() => {
+              if (!name.trim()) return;
+              const id = createProgram(name, "trainer");
+              setName("");
+              router.push(`/programs/${id}`);
+            }}
+          >
+            + Program
+          </button>
+        </div>
       </div>
 
       <AiPlanButton />
@@ -86,17 +88,20 @@ export default function PlansPage() {
         <>
           {/* Programs (trainer plans) */}
           {programs.length > 0 && (
-            <section className="space-y-2">
+            <section className="space-y-3">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
                 Programs
               </h2>
               {programs.map((p) => {
                 const days = daysForProgram(p.id);
                 return (
-                  <div key={p.id} className="card space-y-2">
-                    <div className="flex items-start justify-between">
-                      <Link href={`/programs/${p.id}`} className="flex-1">
-                        <p className="font-semibold">
+                  <div key={p.id} className="card space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <Link
+                        href={`/programs/${p.id}`}
+                        className="flex-1 min-w-0"
+                      >
+                        <p className="font-semibold text-base">
                           {p.name}
                           {p.source === "trainer" && (
                             <span className="ml-2 rounded-full bg-accentDim/40 px-2 py-0.5 text-[10px] uppercase text-accent">
@@ -104,35 +109,35 @@ export default function PlansPage() {
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-muted">
+                        <p className="text-sm text-muted mt-1">
                           {days.length} day{days.length === 1 ? "" : "s"} · tap
                           to edit
                         </p>
                       </Link>
                       <button
-                        className="btn-danger"
+                        className="btn-danger px-3 py-2 text-sm shrink-0"
                         onClick={() => {
-                          if (confirm(`Delete program “${p.name}”?`))
+                          if (confirm(`Delete program "${p.name}"?`))
                             deleteProgram(p.id);
                         }}
                       >
                         Delete
                       </button>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {days.map((d) => (
                         <div
                           key={d.id}
-                          className="flex items-center justify-between rounded-xl bg-surface2 px-3 py-2"
+                          className="flex items-center justify-between rounded-xl bg-surface2 px-4 py-3"
                         >
-                          <span className="text-sm">
+                          <span className="text-sm font-medium">
                             {d.name}
-                            <span className="ml-1 text-xs text-muted">
+                            <span className="ml-2 text-xs text-muted">
                               ({d.exercises.length})
                             </span>
                           </span>
                           <button
-                            className="btn-primary px-3 py-1.5 text-xs"
+                            className="btn-primary px-4 py-2 text-sm font-semibold"
                             onClick={() => start(d.id)}
                           >
                             Start
@@ -140,7 +145,7 @@ export default function PlansPage() {
                         </div>
                       ))}
                       <button
-                        className="btn-ghost w-full text-xs"
+                        className="btn-ghost w-full py-3 text-sm font-semibold"
                         onClick={() => {
                           const tid = addDayToProgram(
                             p.id,
@@ -159,36 +164,36 @@ export default function PlansPage() {
           )}
 
           {/* Standalone plans */}
-          <section className="space-y-2">
+          <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
               Single plans
             </h2>
             {standalone.length === 0 ? (
-              <div className="card text-center text-sm text-muted">
-                No standalone plans.
+              <div className="card text-center py-8 text-sm text-muted">
+                No standalone plans yet.
               </div>
             ) : (
               standalone.map((t) => (
                 <div
                   key={t.id}
-                  className="card flex items-center justify-between"
+                  className="card flex items-center justify-between gap-3"
                 >
-                  <Link href={`/templates/${t.id}`} className="flex-1">
-                    <p className="font-semibold">{t.name}</p>
-                    <p className="text-xs text-muted">
+                  <Link href={`/templates/${t.id}`} className="flex-1 min-w-0">
+                    <p className="font-semibold text-base">{t.name}</p>
+                    <p className="text-sm text-muted mt-1">
                       {t.exercises.length} exercises · tap to edit
                     </p>
                   </Link>
                   <button
-                    className="btn-primary px-3 py-1.5"
+                    className="btn-primary px-4 py-2 text-sm font-semibold shrink-0"
                     onClick={() => start(t.id)}
                   >
                     Start
                   </button>
                   <button
-                    className="btn-danger"
+                    className="btn-danger px-3 py-2 text-sm shrink-0"
                     onClick={() => {
-                      if (confirm(`Delete “${t.name}”?`)) deleteTemplate(t.id);
+                      if (confirm(`Delete "${t.name}"?`)) deleteTemplate(t.id);
                     }}
                   >
                     ✕

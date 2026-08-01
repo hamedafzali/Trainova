@@ -225,24 +225,24 @@ export function AiOnboarding() {
   }
 
   return (
-    <main className="space-y-6 p-5">
-      <header className="pt-6">
+    <main className="space-y-6 p-4 pb-20">
+      <header className="pt-4">
         <h1 className="text-3xl font-bold tracking-tight">
           AI-Powered Onboarding
         </h1>
-        <p className="mt-1 text-muted">
+        <p className="mt-2 text-base text-muted">
           Step {step} of 2: {step === 1 ? "Basic Info" : "Details"}
         </p>
       </header>
 
       {error && (
-        <div className="card bg-danger/10 border-danger text-danger p-3">
+        <div className="card bg-danger/10 border-danger text-danger p-4">
           {error}
         </div>
       )}
 
       {step === 1 ? (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <Section title="Primary Goal">
             <Chips
               options={GOALS.map((g) => ({ key: g, label: g }))}
@@ -253,7 +253,7 @@ export function AiOnboarding() {
 
           <Section title="Timeline (weeks)">
             <input
-              className="input"
+              className="input text-base py-3"
               type="number"
               min="4"
               max="52"
@@ -271,12 +271,12 @@ export function AiOnboarding() {
           </Section>
 
           <Section title="Training Days per Week">
-            <div className="flex gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {[3, 4, 5, 6].map((days) => (
                 <button
                   key={days}
                   onClick={() => updateField("daysPerWeek", days)}
-                  className={`flex-1 py-3 rounded-lg font-semibold ${
+                  className={`py-4 rounded-xl font-semibold text-base ${
                     formData.daysPerWeek === days
                       ? "bg-accent text-onAccent"
                       : "bg-surface2 text-inkSoft"
@@ -290,7 +290,7 @@ export function AiOnboarding() {
 
           <Section title="Session Duration (minutes)">
             <input
-              className="input"
+              className="input text-base py-3"
               type="number"
               min="15"
               max="120"
@@ -303,7 +303,7 @@ export function AiOnboarding() {
 
           <Section title="Available Equipment">
             <select
-              className="input"
+              className="input text-base py-3"
               value={formData.equipment}
               onChange={(e) => updateField("equipment", e.target.value)}
             >
@@ -316,7 +316,7 @@ export function AiOnboarding() {
           </Section>
 
           <button
-            className="btn-primary w-full py-4 text-base"
+            className="btn-primary w-full py-4 text-base font-semibold"
             onClick={() => setStep(2)}
             disabled={!formData.goal || !formData.experience}
           >
@@ -324,10 +324,10 @@ export function AiOnboarding() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <Section title="Age">
             <input
-              className="input"
+              className="input text-base py-3"
               type="number"
               min="16"
               max="80"
@@ -350,7 +350,7 @@ export function AiOnboarding() {
 
           <Section title="Height">
             <input
-              className="input"
+              className="input text-base py-3"
               placeholder="e.g., 180cm or 5'11&quot;"
               value={formData.height}
               onChange={(e: any) => updateField("height", e.target.value)}
@@ -359,7 +359,7 @@ export function AiOnboarding() {
 
           <Section title="Weight">
             <input
-              className="input"
+              className="input text-base py-3"
               placeholder="e.g., 75kg or 165lbs"
               value={formData.weight}
               onChange={(e) => updateField("weight", e.target.value)}
@@ -368,7 +368,7 @@ export function AiOnboarding() {
 
           <Section title="Body Fat Percentage (optional)">
             <input
-              className="input"
+              className="input text-base py-3"
               type="number"
               min="0"
               max="50"
@@ -382,7 +382,7 @@ export function AiOnboarding() {
                 )
               }
             />
-            <p className="text-xs text-muted mt-1">
+            <p className="text-sm text-muted mt-2">
               Optional - helps with more accurate program design
             </p>
           </Section>
@@ -390,7 +390,7 @@ export function AiOnboarding() {
           <Section title="Body Measurements (optional, in cm)">
             <div className="grid grid-cols-2 gap-2">
               <input
-                className="input"
+                className="input text-base py-3"
                 type="number"
                 placeholder="Chest"
                 value={formData.measurements?.chest || ""}
@@ -402,7 +402,7 @@ export function AiOnboarding() {
                 }
               />
               <input
-                className="input"
+                className="input text-base py-3"
                 type="number"
                 placeholder="Waist"
                 value={formData.measurements?.waist || ""}
@@ -414,7 +414,7 @@ export function AiOnboarding() {
                 }
               />
               <input
-                className="input"
+                className="input text-base py-3"
                 type="number"
                 placeholder="Hips"
                 value={formData.measurements?.hips || ""}
@@ -426,7 +426,7 @@ export function AiOnboarding() {
                 }
               />
               <input
-                className="input"
+                className="input text-base py-3"
                 type="number"
                 placeholder="Left Arm"
                 value={formData.measurements?.leftArm || ""}
@@ -438,7 +438,7 @@ export function AiOnboarding() {
                 }
               />
               <input
-                className="input"
+                className="input text-base py-3"
                 type="number"
                 placeholder="Right Arm"
                 value={formData.measurements?.rightArm || ""}
@@ -450,7 +450,7 @@ export function AiOnboarding() {
                 }
               />
               <input
-                className="input"
+                className="input text-base py-3"
                 type="number"
                 placeholder="Left Thigh"
                 value={formData.measurements?.leftThigh || ""}
@@ -462,7 +462,7 @@ export function AiOnboarding() {
                 }
               />
               <input
-                className="input"
+                className="input text-base py-3"
                 type="number"
                 placeholder="Right Thigh"
                 value={formData.measurements?.rightThigh || ""}
@@ -474,28 +474,28 @@ export function AiOnboarding() {
                 }
               />
             </div>
-            <p className="text-xs text-muted mt-1">
+            <p className="text-sm text-muted mt-2">
               Optional - helps with personalized exercise selection
             </p>
           </Section>
 
           <Section title="Injuries or Limitations (optional)">
             <textarea
-              className="input"
+              className="input text-base py-3"
               placeholder="Any injuries or physical limitations?"
               value={formData.injuries}
               onChange={(e) => updateField("injuries", e.target.value)}
-              rows={2}
+              rows={3}
             />
           </Section>
 
           <Section title="Sleep Quality (1-5)">
-            <div className="flex gap-2">
+            <div className="grid grid-cols-5 gap-2">
               {[1, 2, 3, 4, 5].map((level) => (
                 <button
                   key={level}
                   onClick={() => updateField("sleepQuality", level)}
-                  className={`flex-1 py-3 rounded-lg font-semibold ${
+                  className={`py-4 rounded-xl font-semibold text-base ${
                     formData.sleepQuality === level
                       ? "bg-accent text-onAccent"
                       : "bg-surface2 text-inkSoft"
@@ -508,12 +508,12 @@ export function AiOnboarding() {
           </Section>
 
           <Section title="Stress Level (1-5)">
-            <div className="flex gap-2">
+            <div className="grid grid-cols-5 gap-2">
               {[1, 2, 3, 4, 5].map((level) => (
                 <button
                   key={level}
                   onClick={() => updateField("stressLevel", level)}
-                  className={`flex-1 py-3 rounded-lg font-semibold ${
+                  className={`py-4 rounded-xl font-semibold text-base ${
                     formData.stressLevel === level
                       ? "bg-accent text-onAccent"
                       : "bg-surface2 text-inkSoft"
@@ -527,17 +527,17 @@ export function AiOnboarding() {
 
           <Section title="Nutrition Situation">
             <textarea
-              className="input"
+              className="input text-base py-3"
               placeholder="Briefly describe your current nutrition"
               value={formData.nutrition}
               onChange={(e) => updateField("nutrition", e.target.value)}
-              rows={2}
+              rows={3}
             />
           </Section>
 
           <Section title="Activities You Enjoy (optional)">
             <input
-              className="input"
+              className="input text-base py-3"
               placeholder="e.g., Weightlifting, running, swimming"
               value={formData.enjoyActivities}
               onChange={(e) => updateField("enjoyActivities", e.target.value)}
@@ -546,7 +546,7 @@ export function AiOnboarding() {
 
           <Section title="Activities You Hate (optional)">
             <input
-              className="input"
+              className="input text-base py-3"
               placeholder="e.g., Long cardio, burpees"
               value={formData.hateActivities}
               onChange={(e) => updateField("hateActivities", e.target.value)}
@@ -555,23 +555,23 @@ export function AiOnboarding() {
 
           <Section title="Supplements (optional)">
             <input
-              className="input"
+              className="input text-base py-3"
               placeholder="e.g., Protein powder, creatine"
               value={formData.supplements}
               onChange={(e) => updateField("supplements", e.target.value)}
             />
           </Section>
 
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-3 pt-4">
             <button
-              className="btn-ghost flex-1 py-4"
+              className="btn-ghost py-4 text-base font-semibold"
               onClick={() => setStep(1)}
               disabled={busy}
             >
               ← Back
             </button>
             <button
-              className="btn-primary flex-1 py-4"
+              className="btn-primary py-4 text-base font-semibold"
               onClick={generateProgram}
               disabled={busy}
             >
