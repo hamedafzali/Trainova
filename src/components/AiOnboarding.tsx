@@ -37,6 +37,16 @@ interface OnboardingFormData {
   sex: string;
   height: string;
   weight: string;
+  bodyFatPercentage?: number;
+  measurements?: {
+    chest?: number;
+    waist?: number;
+    hips?: number;
+    leftArm?: number;
+    rightArm?: number;
+    leftThigh?: number;
+    rightThigh?: number;
+  };
   injuries: string;
   sleepQuality: number;
   stressLevel: number;
@@ -100,6 +110,8 @@ export function AiOnboarding() {
             sex: formData.sex,
             height: formData.height,
             weight: formData.weight,
+            bodyFatPercentage: formData.bodyFatPercentage,
+            measurements: formData.measurements,
             injuries: formData.injuries || "None",
             sleepQuality: formData.sleepQuality,
             stressLevel: formData.stressLevel,
@@ -352,6 +364,119 @@ export function AiOnboarding() {
               value={formData.weight}
               onChange={(e) => updateField("weight", e.target.value)}
             />
+          </Section>
+
+          <Section title="Body Fat Percentage (optional)">
+            <input
+              className="input"
+              type="number"
+              min="0"
+              max="50"
+              step="0.1"
+              placeholder="e.g., 15.5"
+              value={formData.bodyFatPercentage || ""}
+              onChange={(e) =>
+                updateField(
+                  "bodyFatPercentage",
+                  Number(e.target.value) || undefined,
+                )
+              }
+            />
+            <p className="text-xs text-muted mt-1">
+              Optional - helps with more accurate program design
+            </p>
+          </Section>
+
+          <Section title="Body Measurements (optional, in cm)">
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className="input"
+                type="number"
+                placeholder="Chest"
+                value={formData.measurements?.chest || ""}
+                onChange={(e) =>
+                  updateField("measurements", {
+                    ...formData.measurements,
+                    chest: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+              <input
+                className="input"
+                type="number"
+                placeholder="Waist"
+                value={formData.measurements?.waist || ""}
+                onChange={(e) =>
+                  updateField("measurements", {
+                    ...formData.measurements,
+                    waist: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+              <input
+                className="input"
+                type="number"
+                placeholder="Hips"
+                value={formData.measurements?.hips || ""}
+                onChange={(e) =>
+                  updateField("measurements", {
+                    ...formData.measurements,
+                    hips: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+              <input
+                className="input"
+                type="number"
+                placeholder="Left Arm"
+                value={formData.measurements?.leftArm || ""}
+                onChange={(e) =>
+                  updateField("measurements", {
+                    ...formData.measurements,
+                    leftArm: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+              <input
+                className="input"
+                type="number"
+                placeholder="Right Arm"
+                value={formData.measurements?.rightArm || ""}
+                onChange={(e) =>
+                  updateField("measurements", {
+                    ...formData.measurements,
+                    rightArm: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+              <input
+                className="input"
+                type="number"
+                placeholder="Left Thigh"
+                value={formData.measurements?.leftThigh || ""}
+                onChange={(e) =>
+                  updateField("measurements", {
+                    ...formData.measurements,
+                    leftThigh: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+              <input
+                className="input"
+                type="number"
+                placeholder="Right Thigh"
+                value={formData.measurements?.rightThigh || ""}
+                onChange={(e) =>
+                  updateField("measurements", {
+                    ...formData.measurements,
+                    rightThigh: Number(e.target.value) || undefined,
+                  })
+                }
+              />
+            </div>
+            <p className="text-xs text-muted mt-1">
+              Optional - helps with personalized exercise selection
+            </p>
           </Section>
 
           <Section title="Injuries or Limitations (optional)">

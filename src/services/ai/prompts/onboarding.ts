@@ -12,6 +12,16 @@ export interface OnboardingInput {
   sex: string;
   height: string;
   weight: string;
+  bodyFatPercentage?: number; // Optional body fat %
+  measurements?: {
+    chest?: number;
+    waist?: number;
+    hips?: number;
+    leftArm?: number;
+    rightArm?: number;
+    leftThigh?: number;
+    rightThigh?: number;
+  };
   injuries: string;
   sleepQuality: number;
   stressLevel: string;
@@ -88,13 +98,22 @@ export function createOnboardingPrompt(input: OnboardingInput): string {
 - Sex: ${input.sex}
 - Height: ${input.height}
 - Current Weight: ${input.weight}
-- Injuries/Limitations: ${input.injuries || 'None'}
+${input.bodyFatPercentage ? `- Body Fat Percentage: ${input.bodyFatPercentage}%` : ""}
+${
+  input.measurements
+    ? `- Measurements: ${Object.entries(input.measurements)
+        .filter(([_, v]) => v !== undefined)
+        .map(([k, v]) => `${k}: ${v}cm`)
+        .join(", ")}`
+    : ""
+}
+- Injuries/Limitations: ${input.injuries || "None"}
 - Sleep Quality (1-5): ${input.sleepQuality}
 - Stress Level: ${input.stressLevel}
 - Nutrition Situation: ${input.nutrition}
 - Activities They Enjoy: ${input.enjoyActivities}
 - Activities They Hate: ${input.hateActivities}
-- Supplements: ${input.supplements || 'None'}
+- Supplements: ${input.supplements || "None"}
 
 **Programming Requirements:**
 
@@ -179,15 +198,18 @@ Ensure all JSON is valid and properly formatted. Include the medical disclaimer 
 /**
  * Follow-up question prompt for incomplete onboarding
  */
-export function createFollowUpPrompt(missingFields: string[], currentData: Partial<OnboardingInput>): string {
-  const missingFieldsList = missingFields.join(', ');
+export function createFollowUpPrompt(
+  missingFields: string[],
+  currentData: Partial<OnboardingInput>,
+): string {
+  const missingFieldsList = missingFields.join(", ");
   return `I need more information to create your personalized program. Please provide the following: ${missingFieldsList}.
 
 Current information I have:
 ${Object.entries(currentData)
-  .filter(([_, value]) => value !== undefined && value !== '')
+  .filter(([_, value]) => value !== undefined && value !== "")
   .map(([key, value]) => `- ${key}: ${value}`)
-  .join('\n')}
+  .join("\n")}
 
 Please respond with the missing information so I can generate your program.`;
 }
@@ -209,7 +231,7 @@ export function createWeeklyCheckInPrompt(
     whatFeltGood: string;
     whatFeltDifficult: string;
     weightChanges?: string;
-  }
+  },
 ): string {
   return `Review the following weekly check-in for the "${programName}" program (Week ${weekNumber}):
 
@@ -218,9 +240,9 @@ export function createWeeklyCheckInPrompt(
 - Average Session RPE: ${checkInData.averageRPE} / 10
 - Sleep Quality (1-5): ${checkInData.sleepQuality}
 - Energy Level (1-5): ${checkInData.energyLevel}
-- Pain or Injuries: ${checkInData.painOrInjuries || 'None'}
-- Weight: ${checkInData.weight || 'Not reported'}
-- Weight Changes: ${checkInData.weightChanges || 'None reported'}
+- Pain or Injuries: ${checkInData.painOrInjuries || "None"}
+- Weight: ${checkInData.weight || "Not reported"}
+- Weight Changes: ${checkInData.weightChanges || "None reported"}
 - What Felt Good: ${checkInData.whatFeltGood}
 - What Felt Difficult: ${checkInData.whatFeltDifficult}
 
