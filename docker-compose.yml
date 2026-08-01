@@ -6,7 +6,7 @@ services:
       args:
         # "1" turns the login screen on in the client (server has a database).
         - NEXT_PUBLIC_AUTH_ENABLED=${NEXT_PUBLIC_AUTH_ENABLED:-1}
-        # "1" shows the AI plan generator (set when ANTHROPIC_API_KEY is present).
+        # "1" shows the AI plan generator (set when MISTRAL_API_KEY is present).
         - NEXT_PUBLIC_AI_ENABLED=${NEXT_PUBLIC_AI_ENABLED:-}
     container_name: trainova-web
     ports:
@@ -23,7 +23,7 @@ services:
       # Optional: this email becomes admin on signup/login (set in ACM variables).
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
       # Optional: enables AI plan generation (set in ACM variables).
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
       # Optional: SMTP for password-reset emails + public URL for the reset link.
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
@@ -32,9 +32,15 @@ services:
       - SMTP_PASS=${SMTP_PASS:-}
       - SMTP_FROM=${SMTP_FROM:-}
       - APP_URL=${APP_URL:-}
+      # Optional: Redis URL for caching
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Optional: Sentry DSN for error monitoring
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN:-}
     restart: unless-stopped
     depends_on:
       trainova-db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - trainova-network
@@ -60,6 +66,19 @@ services:
       - trainova-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U trainova -d trainova"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: trainova-redis
+    restart: unless-stopped
+    networks:
+      - trainova-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
