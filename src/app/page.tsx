@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MonthCalendar, dayKey } from "@/components/MonthCalendar";
 import { Onboarding } from "@/components/Onboarding";
+import { AiOnboarding } from "@/components/AiOnboarding";
 import { Welcome } from "@/components/Welcome";
 import { OnlineBadge } from "@/components/OnlineBadge";
 import { useHydrated, useStore } from "@/lib/store";
@@ -20,14 +21,32 @@ export default function HomePage() {
   const sessions = useStore((s) => s.sessions);
   const getActiveSession = useStore((s) => s.getActiveSession);
   const startSession = useStore((s) => s.startSession);
+  const [useAiOnboarding, setUseAiOnboarding] = useState(false);
 
   const today = new Date();
-  const todayKey = dayKey(today.getFullYear(), today.getMonth(), today.getDate());
+  const todayKey = dayKey(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
   const [selected, setSelected] = useState(todayKey);
 
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
   if (!session) return <Welcome />;
-  if (!onboarded) return <Onboarding />;
+  if (!onboarded) {
+    if (useAiOnboarding) return <AiOnboarding />;
+    return (
+      <div className="space-y-4 p-5">
+        <Onboarding />
+        <button
+          className="btn-primary w-full py-4 text-base"
+          onClick={() => setUseAiOnboarding(true)}
+        >
+          ✨ Use AI-Powered Onboarding Instead
+        </button>
+      </div>
+    );
+  }
 
   const active = getActiveSession();
   const start = (templateId: string | null) => {
@@ -62,8 +81,13 @@ export default function HomePage() {
       </header>
 
       {active && (
-        <Link href={`/session/${active.id}`} className="card block border-accent/60">
-          <p className="text-xs uppercase tracking-wide text-accent">Workout in progress</p>
+        <Link
+          href={`/session/${active.id}`}
+          className="card block border-accent/60"
+        >
+          <p className="text-xs uppercase tracking-wide text-accent">
+            Workout in progress
+          </p>
           <p className="mt-0.5 text-lg font-bold">{active.title}</p>
           <p className="text-sm text-muted">Tap to continue →</p>
         </Link>
@@ -85,7 +109,11 @@ export default function HomePage() {
 
         {daySessions.length > 0 ? (
           daySessions.map((s) => (
-            <Link key={s.id} href={`/session/${s.id}`} className="card flex items-center justify-between">
+            <Link
+              key={s.id}
+              href={`/session/${s.id}`}
+              className="card flex items-center justify-between"
+            >
               <span className="font-semibold">{s.title}</span>
               <span className="text-sm text-accent">
                 {s.status === "active" ? "Resume →" : "View / edit →"}
@@ -97,10 +125,13 @@ export default function HomePage() {
             {!isToday && (
               <p className="text-xs text-muted">
                 Logging a workout for{" "}
-                {new Date(selected + "T00:00:00").toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
+                {new Date(selected + "T00:00:00").toLocaleDateString(
+                  undefined,
+                  {
+                    month: "short",
+                    day: "numeric",
+                  },
+                )}
                 .
               </p>
             )}
@@ -109,7 +140,9 @@ export default function HomePage() {
               if (days.length === 0) return null;
               return (
                 <div key={p.id} className="card space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-muted">{p.name}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted">
+                    {p.name}
+                  </p>
                   {days.map((d) => (
                     <button
                       key={d.id}
@@ -117,7 +150,9 @@ export default function HomePage() {
                       className="flex w-full items-center justify-between rounded-xl bg-surface2 px-3 py-3 active:scale-[0.99]"
                     >
                       <span className="font-semibold">{d.name}</span>
-                      <span className="text-sm text-accent">{d.exercises.length} ex · Start →</span>
+                      <span className="text-sm text-accent">
+                        {d.exercises.length} ex · Start →
+                      </span>
                     </button>
                   ))}
                 </div>

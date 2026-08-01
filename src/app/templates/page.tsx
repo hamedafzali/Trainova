@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { AiPlanButton } from "@/components/AiPlanButton";
 import { AssignmentsInbox } from "@/components/AssignmentsInbox";
-import { isAiEnabled } from "@/lib/supabase/client";
 
 export default function PlansPage() {
   const hydrated = useHydrated();
@@ -41,7 +40,9 @@ export default function PlansPage() {
     <main className="space-y-5 p-4">
       <header className="pt-2">
         <h1 className="text-2xl font-bold tracking-tight">Plans</h1>
-        <p className="text-sm text-muted">Trainer programs and your own routines.</p>
+        <p className="text-sm text-muted">
+          Trainer programs and your own routines.
+        </p>
       </header>
 
       {/* Create */}
@@ -75,7 +76,7 @@ export default function PlansPage() {
         </button>
       </div>
 
-      {isAiEnabled() && <AiPlanButton />}
+      <AiPlanButton />
 
       <AssignmentsInbox />
 
@@ -86,7 +87,9 @@ export default function PlansPage() {
           {/* Programs (trainer plans) */}
           {programs.length > 0 && (
             <section className="space-y-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Programs</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+                Programs
+              </h2>
               {programs.map((p) => {
                 const days = daysForProgram(p.id);
                 return (
@@ -102,13 +105,15 @@ export default function PlansPage() {
                           )}
                         </p>
                         <p className="text-xs text-muted">
-                          {days.length} day{days.length === 1 ? "" : "s"} · tap to edit
+                          {days.length} day{days.length === 1 ? "" : "s"} · tap
+                          to edit
                         </p>
                       </Link>
                       <button
                         className="btn-danger"
                         onClick={() => {
-                          if (confirm(`Delete program “${p.name}”?`)) deleteProgram(p.id);
+                          if (confirm(`Delete program “${p.name}”?`))
+                            deleteProgram(p.id);
                         }}
                       >
                         Delete
@@ -137,7 +142,10 @@ export default function PlansPage() {
                       <button
                         className="btn-ghost w-full text-xs"
                         onClick={() => {
-                          const tid = addDayToProgram(p.id, `Day ${days.length + 1}`);
+                          const tid = addDayToProgram(
+                            p.id,
+                            `Day ${days.length + 1}`,
+                          );
                           router.push(`/templates/${tid}`);
                         }}
                       >
@@ -156,15 +164,25 @@ export default function PlansPage() {
               Single plans
             </h2>
             {standalone.length === 0 ? (
-              <div className="card text-center text-sm text-muted">No standalone plans.</div>
+              <div className="card text-center text-sm text-muted">
+                No standalone plans.
+              </div>
             ) : (
               standalone.map((t) => (
-                <div key={t.id} className="card flex items-center justify-between">
+                <div
+                  key={t.id}
+                  className="card flex items-center justify-between"
+                >
                   <Link href={`/templates/${t.id}`} className="flex-1">
                     <p className="font-semibold">{t.name}</p>
-                    <p className="text-xs text-muted">{t.exercises.length} exercises · tap to edit</p>
+                    <p className="text-xs text-muted">
+                      {t.exercises.length} exercises · tap to edit
+                    </p>
                   </Link>
-                  <button className="btn-primary px-3 py-1.5" onClick={() => start(t.id)}>
+                  <button
+                    className="btn-primary px-3 py-1.5"
+                    onClick={() => start(t.id)}
+                  >
                     Start
                   </button>
                   <button
