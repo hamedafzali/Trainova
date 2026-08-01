@@ -11,6 +11,7 @@ export function WorkoutAnalysis() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exercises, setExercises] = useState<any[]>([]);
 
   const profile = useStore((s) => s.profile);
   const sessions = useStore((s) => s.sessions);
@@ -158,6 +159,7 @@ export function WorkoutAnalysis() {
 
       const result = await response.json();
       setAnalysis(result.analysis);
+      setExercises(exercises); // Store exercises for chart display
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
     } finally {
@@ -304,34 +306,51 @@ export function WorkoutAnalysis() {
               </p>
             )}
           </div>
+          {/* Progress Chart for top exercise */}
+          {exercises.length > 0 && exercises[0].weights.length > 0 && (
+            <div className="rounded-xl bg-surface2 p-3">
+              <p className="text-xs text-muted mb-2">
+                {exercises[0].exerciseName} Progress
+              </p>
+              <LineChart
+                data={exercises[0].weights.map((w: number, i: number) => ({
+                  label: `Set ${i + 1}`,
+                  value: w,
+                }))}
+                unit={units}
+              />
+            </div>
+          )}
         </div>
 
         {/* Actionable Recommendations */}
         {analysis.actionableRecommendations.length > 0 && (
           <div className="space-y-2">
             <h3 className="font-semibold text-base">Recommendations</h3>
-            {analysis.actionableRecommendations.map((rec, idx) => (
-              <div key={idx} className="rounded-xl bg-accentDim/20 p-3">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      rec.priority === "high"
-                        ? "bg-danger text-onAccent"
-                        : rec.priority === "medium"
-                          ? "bg-amber text-onAccent"
-                          : "bg-green text-onAccent"
-                    }`}
-                  >
-                    {rec.priority}
-                  </span>
-                  <span className="text-xs text-muted">{rec.category}</span>
+            <div className="space-y-2">
+              {analysis.actionableRecommendations.map((rec, idx) => (
+                <div key={idx} className="rounded-xl bg-accentDim/20 p-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        rec.priority === "high"
+                          ? "bg-danger text-onAccent"
+                          : rec.priority === "medium"
+                            ? "bg-amber text-onAccent"
+                            : "bg-green text-onAccent"
+                      }`}
+                    >
+                      {rec.priority}
+                    </span>
+                    <span className="text-xs text-muted">{rec.category}</span>
+                  </div>
+                  <p className="text-sm mt-1">{rec.recommendation}</p>
+                  <p className="text-xs text-muted mt-1">
+                    Expected: {rec.expectedImpact}
+                  </p>
                 </div>
-                <p className="text-sm mt-1">{rec.recommendation}</p>
-                <p className="text-xs text-muted mt-1">
-                  Expected: {rec.expectedImpact}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
