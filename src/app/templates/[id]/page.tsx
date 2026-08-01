@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
+import { Stepper } from "@/components/Stepper";
+import { plateIncrement } from "@/domain/progression";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function TemplateEditPage() {
@@ -49,41 +51,54 @@ export default function TemplateEditPage() {
   const num = (v: string) => (v === "" ? null : Number(v));
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="space-y-6 p-4 pb-20">
       <header className="flex items-center justify-between pt-2">
         <div>
           <Link href="/templates" className="text-sm text-muted">
             ← Plans
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight">{template.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{template.name}</h1>
         </div>
-        <button className="btn-primary" onClick={start}>
+        <button
+          className="btn-primary py-3 px-6 text-base font-semibold"
+          onClick={start}
+        >
           Start
         </button>
       </header>
 
       {template.exercises.length === 0 ? (
-        <div className="card text-center text-muted">No exercises yet.</div>
+        <div className="card text-center py-8 text-base text-muted">
+          No exercises yet.
+        </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {template.exercises.map((te) => {
             const ex = exerciseById(te.exerciseId);
             const device = deviceById(te.deviceId ?? ex?.defaultDeviceId);
+            const step = plateIncrement(units);
             return (
-              <li key={te.id} className="card space-y-2">
-                <div className="flex items-center gap-2.5">
-                  <DeviceAvatar device={device} className="h-10 w-10 rounded-lg text-sm" />
+              <li key={te.id} className="card space-y-3">
+                <div className="flex items-center gap-3">
+                  <DeviceAvatar
+                    device={device}
+                    className="h-10 w-10 rounded-lg text-sm"
+                  />
                   <div className="flex-1">
-                    <p className="font-semibold leading-tight">{ex?.name ?? "Exercise"}</p>
+                    <p className="font-semibold text-base leading-tight">
+                      {ex?.name ?? "Exercise"}
+                    </p>
                     {device && (
-                      <p className="text-[11px] text-muted">
+                      <p className="text-sm text-muted">
                         {device.name}
-                        {device.machineNumber ? ` · No.${device.machineNumber}` : ""}
+                        {device.machineNumber
+                          ? ` · No.${device.machineNumber}`
+                          : ""}
                       </p>
                     )}
                   </div>
                   <button
-                    className="btn-danger"
+                    className="btn-danger px-3 py-2 text-sm"
                     onClick={() => removeTemplateExercise(template.id, te.id)}
                   >
                     ✕
@@ -91,38 +106,49 @@ export default function TemplateEditPage() {
                 </div>
 
                 {/* Per-round target weight (each round can differ — a ramp) */}
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {te.sets.map((st, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="w-16 text-xs text-muted">Round {i + 1}</span>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        className="num flex-1"
-                        placeholder={units}
-                        value={st.targetWeight ?? ""}
-                        onChange={(e) =>
+                    <div key={i} className="space-y-1">
+                      <p className="text-sm text-muted">Round {i + 1}</p>
+                      <Stepper
+                        value={st.targetWeight ?? 0}
+                        step={step}
+                        unit={units}
+                        onChange={(v) =>
                           updateTemplateSet(template.id, te.id, i, {
-                            targetWeight: num(e.target.value),
+                            targetWeight: v || null,
                           })
                         }
                       />
-                      <span className="w-8 text-xs text-muted">{units}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex items-center justify-center gap-3 text-sm">
+                <div className="flex items-center justify-center gap-3 text-base">
                   <button
-                    className="btn-ghost px-3 py-1"
-                    onClick={() => setTemplateSetCount(template.id, te.id, te.sets.length - 1)}
+                    className="btn-ghost px-4 py-2 text-sm font-semibold"
+                    onClick={() =>
+                      setTemplateSetCount(
+                        template.id,
+                        te.id,
+                        te.sets.length - 1,
+                      )
+                    }
                   >
                     − round
                   </button>
-                  <span className="text-muted">{te.sets.length} rounds</span>
+                  <span className="text-muted font-medium">
+                    {te.sets.length} rounds
+                  </span>
                   <button
-                    className="btn-ghost px-3 py-1"
-                    onClick={() => setTemplateSetCount(template.id, te.id, te.sets.length + 1)}
+                    className="btn-ghost px-4 py-2 text-sm font-semibold"
+                    onClick={() =>
+                      setTemplateSetCount(
+                        template.id,
+                        te.id,
+                        te.sets.length + 1,
+                      )
+                    }
                   >
                     + round
                   </button>
@@ -133,7 +159,10 @@ export default function TemplateEditPage() {
         </ul>
       )}
 
-      <button className="btn-ghost w-full" onClick={() => setPicking(true)}>
+      <button
+        className="btn-ghost w-full py-4 text-base font-semibold"
+        onClick={() => setPicking(true)}
+      >
         + Add exercise
       </button>
 
