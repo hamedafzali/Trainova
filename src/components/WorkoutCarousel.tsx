@@ -50,32 +50,38 @@ export function WorkoutCarousel({
   };
 
   const currentSets = setsByExercise.get(exerciseIds[idx]) ?? [];
-  const currentDone = currentSets.length > 0 && currentSets.every((s) => s.completed);
+  const currentDone =
+    currentSets.length > 0 && currentSets.every((s) => s.completed);
   const hasNext = idx < exerciseIds.length - 1;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       {/* pager */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => go(idx - 1)}
           disabled={idx === 0}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface2 text-lg text-ink disabled:opacity-30"
+          className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface2 text-xl text-ink disabled:opacity-30 active:scale-95"
           aria-label="previous exercise"
         >
           ‹
         </button>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {exerciseIds.map((id, i) => {
-            const done = (setsByExercise.get(id) ?? []).every((s) => s.completed) &&
+            const done =
+              (setsByExercise.get(id) ?? []).every((s) => s.completed) &&
               (setsByExercise.get(id) ?? []).length > 0;
             return (
               <button
                 key={id}
                 onClick={() => go(i)}
                 aria-label={`exercise ${i + 1}`}
-                className={`h-1.5 rounded-full transition-all ${
-                  i === idx ? "w-6 bg-accent" : done ? "w-1.5 bg-green" : "w-1.5 bg-border"
+                className={`h-2 rounded-full transition-all ${
+                  i === idx
+                    ? "w-8 bg-accent"
+                    : done
+                      ? "w-2 bg-green"
+                      : "w-2 bg-border"
                 }`}
               />
             );
@@ -84,15 +90,16 @@ export function WorkoutCarousel({
         <button
           onClick={() => go(idx + 1)}
           disabled={!hasNext}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface2 text-lg text-ink disabled:opacity-30"
+          className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface2 text-xl text-ink disabled:opacity-30 active:scale-95"
           aria-label="next exercise"
         >
           ›
         </button>
       </div>
 
-      <p className="text-center text-xs text-muted">
-        {exerciseById(exerciseIds[idx])?.name} · {idx + 1} of {exerciseIds.length}
+      <p className="text-center text-sm text-muted font-medium">
+        {exerciseById(exerciseIds[idx])?.name} · {idx + 1} of{" "}
+        {exerciseIds.length}
       </p>
 
       {/* slides */}
@@ -117,7 +124,10 @@ export function WorkoutCarousel({
       </div>
 
       {!readOnly && currentDone && hasNext && (
-        <button className="btn-primary w-full" onClick={() => go(idx + 1)}>
+        <button
+          className="btn-primary w-full py-4 text-base font-semibold"
+          onClick={() => go(idx + 1)}
+        >
           Next exercise →
         </button>
       )}
