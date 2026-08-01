@@ -25,7 +25,7 @@ export default function HistoryPage() {
           const mine = sets.filter((x) => x.sessionId === s.id && x.completed);
           const volume = mine.reduce(
             (acc, x) => acc + (x.actualWeight ?? 0) * (x.actualReps ?? 0),
-            0
+            0,
           );
           const byExercise = new Map<string, WorkoutSet[]>();
           for (const x of mine) {
@@ -34,22 +34,29 @@ export default function HistoryPage() {
             byExercise.set(x.exerciseId, list);
           }
           const mins = s.completedAt
-            ? Math.max(1, Math.round((+new Date(s.completedAt) - +new Date(s.startedAt)) / 60000))
+            ? Math.max(
+                1,
+                Math.round(
+                  (+new Date(s.completedAt) - +new Date(s.startedAt)) / 60000,
+                ),
+              )
             : null;
           return { session: s, count: mine.length, volume, byExercise, mins };
         }),
-    [sessions, sets, showArchived]
+    [sessions, sets, showArchived],
   );
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="space-y-6 p-4 pb-20">
       <header className="flex items-start justify-between pt-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">History</h1>
-          <p className="text-sm text-muted">Tap a workout to see what you lifted.</p>
+          <h1 className="text-3xl font-bold tracking-tight">History</h1>
+          <p className="text-base text-muted mt-1">
+            Tap a workout to see what you lifted.
+          </p>
         </div>
         <button
-          className="chip mt-1"
+          className="chip mt-1 py-3 px-4 text-base font-semibold"
           onClick={() => setShowArchived((v) => !v)}
         >
           {showArchived ? "Hide archived" : "Show archived"}
@@ -57,85 +64,104 @@ export default function HistoryPage() {
       </header>
 
       {!hydrated ? (
-        <div className="card animate-pulse text-muted">Loading…</div>
+        <div className="card animate-pulse text-muted py-8">Loading…</div>
       ) : rows.length === 0 ? (
-        <div className="card text-center text-muted">No workouts logged yet.</div>
+        <div className="card text-center py-8 text-base text-muted">
+          No workouts logged yet.
+        </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {rows.map(({ session, count, volume, byExercise, mins }) => {
             const expanded = open === session.id;
             return (
               <li key={session.id} className="card">
                 <button
-                  className="flex w-full items-center justify-between text-left"
+                  className="flex w-full items-center justify-between text-left p-4"
                   onClick={() => setOpen(expanded ? null : session.id)}
                 >
-                  <div>
-                    <p className="font-semibold">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-base">
                       {session.title}
                       {session.status === "active" && (
-                        <span className="ml-2 text-xs text-accent">● in progress</span>
+                        <span className="ml-2 text-sm text-accent">
+                          ● in progress
+                        </span>
                       )}
                       {session.status === "archived" && (
-                        <span className="ml-2 text-xs text-muted">archived</span>
+                        <span className="ml-2 text-sm text-muted">
+                          archived
+                        </span>
                       )}
                     </p>
-                    <p className="text-xs text-muted">
-                      {new Date(session.startedAt).toLocaleDateString(undefined, {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                      {mins ? ` · ${mins} min` : ""} · {byExercise.size} exercises
+                    <p className="text-sm text-muted mt-1">
+                      {new Date(session.startedAt).toLocaleDateString(
+                        undefined,
+                        {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
+                      {mins ? ` · ${mins} min` : ""} · {byExercise.size}{" "}
+                      exercises
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold tabular-nums">
+                  <div className="text-right ml-3">
+                    <p className="text-base font-semibold tabular-nums">
                       {Math.round(volume).toLocaleString()}
-                      <span className="text-xs text-muted"> {units}·vol</span>
+                      <span className="text-sm text-muted"> {units}·vol</span>
                     </p>
-                    <p className="text-xs text-muted">
+                    <p className="text-sm text-muted mt-1">
                       {expanded ? "▲" : "▼"} {count} sets
                     </p>
                   </div>
                 </button>
 
                 {expanded && (
-                  <ul className="mt-3 space-y-2 border-t border-border pt-3">
+                  <ul className="mt-3 space-y-3 border-t border-border pt-3 px-4 pb-4">
                     {[...byExercise.entries()].map(([exId, exSets]) => {
                       const ex = exerciseById(exId);
                       const device = deviceForExercise(exId);
                       return (
-                        <li key={exId} className="flex items-start gap-2.5">
-                          <DeviceAvatar device={device} className="mt-0.5 h-8 w-8 rounded-md text-xs" />
+                        <li key={exId} className="flex items-start gap-3">
+                          <DeviceAvatar
+                            device={device}
+                            className="mt-0.5 h-10 w-10 rounded-md text-sm"
+                          />
                           <div className="flex-1">
-                            <p className="text-sm font-medium leading-tight">{ex?.name ?? "Exercise"}</p>
+                            <p className="text-base font-medium leading-tight">
+                              {ex?.name ?? "Exercise"}
+                            </p>
                             {exSets[0]?.durationSec != null ? (
-                              <p className="text-xs text-muted">
-                                {exSets.map((s) => `${s.durationSec ?? "–"}s`).join(" · ")} ·{" "}
-                                {exSets.length} {exSets.length === 1 ? "hold" : "holds"}
+                              <p className="text-sm text-muted mt-1">
+                                {exSets
+                                  .map((s) => `${s.durationSec ?? "–"}s`)
+                                  .join(" · ")}{" "}
+                                · {exSets.length}{" "}
+                                {exSets.length === 1 ? "hold" : "holds"}
                               </p>
                             ) : exSets[0]?.durationMin != null ? (
-                              <p className="text-xs text-muted">
+                              <p className="text-sm text-muted mt-1">
                                 {exSets
                                   .map(
                                     (s) =>
                                       `${s.durationMin ?? "–"} min${
                                         s.incline ? ` · ${s.incline}%` : ""
-                                      }${s.distance ? ` · ${s.distance}` : ""}`
+                                      }${s.distance ? ` · ${s.distance}` : ""}`,
                                   )
                                   .join("  ·  ")}
                               </p>
                             ) : (
-                              <p className="text-xs text-muted">
+                              <p className="text-sm text-muted mt-1">
                                 {exSets
                                   .map((s) =>
                                     s.actualReps
                                       ? `${s.actualWeight ?? "–"}×${s.actualReps}`
-                                      : `${s.actualWeight ?? "–"}`
+                                      : `${s.actualWeight ?? "–"}`,
                                   )
                                   .join(" · ")}{" "}
-                                {units} · {exSets.length} {exSets.length === 1 ? "round" : "rounds"}
+                                {units} · {exSets.length}{" "}
+                                {exSets.length === 1 ? "round" : "rounds"}
                               </p>
                             )}
                           </div>
@@ -144,7 +170,10 @@ export default function HistoryPage() {
                     })}
                     {session.status === "active" && (
                       <li>
-                        <Link href={`/session/${session.id}`} className="text-sm text-accent">
+                        <Link
+                          href={`/session/${session.id}`}
+                          className="text-base text-accent font-semibold"
+                        >
                           Resume workout →
                         </Link>
                       </li>
