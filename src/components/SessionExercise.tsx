@@ -50,7 +50,7 @@ export function SessionExercise({
   const last = useMemo(
     () => lastPerformance(exerciseId, sessionId),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [exerciseId, sessionId]
+    [exerciseId, sessionId],
   );
 
   const done = sets.filter((s) => s.completed).length;
@@ -61,10 +61,16 @@ export function SessionExercise({
   // The weight you used on your last completed round this session.
   const lastRoundWeight = (() => {
     const doneSets = sets.filter((x) => x.completed && x.actualWeight != null);
-    return doneSets.length ? (doneSets[doneSets.length - 1].actualWeight as number) : null;
+    return doneSets.length
+      ? (doneSets[doneSets.length - 1].actualWeight as number)
+      : null;
   })();
   const startWeight = (s: WorkoutSet) =>
-    s.actualWeight ?? lastRoundWeight ?? s.targetWeight ?? prevWeight(s.setIndex) ?? 0;
+    s.actualWeight ??
+    lastRoundWeight ??
+    s.targetWeight ??
+    prevWeight(s.setIndex) ??
+    0;
   const startReps = (s: WorkoutSet) => s.actualReps ?? DEFAULT_REPS;
 
   const complete = (s: WorkoutSet) => {
@@ -72,7 +78,7 @@ export function SessionExercise({
     // reps default to 10; set the stepper to 0 to record "not counted".
     const r = s.actualReps ?? DEFAULT_REPS;
     const reps = r > 0 ? r : null;
-    updateSet(s.id, { actualWeight: w, actualReps: reps });
+    updateSet(s.id, { actualWeight: w, actualReps: reps, rpe: s.rpe ?? 8 });
     const { newPrs } = completeSet(s.id);
     startRest(defaultRest(isCompound));
     if (newPrs.length) {
@@ -89,10 +95,12 @@ export function SessionExercise({
     const d = sets.filter((x) => x.completed && x.durationMin != null);
     return d.length ? d[d.length - 1] : null;
   })();
-  const startDur = (s: WorkoutSet) => s.durationMin ?? lastCardio?.durationMin ?? 20;
+  const startDur = (s: WorkoutSet) =>
+    s.durationMin ?? lastCardio?.durationMin ?? 20;
   const startSpeed = (s: WorkoutSet) => s.speed ?? lastCardio?.speed ?? 6;
   const startIncline = (s: WorkoutSet) => s.incline ?? lastCardio?.incline ?? 0;
-  const startDistance = (s: WorkoutSet) => s.distance ?? lastCardio?.distance ?? 0;
+  const startDistance = (s: WorkoutSet) =>
+    s.distance ?? lastCardio?.distance ?? 0;
 
   const completeCardio = (s: WorkoutSet) => {
     const dist = startDistance(s);
@@ -112,7 +120,8 @@ export function SessionExercise({
     const d = sets.filter((x) => x.completed && x.durationSec != null);
     return d.length ? d[d.length - 1] : null;
   })();
-  const startHold = (s: WorkoutSet) => s.durationSec ?? lastHold?.durationSec ?? 30;
+  const startHold = (s: WorkoutSet) =>
+    s.durationSec ?? lastHold?.durationSec ?? 30;
   const completeTime = (s: WorkoutSet) => {
     updateSet(s.id, { durationSec: startHold(s) });
     completeSet(s.id);
@@ -124,9 +133,14 @@ export function SessionExercise({
     <section className="card space-y-3">
       {/* header */}
       <div className="flex items-center gap-2.5">
-        <DeviceAvatar device={device} className="h-10 w-10 rounded-lg text-sm" />
+        <DeviceAvatar
+          device={device}
+          className="h-10 w-10 rounded-lg text-sm"
+        />
         <div className="flex-1">
-          <h3 className="font-semibold leading-tight text-ink">{ex?.name ?? "Exercise"}</h3>
+          <h3 className="font-semibold leading-tight text-ink">
+            {ex?.name ?? "Exercise"}
+          </h3>
           {device && (
             <p className="text-[11px] text-muted">
               {device.name}
@@ -139,7 +153,11 @@ export function SessionExercise({
             <span
               key={s.id}
               className={`h-2 w-2 rounded-full ${
-                s.completed ? "bg-green" : s === activeSet ? "bg-accent" : "border border-border"
+                s.completed
+                  ? "bg-green"
+                  : s === activeSet
+                    ? "bg-accent"
+                    : "border border-border"
               }`}
             />
           ))}
@@ -161,12 +179,21 @@ export function SessionExercise({
                       {lastHold?.durationSec ? `${lastHold.durationSec}s` : "—"}
                     </b>
                   </span>
-                  <button className="text-danger" onClick={() => removeSet(s.id)}>
+                  <button
+                    className="text-danger"
+                    onClick={() => removeSet(s.id)}
+                  >
                     ✕ remove
                   </button>
                 </div>
-                <CardioField label="Seconds" value={startHold(s)} step={5} min={5} unit="sec"
-                  onChange={(v) => updateSet(s.id, { durationSec: v })} />
+                <CardioField
+                  label="Seconds"
+                  value={startHold(s)}
+                  step={5}
+                  min={5}
+                  unit="sec"
+                  onChange={(v) => updateSet(s.id, { durationSec: v })}
+                />
                 <CompleteButton onComplete={() => completeTime(s)} />
               </div>
             );
@@ -179,21 +206,50 @@ export function SessionExercise({
                   <span>
                     Cardio · last{" "}
                     <b className="text-inkSoft">
-                      {lastCardio?.durationMin ? `${lastCardio.durationMin} min` : "—"}
+                      {lastCardio?.durationMin
+                        ? `${lastCardio.durationMin} min`
+                        : "—"}
                     </b>
                   </span>
-                  <button className="text-danger" onClick={() => removeSet(s.id)}>
+                  <button
+                    className="text-danger"
+                    onClick={() => removeSet(s.id)}
+                  >
                     ✕ remove
                   </button>
                 </div>
-                <CardioField label="Minutes" value={startDur(s)} step={1} min={1} unit="min"
-                  onChange={(v) => updateSet(s.id, { durationMin: v })} />
-                <CardioField label="Speed" value={startSpeed(s)} step={0.5} min={0} unit="spd"
-                  onChange={(v) => updateSet(s.id, { speed: v })} />
-                <CardioField label="Incline" value={startIncline(s)} step={0.5} min={0} unit="%"
-                  onChange={(v) => updateSet(s.id, { incline: v })} />
-                <CardioField label="Distance (optional)" value={startDistance(s)} step={0.1} min={0} unit="dist"
-                  onChange={(v) => updateSet(s.id, { distance: v })} />
+                <CardioField
+                  label="Minutes"
+                  value={startDur(s)}
+                  step={1}
+                  min={1}
+                  unit="min"
+                  onChange={(v) => updateSet(s.id, { durationMin: v })}
+                />
+                <CardioField
+                  label="Speed"
+                  value={startSpeed(s)}
+                  step={0.5}
+                  min={0}
+                  unit="spd"
+                  onChange={(v) => updateSet(s.id, { speed: v })}
+                />
+                <CardioField
+                  label="Incline"
+                  value={startIncline(s)}
+                  step={0.5}
+                  min={0}
+                  unit="%"
+                  onChange={(v) => updateSet(s.id, { incline: v })}
+                />
+                <CardioField
+                  label="Distance (optional)"
+                  value={startDistance(s)}
+                  step={0.1}
+                  min={0}
+                  unit="dist"
+                  onChange={(v) => updateSet(s.id, { distance: v })}
+                />
                 <CompleteButton onComplete={() => completeCardio(s)} />
               </div>
             );
@@ -205,9 +261,14 @@ export function SessionExercise({
                 <div className="flex items-center justify-between text-xs text-muted">
                   <span>
                     Round {s.setIndex + 1} · last{" "}
-                    <b className="text-inkSoft">{prev != null ? `${prev} ${units}` : "—"}</b>
+                    <b className="text-inkSoft">
+                      {prev != null ? `${prev} ${units}` : "—"}
+                    </b>
                   </span>
-                  <button className="text-danger" onClick={() => removeSet(s.id)}>
+                  <button
+                    className="text-danger"
+                    onClick={() => removeSet(s.id)}
+                  >
                     ✕ remove
                   </button>
                 </div>
@@ -218,7 +279,9 @@ export function SessionExercise({
                   onChange={(v) => updateSet(s.id, { actualWeight: v })}
                 />
                 <div className="space-y-1">
-                  <p className="text-[11px] text-muted">Reps (defaults to 10 — set 0 to skip)</p>
+                  <p className="text-[11px] text-muted">
+                    Reps (defaults to 10 — set 0 to skip)
+                  </p>
                   <Stepper
                     value={startReps(s)}
                     step={1}
@@ -226,6 +289,26 @@ export function SessionExercise({
                     unit="reps"
                     onChange={(v) => updateSet(s.id, { actualReps: v })}
                   />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] text-muted">
+                    RPE (6=easy, 7=moderate, 8=standard, 9=hard, 10=max)
+                  </p>
+                  <div className="flex gap-1">
+                    {[6, 7, 8, 9, 10].map((rpe) => (
+                      <button
+                        key={rpe}
+                        onClick={() => updateSet(s.id, { rpe })}
+                        className={`flex-1 rounded-lg py-2 text-sm font-semibold ${
+                          s.rpe === rpe
+                            ? "bg-accent text-onAccent"
+                            : "bg-surface2 text-inkSoft"
+                        }`}
+                      >
+                        {rpe}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <CompleteButton onComplete={() => complete(s)} />
               </div>
@@ -244,7 +327,10 @@ export function SessionExercise({
                   setEditingId(null);
                 }}
                 onSave={(w, r) => {
-                  editSet(s.id, { actualWeight: w, actualReps: r > 0 ? r : null });
+                  editSet(s.id, {
+                    actualWeight: w,
+                    actualReps: r > 0 ? r : null,
+                  });
                   setEditingId(null);
                 }}
               />
@@ -256,11 +342,17 @@ export function SessionExercise({
               key={s.id}
               onClick={() => editable && s.completed && setEditingId(s.id)}
               className={`flex items-center gap-2 rounded-xl px-2 py-2.5 text-sm ${
-                s.completed ? "bg-green/15 animate-completeWipe" : "bg-surface2/50"
+                s.completed
+                  ? "bg-green/15 animate-completeWipe"
+                  : "bg-surface2/50"
               } ${editable && s.completed ? "cursor-pointer" : ""}`}
             >
               <span className="w-12 shrink-0 text-xs text-muted">
-                {isCardio ? "Cardio" : isTime ? "Hold" : `Round ${s.setIndex + 1}`}
+                {isCardio
+                  ? "Cardio"
+                  : isTime
+                    ? "Hold"
+                    : `Round ${s.setIndex + 1}`}
               </span>
               <span className="flex-1 text-center text-base font-bold tabular-nums text-ink">
                 {isTime ? (
@@ -274,14 +366,20 @@ export function SessionExercise({
                   </span>
                 ) : (
                   <>
-                    {(s.completed ? s.actualWeight : s.targetWeight) ?? "–"} {units}
+                    {(s.completed ? s.actualWeight : s.targetWeight) ?? "–"}{" "}
+                    {units}
                     {s.completed && s.actualReps ? (
-                      <span className="text-sm font-normal text-muted"> × {s.actualReps}</span>
+                      <span className="text-sm font-normal text-muted">
+                        {" "}
+                        × {s.actualReps}
+                      </span>
                     ) : null}
                   </>
                 )}
                 {s.editedAt && (
-                  <span className="ml-1 align-middle text-[10px] uppercase text-amber">edited</span>
+                  <span className="ml-1 align-middle text-[10px] uppercase text-amber">
+                    edited
+                  </span>
                 )}
               </span>
               {!readOnly && (
@@ -298,7 +396,9 @@ export function SessionExercise({
               ) : s.completed ? (
                 <button
                   aria-label="undo round"
-                  onClick={() => !readOnly && updateSet(s.id, { completed: false })}
+                  onClick={() =>
+                    !readOnly && updateSet(s.id, { completed: false })
+                  }
                   className="flex h-7 w-7 items-center justify-center rounded-lg bg-green text-onAccent"
                 >
                   ✓
@@ -313,13 +413,20 @@ export function SessionExercise({
 
       {!readOnly && (
         <div className="flex items-center justify-between">
-          <button className="text-sm font-semibold text-accent" onClick={() => addSet(sessionId, exerciseId)}>
+          <button
+            className="text-sm font-semibold text-accent"
+            onClick={() => addSet(sessionId, exerciseId)}
+          >
             + Add round
           </button>
           <span className="text-xs text-muted">{done} done</span>
         </div>
       )}
-      {editable && <p className="text-center text-[11px] text-muted">Tap a round to correct it</p>}
+      {editable && (
+        <p className="text-center text-[11px] text-muted">
+          Tap a round to correct it
+        </p>
+      )}
     </section>
   );
 }
@@ -343,7 +450,13 @@ function CardioField({
   return (
     <div className="space-y-1">
       <p className="text-[11px] text-muted">{label}</p>
-      <Stepper value={value} step={step} min={min} unit={unit} onChange={onChange} />
+      <Stepper
+        value={value}
+        step={step}
+        min={min}
+        unit={unit}
+        onChange={onChange}
+      />
     </div>
   );
 }
