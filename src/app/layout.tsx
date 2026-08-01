@@ -19,10 +19,14 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body className="mx-auto min-h-dvh max-w-md pb-24">
+      <body className="mx-auto min-h-dvh max-w-7xl pb-24 px-4 md:px-6 lg:px-8">
         <ServiceWorker />
         <SyncManager />
         {children}

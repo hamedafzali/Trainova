@@ -21,6 +21,7 @@ export default function PlansPage() {
   const startSession = useStore((s) => s.startSession);
   const getActiveSession = useStore((s) => s.getActiveSession);
   const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const start = (templateId: string) => {
     const { id, blocked } = startSession(templateId);
@@ -37,46 +38,60 @@ export default function PlansPage() {
   const standalone = templates.filter((t) => !inProgram.has(t.id));
 
   return (
-    <main className="space-y-6 p-4 pb-20">
-      <header className="pt-2">
-        <h1 className="text-3xl font-bold tracking-tight">Plans</h1>
-        <p className="mt-1 text-sm text-muted">
-          Trainer programs and your own routines.
-        </p>
+    <main className="space-y-6 p-4 md:p-6 lg:p-8 pb-24 md:pb-28">
+      <header className="flex items-center justify-between pt-2">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
+            Plans
+          </h1>
+          <p className="text-base text-muted mt-1 md:text-lg">
+            Trainer programs and your routines.
+          </p>
+        </div>
+        <button
+          className="btn-primary py-3 px-6 text-base font-semibold md:text-sm"
+          onClick={() => setCreating(true)}
+        >
+          + New plan
+        </button>
       </header>
 
       {/* Create */}
-      <div className="space-y-3">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="New plan name…"
-          className="input w-full text-base"
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            className="btn-primary py-3 text-base font-semibold"
-            onClick={() => {
-              if (!name.trim()) return;
-              createTemplate(name);
-              setName("");
-            }}
-          >
-            + Plan
-          </button>
-          <button
-            className="btn-ghost py-3 text-base font-semibold"
-            onClick={() => {
-              if (!name.trim()) return;
-              const id = createProgram(name, "trainer");
-              setName("");
-              router.push(`/programs/${id}`);
-            }}
-          >
-            + Program
-          </button>
+      {creating && (
+        <div className="space-y-3">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="New plan name…"
+            className="input w-full text-base"
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              className="btn-primary py-3 text-base font-semibold"
+              onClick={() => {
+                if (!name.trim()) return;
+                createTemplate(name);
+                setName("");
+                setCreating(false);
+              }}
+            >
+              + Plan
+            </button>
+            <button
+              className="btn-ghost py-3 text-base font-semibold"
+              onClick={() => {
+                if (!name.trim()) return;
+                const id = createProgram(name, "trainer");
+                setName("");
+                router.push(`/programs/${id}`);
+                setCreating(false);
+              }}
+            >
+              + Program
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <AiPlanButton />
 

@@ -69,16 +69,19 @@ export default function HomePage() {
   const standalone = templates.filter((t) => !inProgram.has(t.id));
 
   return (
-    <main className="space-y-6 p-4 pb-20">
-      <header className="flex items-center justify-between pt-2">
-        <h1 className="text-3xl font-bold tracking-tight">Trainova</h1>
-        <div className="flex items-center gap-2">
-          <OnlineBadge />
-          <Link href="/profile" className="text-2xl" aria-label="profile">
-            ⚙️
-          </Link>
+    <main className="space-y-6 p-4 md:p-6 lg:p-8 pb-24 md:pb-28">
+      <header className="flex items-start justify-between pt-2">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
+            Today
+          </h1>
+          <p className="text-base text-muted mt-1 md:text-lg">
+            Tap a workout to see what you lifted.
+          </p>
         </div>
       </header>
+
+      <MonthCalendar selected={selected} onSelect={setSelected} />
 
       {active && (
         <Link

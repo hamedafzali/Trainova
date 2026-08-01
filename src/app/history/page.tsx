@@ -48,16 +48,18 @@ export default function HistoryPage() {
   );
 
   return (
-    <main className="space-y-6 p-4 pb-20">
+    <main className="space-y-6 p-4 md:p-6 lg:p-8 pb-24 md:pb-28">
       <header className="flex items-start justify-between pt-2">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">History</h1>
-          <p className="text-base text-muted mt-1">
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
+            History
+          </h1>
+          <p className="text-base text-muted mt-1 md:text-lg">
             Tap a workout to see what you lifted.
           </p>
         </div>
         <button
-          className="chip mt-1 py-3 px-4 text-base font-semibold"
+          className="chip mt-1 py-3 px-4 text-base font-semibold md:text-sm"
           onClick={() => setShowArchived((v) => !v)}
         >
           {showArchived ? "Hide archived" : "Show archived"}
