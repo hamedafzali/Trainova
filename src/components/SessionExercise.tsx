@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Stepper } from "@/components/Stepper";
 import { CompleteButton } from "@/components/CompleteButton";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
@@ -42,6 +42,10 @@ export function SessionExercise({
   const lastPerformance = useStore((s) => s.lastPerformance);
   const startRest = useRestTimer((s) => s.start);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [swipingSetId, setSwipingSetId] = useState<string | null>(null);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
 
   const ex = exerciseById(exerciseId);
   const device = deviceById(sets[0]?.deviceId ?? ex?.defaultDeviceId);
@@ -87,6 +91,41 @@ export function SessionExercise({
     } else {
       haptic("tick");
     }
+  };
+
+  // Touch handlers for swipe-to-complete
+  const handleTouchStart = (e: React.TouchEvent, setId: string) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    setSwipingSetId(setId);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!swipingSetId) return;
+
+    const touchX = e.touches[0].clientX;
+    const deltaX = touchX - touchStartX.current;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+
+    // Only allow horizontal swipes (prevent vertical scrolling interference)
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      e.preventDefault();
+      setSwipeOffset(Math.max(-100, Math.min(100, deltaX)));
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, s: WorkoutSet) => {
+    if (!swipingSetId) return;
+
+    // Swipe right to complete (positive offset)
+    if (swipeOffset > 50) {
+      complete(s);
+      haptic("tick");
+    }
+
+    // Reset swipe state
+    setSwipeOffset(0);
+    setSwipingSetId(null);
   };
 
   // ── Cardio (treadmill etc.): minutes / speed / incline / distance ──
@@ -257,7 +296,13 @@ export function SessionExercise({
 
           if (s === activeSet) {
             return (
-              <div key={s.id} className="space-y-2 rounded-xl bg-bg/60 p-2.5">
+              <div
+                key={s.id}
+                className="space-y-2 rounded-xl bg-bg/60 p-2.5"
+                onTouchStart={(e) => handleTouchStart(e, s.id)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={(e) => handleTouchEnd(e, s)}
+              >
                 <div className="flex items-center justify-between text-xs text-muted">
                   <span>
                     Round {s.setIndex + 1} · last{" "}
