@@ -69,12 +69,12 @@ export default function HomePage() {
   const standalone = templates.filter((t) => !inProgram.has(t.id));
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="space-y-6 p-4 pb-20">
       <header className="flex items-center justify-between pt-2">
-        <h1 className="text-2xl font-bold tracking-tight">Trainova</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Trainova</h1>
         <div className="flex items-center gap-2">
           <OnlineBadge />
-          <Link href="/profile" className="text-xl" aria-label="profile">
+          <Link href="/profile" className="text-2xl" aria-label="profile">
             ⚙️
           </Link>
         </div>
@@ -83,20 +83,20 @@ export default function HomePage() {
       {active && (
         <Link
           href={`/session/${active.id}`}
-          className="card block border-accent/60"
+          className="card block border-accent/60 p-4"
         >
-          <p className="text-xs uppercase tracking-wide text-accent">
+          <p className="text-xs uppercase tracking-wide text-accent font-semibold">
             Workout in progress
           </p>
-          <p className="mt-0.5 text-lg font-bold">{active.title}</p>
-          <p className="text-sm text-muted">Tap to continue →</p>
+          <p className="mt-1 text-xl font-bold">{active.title}</p>
+          <p className="text-base text-muted mt-1">Tap to continue →</p>
         </Link>
       )}
 
       <MonthCalendar selected={selected} onSelect={setSelected} />
 
       {/* Selected-day panel */}
-      <section className="space-y-2">
+      <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
           {isToday
             ? "Today"
@@ -112,10 +112,10 @@ export default function HomePage() {
             <Link
               key={s.id}
               href={`/session/${s.id}`}
-              className="card flex items-center justify-between"
+              className="card flex items-center justify-between p-4"
             >
-              <span className="font-semibold">{s.title}</span>
-              <span className="text-sm text-accent">
+              <span className="font-semibold text-base">{s.title}</span>
+              <span className="text-base text-accent font-semibold">
                 {s.status === "active" ? "Resume →" : "View / edit →"}
               </span>
             </Link>
@@ -139,18 +139,18 @@ export default function HomePage() {
               const days = daysForProgram(p.id);
               if (days.length === 0) return null;
               return (
-                <div key={p.id} className="card space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-muted">
+                <div key={p.id} className="card space-y-3">
+                  <p className="text-sm uppercase tracking-wide text-muted font-semibold">
                     {p.name}
                   </p>
                   {days.map((d) => (
                     <button
                       key={d.id}
                       onClick={() => start(d.id)}
-                      className="flex w-full items-center justify-between rounded-xl bg-surface2 px-3 py-3 active:scale-[0.99]"
+                      className="flex w-full items-center justify-between rounded-xl bg-surface2 px-4 py-4 active:scale-[0.99]"
                     >
-                      <span className="font-semibold">{d.name}</span>
-                      <span className="text-sm text-accent">
+                      <span className="font-semibold text-base">{d.name}</span>
+                      <span className="text-base text-accent font-semibold">
                         {d.exercises.length} ex · Start →
                       </span>
                     </button>
@@ -162,26 +162,28 @@ export default function HomePage() {
               <button
                 key={t.id}
                 onClick={() => start(t.id)}
-                className="card flex w-full items-center justify-between active:scale-[0.99]"
+                className="card flex w-full items-center justify-between p-4 active:scale-[0.99]"
               >
-                <span className="font-semibold">{t.name}</span>
-                <span className="text-sm text-accent">Start →</span>
+                <span className="font-semibold text-base">{t.name}</span>
+                <span className="text-base text-accent font-semibold">
+                  Start →
+                </span>
               </button>
             ))}
             <button
               onClick={() => start(null)}
-              className="w-full text-center text-sm text-muted underline underline-offset-4"
+              className="w-full py-4 text-center text-base text-muted underline underline-offset-4"
             >
               or start an empty workout
             </button>
           </>
         ) : (
-          <div className="card text-center text-sm text-muted">
+          <div className="card text-center py-8 text-base text-muted">
             {active
               ? "Finish your active workout to start another."
               : isPastOrToday
                 ? "No workout on this day."
-                : "You can’t log a workout for a future date."}
+                : "You can't log a workout for a future date."}
           </div>
         )}
       </section>
