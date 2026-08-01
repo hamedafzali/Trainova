@@ -28,13 +28,17 @@ export default function SessionPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   const sessionSets = useMemo(
-    () => allSets.filter((s) => s.sessionId === id).sort((a, b) => a.setIndex - b.setIndex),
-    [allSets, id]
+    () =>
+      allSets
+        .filter((s) => s.sessionId === id)
+        .sort((a, b) => a.setIndex - b.setIndex),
+    [allSets, id],
   );
 
   const exerciseOrder = useMemo(() => {
     const seen: string[] = [];
-    for (const s of sessionSets) if (!seen.includes(s.exerciseId)) seen.push(s.exerciseId);
+    for (const s of sessionSets)
+      if (!seen.includes(s.exerciseId)) seen.push(s.exerciseId);
     return seen;
   }, [sessionSets]);
 
@@ -55,7 +59,13 @@ export default function SessionPage() {
 
   const showPr = (kinds: string[]) => {
     const label = kinds
-      .map((k) => (k === "e1rm" ? "estimated 1RM" : k === "max_weight" ? "top weight" : "rep"))
+      .map((k) =>
+        k === "e1rm"
+          ? "estimated 1RM"
+          : k === "max_weight"
+            ? "top weight"
+            : "rep",
+      )
       .join(" & ");
     setToast(`🏆 New ${label} PR!`);
     setTimeout(() => setToast(null), 2500);
@@ -68,7 +78,7 @@ export default function SessionPage() {
   };
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="space-y-6 p-4 pb-20">
       <header className="flex items-center justify-between pt-2">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted">
@@ -80,14 +90,16 @@ export default function SessionPage() {
             {" · "}
             {new Date(session.startedAt).toLocaleDateString()}
           </p>
-          <h1 className="text-xl font-bold tracking-tight">{session.title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{session.title}</h1>
         </div>
         <OnlineBadge />
       </header>
 
       {exerciseOrder.length === 0 && (
         <div className="card text-center text-muted">
-          {isActive ? "Empty workout — add your first exercise below." : "No sets were logged."}
+          {isActive
+            ? "Empty workout — add your first exercise below."
+            : "No sets were logged."}
         </div>
       )}
 
@@ -104,16 +116,24 @@ export default function SessionPage() {
 
       {isActive && (
         <>
-          <button className="btn-ghost w-full" onClick={() => setPicking(true)}>
+          <button
+            className="btn-ghost w-full py-4 text-base font-semibold"
+            onClick={() => setPicking(true)}
+          >
             + Add exercise
           </button>
-          <button className="btn-primary w-full py-4 text-base" onClick={finish}>
+          <button
+            className="btn-primary w-full py-4 text-base font-semibold"
+            onClick={finish}
+          >
             Finish workout
           </button>
           <button
-            className="btn-danger w-full"
+            className="btn-danger w-full py-4 text-base font-semibold"
             onClick={() => {
-              if (confirm("Discard this workout? Logged sets will be deleted.")) {
+              if (
+                confirm("Discard this workout? Logged sets will be deleted.")
+              ) {
                 discardSession(session.id);
                 router.push("/");
               }
@@ -125,12 +145,13 @@ export default function SessionPage() {
       )}
 
       {session.status === "completed" && (
-        <div className="space-y-2">
-          <div className="flex gap-2">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <button
-              className="btn-ghost flex-1"
+              className="btn-ghost py-4 text-base font-semibold"
               onClick={() => {
-                if (reopenSession(session.id)) setToast("Re-opened for editing");
+                if (reopenSession(session.id))
+                  setToast("Re-opened for editing");
                 else setToast("Finish the active workout first");
                 setTimeout(() => setToast(null), 2000);
               }}
@@ -138,7 +159,7 @@ export default function SessionPage() {
               Edit workout
             </button>
             <button
-              className="btn-ghost flex-1"
+              className="btn-ghost py-4 text-base font-semibold"
               onClick={() => {
                 archiveSession(session.id);
                 router.push("/history");
@@ -148,9 +169,13 @@ export default function SessionPage() {
             </button>
           </div>
           <button
-            className="btn-danger w-full"
+            className="btn-danger w-full py-4 text-base font-semibold"
             onClick={() => {
-              if (confirm("Delete this workout permanently? This can’t be undone.")) {
+              if (
+                confirm(
+                  "Delete this workout permanently? This can't be undone.",
+                )
+              ) {
                 discardSession(session.id);
                 router.push("/history");
               }
@@ -162,9 +187,9 @@ export default function SessionPage() {
       )}
 
       {session.status === "archived" && (
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <button
-            className="btn-ghost flex-1"
+            className="btn-ghost py-4 text-base font-semibold"
             onClick={() => {
               unarchiveSession(session.id);
               router.push("/history");
@@ -173,9 +198,13 @@ export default function SessionPage() {
             Unarchive
           </button>
           <button
-            className="btn-danger flex-1"
+            className="btn-danger py-4 text-base font-semibold"
             onClick={() => {
-              if (confirm("Delete this workout permanently? This can’t be undone.")) {
+              if (
+                confirm(
+                  "Delete this workout permanently? This can't be undone.",
+                )
+              ) {
                 discardSession(session.id);
                 router.push("/history");
               }
