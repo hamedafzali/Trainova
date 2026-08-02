@@ -29,7 +29,7 @@ export default function TemplateEditPage() {
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
   if (!template) {
     return (
-      <main className="space-y-3 p-4">
+      <main className="mx-auto max-w-2xl space-y-3 p-4">
         <p className="text-muted">Plan not found.</p>
         <Link href="/templates" className="text-accent">
           ← Back to plans
@@ -51,7 +51,7 @@ export default function TemplateEditPage() {
   const num = (v: string) => (v === "" ? null : Number(v));
 
   return (
-    <main className="space-y-6 p-4 pb-20">
+    <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <header className="flex items-center justify-between pt-2">
         <div>
           <Link href="/templates" className="text-sm text-muted">

@@ -169,79 +169,84 @@ export function AiOnboarding() {
 
   if (step === 3 && generatedProgram) {
     return (
-      <main className="space-y-6 p-5">
-        <header className="pt-6">
-          <h1 className="text-3xl font-bold tracking-tight">Your AI Program</h1>
-          <p className="mt-1 text-muted">{generatedProgram.name}</p>
-        </header>
+      <main className="flex justify-center p-6">
+        <div className="w-full max-w-2xl space-y-6">
+          <header className="pt-6">
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Your AI Program
+            </h1>
+            <p className="mt-1 text-muted">{generatedProgram.name}</p>
+          </header>
 
-        <div className="card space-y-4">
-          <div>
-            <h3 className="font-semibold">Program Overview</h3>
-            <p className="text-sm text-muted">{generatedProgram.description}</p>
-            <p className="text-sm text-muted mt-2">
-              <strong>Focus:</strong> {generatedProgram.focus}
-            </p>
-            <p className="text-sm text-muted">
-              <strong>Split:</strong> {generatedProgram.split}
-            </p>
+          <div className="card space-y-4">
+            <div>
+              <h3 className="font-semibold text-white">Program Overview</h3>
+              <p className="text-sm text-muted">{generatedProgram.description}</p>
+              <p className="text-sm text-muted mt-2">
+                <strong>Focus:</strong> {generatedProgram.focus}
+              </p>
+              <p className="text-sm text-muted">
+                <strong>Split:</strong> {generatedProgram.split}
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white">
+                Weekly Sessions ({generatedProgram.sessions.length})
+              </h3>
+              {generatedProgram.sessions.map((session: any, index: number) => (
+                <div key={index} className="mt-3 p-3 bg-surface2 rounded-lg">
+                  <p className="font-semibold text-white">
+                    Day {session.day}: {session.focus}
+                  </p>
+                  <p className="text-sm text-muted">
+                    {session.exercises.length} exercises
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white">Recommendations</h3>
+              <p className="text-sm text-muted mt-1">
+                {generatedProgram.recommendations?.nutrition}
+              </p>
+              <p className="text-sm text-muted mt-2">
+                {generatedProgram.recommendations?.recovery}
+              </p>
+            </div>
           </div>
 
-          <div>
-            <h3 className="font-semibold">
-              Weekly Sessions ({generatedProgram.sessions.length})
-            </h3>
-            {generatedProgram.sessions.map((session: any, index: number) => (
-              <div key={index} className="mt-3 p-3 bg-surface2 rounded-lg">
-                <p className="font-semibold">
-                  Day {session.day}: {session.focus}
-                </p>
-                <p className="text-sm text-muted">
-                  {session.exercises.length} exercises
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div>
-            <h3 className="font-semibold">Recommendations</h3>
-            <p className="text-sm text-muted mt-1">
-              {generatedProgram.recommendations?.nutrition}
-            </p>
-            <p className="text-sm text-muted mt-2">
-              {generatedProgram.recommendations?.recovery}
-            </p>
-          </div>
+          <button
+            className="btn-primary w-full py-4 text-base"
+            onClick={importProgram}
+          >
+            Import Program & Start Training →
+          </button>
         </div>
-
-        <button
-          className="btn-primary w-full py-4 text-base"
-          onClick={importProgram}
-        >
-          Import Program & Start Training →
-        </button>
       </main>
     );
   }
 
   return (
-    <main className="space-y-6 p-4 pb-20">
-      <header className="pt-4">
-        <h1 className="text-3xl font-bold tracking-tight">
-          AI-Powered Onboarding
-        </h1>
-        <p className="mt-2 text-base text-muted">
-          Step {step} of 2: {step === 1 ? "Basic Info" : "Details"}
-        </p>
-      </header>
+    <main className="flex justify-center p-4 pb-20">
+      <div className="w-full max-w-2xl space-y-6">
+        <header className="pt-4">
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            AI-Powered Onboarding
+          </h1>
+          <p className="mt-2 text-base text-muted">
+            Step {step} of 2: {step === 1 ? "Basic Info" : "Details"}
+          </p>
+        </header>
 
-      {error && (
-        <div className="card bg-danger/10 border-danger text-danger p-4">
-          {error}
-        </div>
-      )}
+        {error && (
+          <div className="card bg-danger/10 border-danger text-danger p-4">
+            {error}
+          </div>
+        )}
 
-      {step === 1 ? (
+        {step === 1 ? (
         <div className="space-y-5">
           <Section title="Primary Goal">
             <Chips
@@ -580,6 +585,7 @@ export function AiOnboarding() {
           </div>
         </div>
       )}
+      </div>
     </main>
   );
 }

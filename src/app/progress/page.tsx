@@ -24,7 +24,7 @@ export default function ProgressPage() {
   );
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="mx-auto max-w-6xl space-y-4 p-4">
       <header className="flex items-center justify-between pt-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Progress</h1>
@@ -67,7 +67,7 @@ export default function ProgressPage() {
             ))}
           </div>
 
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             {exercises.map((exId) => {
               const ex = exerciseById(exId);
               const device = deviceForExercise(exId);

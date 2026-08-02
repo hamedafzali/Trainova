@@ -13,7 +13,7 @@ const tabs = [
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="md:hidden fixed inset-x-0 bottom-0 z-20 border-t border-border bg-bg/95 backdrop-blur">
+    <nav className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-black/80 backdrop-blur-xl">
       <ul className="grid grid-cols-4">
         {tabs.map((t) => {
           const active =
@@ -22,11 +22,11 @@ export function BottomNav() {
             <li key={t.href}>
               <Link
                 href={t.href}
-                className={`flex flex-col items-center gap-0.5 py-2.5 text-[11px] ${
-                  active ? "text-accent" : "text-muted"
+                className={`flex flex-col items-center gap-1 py-3 text-[11px] transition-colors ${
+                  active ? "text-blue-400" : "text-white/50"
                 }`}
               >
-                <span className="text-lg leading-none">{t.icon}</span>
+                <span className="text-xl leading-none">{t.icon}</span>
                 {t.label}
               </Link>
             </li>

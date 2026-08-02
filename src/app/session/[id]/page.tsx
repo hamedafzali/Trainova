@@ -45,7 +45,7 @@ export default function SessionPage() {
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
   if (!session) {
     return (
-      <main className="space-y-3 p-4">
+      <main className="mx-auto max-w-2xl space-y-3 p-4">
         <p className="text-muted">Session not found.</p>
         <Link href="/" className="text-accent">
           ← Home
@@ -78,7 +78,7 @@ export default function SessionPage() {
   };
 
   return (
-    <main className="space-y-6 p-4 pb-20">
+    <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <header className="flex items-center justify-between pt-2">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted">

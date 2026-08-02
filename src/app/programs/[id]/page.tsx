@@ -29,7 +29,7 @@ export default function ProgramEditPage() {
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
   if (!program) {
     return (
-      <main className="space-y-3 p-4">
+      <main className="mx-auto max-w-2xl space-y-3 p-4">
         <p className="text-muted">Program not found.</p>
         <Link href="/templates" className="text-accent">
           ← Back to plans
@@ -41,7 +41,7 @@ export default function ProgramEditPage() {
   const days = daysForProgram(program.id);
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="mx-auto max-w-2xl space-y-4 p-4">
       <header className="pt-2">
         <Link href="/templates" className="text-sm text-muted">
           ← Plans

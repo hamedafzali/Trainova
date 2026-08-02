@@ -75,7 +75,7 @@ export default function CalendarPage() {
   const todayKey = key(today.getFullYear(), today.getMonth(), today.getDate());
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="mx-auto max-w-xl space-y-4 p-4">
       <header className="pt-2">
         <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
         <p className="text-sm text-muted">Every day you trained.</p>

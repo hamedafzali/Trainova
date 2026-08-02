@@ -26,36 +26,38 @@ function ResetForm() {
   };
 
   return (
-    <main className="flex min-h-dvh flex-col justify-center gap-4 p-6">
-      <h1 className="text-2xl font-bold tracking-tight">Set a new password</h1>
-      {!token ? (
-        <p className="text-muted">This reset link is missing its token.</p>
-      ) : done ? (
-        <>
-          <p className="text-accent">Password updated. You can sign in now.</p>
-          <Link href="/" className="btn-primary w-full">
-            Go to sign in
-          </Link>
-        </>
-      ) : (
-        <div className="card space-y-3">
-          <input
-            className="input"
-            type="password"
-            placeholder="New password (6+ chars)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {error && <p className="text-xs text-danger">{error}</p>}
-          <button
-            className="btn-primary w-full py-3"
-            disabled={busy || password.length < 6}
-            onClick={submit}
-          >
-            {busy ? "…" : "Update password"}
-          </button>
-        </div>
-      )}
+    <main className="flex min-h-dvh flex-col justify-center p-6">
+      <div className="mx-auto w-full max-w-sm space-y-4">
+        <h1 className="text-2xl font-bold tracking-tight">Set a new password</h1>
+        {!token ? (
+          <p className="text-muted">This reset link is missing its token.</p>
+        ) : done ? (
+          <>
+            <p className="text-accent">Password updated. You can sign in now.</p>
+            <Link href="/" className="btn-primary w-full">
+              Go to sign in
+            </Link>
+          </>
+        ) : (
+          <div className="card space-y-3">
+            <input
+              className="input"
+              type="password"
+              placeholder="New password (6+ chars)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {error && <p className="text-xs text-danger">{error}</p>}
+            <button
+              className="btn-primary w-full py-3"
+              disabled={busy || password.length < 6}
+              onClick={submit}
+            >
+              {busy ? "…" : "Update password"}
+            </button>
+          </div>
+        )}
+      </div>
     </main>
   );
 }

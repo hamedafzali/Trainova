@@ -35,7 +35,8 @@ export function Welcome() {
       body: JSON.stringify({ email: email.trim() }),
     });
     const j = await r.json().catch(() => ({}));
-    if (r.ok) setNote("If that email is registered, a reset link is on its way.");
+    if (r.ok)
+      setNote("If that email is registered, a reset link is on its way.");
     else setError(j.error || "Couldn’t start a reset.");
   };
 
@@ -44,7 +45,9 @@ export function Welcome() {
     setBusy(true);
     try {
       const who =
-        mode === "up" ? await signUp(email.trim(), password) : await signIn(email.trim(), password);
+        mode === "up"
+          ? await signUp(email.trim(), password)
+          : await signIn(email.trim(), password);
       // Sync: if the account already has data, load it; otherwise migrate this
       // device's local data up to the new account.
       const remote = await pullState();
@@ -59,22 +62,32 @@ export function Welcome() {
   };
 
   return (
-    <main className="flex min-h-dvh flex-col justify-center gap-6 p-6">
-      <header className="text-center">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-3xl text-onAccent">
-          🏋️
+    <main className="flex min-h-screen flex-col justify-center gap-8 p-6">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-8 md:p-12 border border-white/10 text-center">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070')] bg-cover bg-center opacity-20"></div>
+        <div className="relative z-10">
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-4xl shadow-lg shadow-blue-500/25">
+            🏋️
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-3">
+            Trainova
+          </h1>
+          <p className="text-lg text-white/70">Open. Lift. Log. Done.</p>
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">Trainova</h1>
-        <p className="mt-1 text-muted">Open. Lift. Log. Done.</p>
-      </header>
+      </div>
 
-      <div className="card space-y-3">
-        <div className="flex overflow-hidden rounded-xl border border-border text-sm font-semibold">
+      <div className="card space-y-4 max-w-md mx-auto w-full">
+        <div className="flex overflow-hidden rounded-xl border border-white/10 text-sm font-semibold">
           {(["in", "up"] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`flex-1 py-2.5 ${mode === m ? "bg-accent text-onAccent" : "bg-surface2 text-inkSoft"}`}
+              className={`flex-1 py-3 transition-all duration-200 ${
+                mode === m
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                  : "bg-white/5 text-white/60 hover:bg-white/10"
+              }`}
             >
               {m === "in" ? "Sign in" : "Create account"}
             </button>
@@ -100,16 +113,17 @@ export function Welcome() {
         />
 
         {!cloud && (
-          <p className="rounded-lg bg-surface2 px-3 py-2 text-xs text-inkSoft">
-            Cloud accounts aren’t configured on this server yet. You can continue as a guest now —
-            sign-in starts working once Supabase is connected.
+          <p className="rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60 border border-white/10">
+            Cloud accounts aren't configured on this server yet. You can
+            continue as a guest now — sign-in starts working once Supabase is
+            connected.
           </p>
         )}
-        {error && <p className="text-xs text-danger">{error}</p>}
-        {note && <p className="text-xs text-accent">{note}</p>}
+        {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+        {note && <p className="text-sm text-blue-400 text-center">{note}</p>}
 
         <button
-          className="btn-primary w-full py-3"
+          className="btn-primary w-full py-4"
           disabled={busy || !cloud || !email || !password}
           onClick={submit}
         >
@@ -117,7 +131,10 @@ export function Welcome() {
         </button>
 
         {cloud && mode === "in" && (
-          <button onClick={forgot} className="w-full text-center text-xs text-muted underline">
+          <button
+            onClick={forgot}
+            className="w-full text-center text-sm text-white/50 underline hover:text-white/70 transition-colors"
+          >
             Forgot password?
           </button>
         )}
@@ -125,7 +142,7 @@ export function Welcome() {
 
       <button
         onClick={enterGuest}
-        className="text-center text-sm font-semibold text-inkSoft underline underline-offset-4"
+        className="text-center text-base font-semibold text-white/50 underline underline-offset-4 hover:text-white/70 transition-colors"
       >
         Continue as guest
       </button>

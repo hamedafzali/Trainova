@@ -5,22 +5,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Warm nude theme (see UX_REDESIGN.md §4). Names kept stable; roles added.
-        bg: "#F4ECE1", // canvas
-        surface: "#ECE0D1", // card
-        surface2: "#E3D4C1", // wells / inputs / steppers
-        border: "#D6C4AE",
-        accent: "#BC6B47", // terracotta — primary / active
-        accentDim: "#7C8254", // olive — rest / secondary
-        danger: "#C07A6E", // muted red — fail / skip
-        muted: "#9A8B79",
-        ink: "#38302A", // primary text
-        inkSoft: "#6B5E50", // secondary text
-        green: "#6E9E6B", // success / completed
-        gold: "#C7A24B", // PR / highlight
-        amber: "#C98A5E", // fatigue (RPE ≥ 9)
-        onAccent: "#FBF4EC", // text on accent fills
-        clayDeep: "#9E5B3B", // pressed terracotta
+        // Dark glassmorphism theme — matches globals.css / .card / .btn-primary.
+        // Names kept stable (still referenced by session/profile/admin/etc.); roles added.
+        bg: "#0a0a0f", // canvas
+        surface: "rgba(255,255,255,0.05)", // card
+        surface2: "rgba(255,255,255,0.08)", // wells / inputs / steppers
+        border: "rgba(255,255,255,0.1)",
+        accent: "#3b82f6", // blue-500 — primary / active
+        accentDim: "#3a4a63", // muted slate-blue — rest / secondary
+        danger: "#f87171", // red-400 — fail / skip
+        muted: "#94a3b8", // slate-400
+        ink: "#f5f5f7", // primary text
+        inkSoft: "#b8bcc8", // secondary text
+        green: "#4ade80", // success / completed
+        gold: "#fbbf24", // PR / highlight
+        amber: "#fb923c", // fatigue (RPE ≥ 9)
+        onAccent: "#ffffff", // text on accent fills
+        clayDeep: "#1d4ed8", // blue-700 — pressed accent
       },
       keyframes: {
         completeWipe: {

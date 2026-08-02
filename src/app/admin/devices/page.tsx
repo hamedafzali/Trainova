@@ -46,7 +46,7 @@ export default function AdminDevicesPage() {
   if (!hydrated || loading) return <main className="p-4 text-muted">Loading…</main>;
   if (!isAdmin)
     return (
-      <main className="space-y-3 p-4">
+      <main className="mx-auto max-w-3xl space-y-3 p-4">
         <p className="text-muted">Admins only.</p>
         <Link href="/" className="text-accent">
           ← Home
@@ -55,7 +55,7 @@ export default function AdminDevicesPage() {
     );
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="mx-auto max-w-3xl space-y-4 p-4">
       <header className="flex items-center justify-between pt-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Devices</h1>

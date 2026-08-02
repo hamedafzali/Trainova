@@ -25,45 +25,53 @@ export function Onboarding() {
   const [experience, setExperience] = useState<UserProfile["experience"]>(null);
 
   return (
-    <main className="space-y-6 p-5">
-      <header className="pt-6">
-        <h1 className="text-3xl font-bold tracking-tight">Welcome to Trainova</h1>
-        <p className="mt-1 text-muted">A couple of taps and you’re training.</p>
-      </header>
+    <main className="flex min-h-screen flex-col justify-center p-6">
+      <div className="card mx-auto w-full max-w-md space-y-6">
+        <header>
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            Welcome to Trainova
+          </h1>
+          <p className="mt-1 text-sm text-white/50">
+            A couple of taps and you’re training.
+          </p>
+        </header>
 
-      <Section title="Units">
-        <div className="flex overflow-hidden rounded-xl border border-border">
-          {(["kg", "lb"] as Units[]).map((u) => (
-            <button
-              key={u}
-              onClick={() => setUnits(u)}
-              className={`flex-1 py-3 font-semibold ${
-                units === u ? "bg-accent text-onAccent" : "bg-surface2 text-inkSoft"
-              }`}
-            >
-              {u}
-            </button>
-          ))}
-        </div>
-      </Section>
+        <Section title="Units">
+          <div className="flex overflow-hidden rounded-xl border border-white/10 text-sm">
+            {(["kg", "lb"] as Units[]).map((u) => (
+              <button
+                key={u}
+                onClick={() => setUnits(u)}
+                className={`flex-1 py-2.5 font-semibold transition-all duration-200 ${
+                  units === u
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                    : "bg-white/5 text-white/60 hover:bg-white/10"
+                }`}
+              >
+                {u}
+              </button>
+            ))}
+          </div>
+        </Section>
 
-      <Section title="Your goal">
-        <Chips options={GOALS} value={goal} onPick={(k) => setGoal(k)} />
-      </Section>
+        <Section title="Your goal">
+          <Chips options={GOALS} value={goal} onPick={(k) => setGoal(k)} />
+        </Section>
 
-      <Section title="Experience">
-        <Chips options={LEVELS} value={experience} onPick={(k) => setExperience(k)} />
-      </Section>
+        <Section title="Experience">
+          <Chips options={LEVELS} value={experience} onPick={(k) => setExperience(k)} />
+        </Section>
 
-      <button
-        className="btn-primary w-full py-4 text-base"
-        onClick={() => completeOnboarding({ goal, experience, role: "user" })}
-      >
-        Start training →
-      </button>
-      <p className="text-center text-xs text-muted">
-        Your data stays on this device. Cloud sync &amp; coaching arrive with accounts.
-      </p>
+        <button
+          className="btn-primary w-full py-3.5 text-base"
+          onClick={() => completeOnboarding({ goal, experience, role: "user" })}
+        >
+          Start training →
+        </button>
+        <p className="text-center text-xs text-white/40">
+          Your data stays on this device. Cloud sync &amp; coaching arrive with accounts.
+        </p>
+      </div>
     </main>
   );
 }

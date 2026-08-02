@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#F4ECE1",
+  themeColor: "#0a0a0f",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -27,13 +27,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-dvh bg-bg">
+      <body className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f0f1a] to-[#0a0a0f]">
         <ServiceWorker />
         <SyncManager />
         <div className="flex">
           <SidebarNav />
-          <main className="flex-1 md:ml-64 min-h-screen">
-            <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 pb-24 md:pb-8">
+          <main className="flex-1 md:ml-72 min-h-screen">
+            <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-12 py-8 md:py-12 pb-24 md:pb-12">
               {children}
             </div>
           </main>

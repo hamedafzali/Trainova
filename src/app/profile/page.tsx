@@ -38,7 +38,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <main className="space-y-6 p-4 pb-20">
+    <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <header className="flex items-center justify-between pt-2">
         <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
         <Link href="/" className="text-base text-accent font-semibold">

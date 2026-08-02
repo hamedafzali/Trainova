@@ -94,7 +94,7 @@ export default function AdminPage() {
 
   if (!isAdmin) {
     return (
-      <main className="space-y-3 p-4">
+      <main className="mx-auto max-w-4xl space-y-3 p-4">
         <h1 className="text-2xl font-bold">Admin</h1>
         <p className="text-muted">Admins only.</p>
         <Link href="/" className="text-accent">
@@ -105,7 +105,7 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="space-y-4 p-4">
+    <main className="mx-auto max-w-4xl space-y-4 p-4">
       <header className="flex items-center justify-between pt-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
