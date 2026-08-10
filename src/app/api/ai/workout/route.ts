@@ -11,9 +11,12 @@ import {
   type WorkoutGenerationInput,
   type GeneratedWorkout,
 } from '@/services/ai/workout';
+import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
 
 export async function POST(request: NextRequest) {
   try {
+    const authorization = await authorizeAiRequest(request);
+    if (!isAuthorizedAiRequest(authorization)) return authorization.response;
     const body = await request.json();
     const { action, data } = body;
 

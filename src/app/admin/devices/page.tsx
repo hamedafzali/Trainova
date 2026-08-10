@@ -43,30 +43,30 @@ export default function AdminDevicesPage() {
     } else alert("Save failed.");
   };
 
-  if (!hydrated || loading) return <main className="p-4 text-muted">Loading…</main>;
+  if (!hydrated || loading) return <main className="p-4 text-white/50">Loading…</main>;
   if (!isAdmin)
     return (
       <main className="mx-auto max-w-3xl space-y-3 p-4">
-        <p className="text-muted">Admins only.</p>
-        <Link href="/" className="text-accent">
+        <p className="text-white/50">Admins only.</p>
+        <Link href="/" className="text-blue-400 hover:text-blue-300">
           ← Home
         </Link>
       </main>
     );
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-4">
-      <header className="flex items-center justify-between pt-2">
+    <main className="mx-auto max-w-3xl space-y-6">
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Devices</h1>
-          <p className="text-sm text-muted">Shared equipment library · {devices.length}</p>
+          <h1 className="page-title">Devices</h1>
+          <p className="page-subtitle">Shared equipment library · {devices.length}</p>
         </div>
-        <Link href="/admin" className="text-sm text-accent">
+        <Link href="/admin" className="text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors">
           ← Admin
         </Link>
       </header>
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {devices.map((d) =>
           editing === d.id ? (
             <DeviceForm key={d.id} device={d} onCancel={() => setEditing(null)} onSave={save} />
@@ -74,8 +74,8 @@ export default function AdminDevicesPage() {
             <li key={d.id} className="card flex items-center gap-3">
               <DeviceAvatar device={d} className="h-11 w-11 rounded-lg text-lg" />
               <div className="flex-1">
-                <p className="font-semibold leading-tight">{d.name}</p>
-                <p className="text-xs text-muted">
+                <p className="font-semibold leading-tight text-white">{d.name}</p>
+                <p className="text-xs text-white/50 mt-0.5">
                   {d.machineNumber ? `No.${d.machineNumber} · ` : ""}
                   {d.category.replace("_", " ")}
                   {d.primaryMuscle ? ` · ${d.primaryMuscle}` : ""}
@@ -126,8 +126,8 @@ function DeviceForm({
   };
 
   return (
-    <li className="card space-y-2">
-      <p className="text-sm font-semibold">Edit {device.name}</p>
+    <li className="card space-y-3">
+      <p className="text-sm font-semibold text-white">Edit {device.name}</p>
 
       <div className="flex items-center gap-3">
         <DeviceAvatar device={d} className="h-16 w-16 rounded-xl text-2xl" />
@@ -221,7 +221,7 @@ function DeviceForm({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-xs text-muted">{label}</span>
+      <span className="text-xs text-white/50">{label}</span>
       {children}
     </label>
   );

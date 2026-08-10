@@ -18,28 +18,39 @@ body {
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 shadow-2xl;
+    @apply rounded-2xl border border-white/10 bg-white/[0.04] p-6;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.97] hover:scale-[1.02];
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors duration-150 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
   }
   .btn-primary {
-    @apply btn bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/25;
+    @apply btn bg-blue-600 text-white hover:bg-blue-500;
   }
   .btn-ghost {
-    @apply btn bg-white/10 text-white hover:bg-white/20;
+    @apply btn bg-white/[0.06] text-white hover:bg-white/[0.1];
   }
   .btn-danger {
-    @apply btn bg-red-500/20 text-red-400 hover:bg-red-500/30;
+    @apply btn bg-red-500/10 text-red-400 hover:bg-red-500/20;
   }
   .input {
-    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white outline-none placeholder:text-white/40 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all;
+    @apply w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-base text-white outline-none placeholder:text-white/40 focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition-colors;
   }
   .num {
-    @apply w-full rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center text-xl font-bold tabular-nums text-white outline-none placeholder:text-white/40 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all;
+    @apply w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-center text-xl font-bold tabular-nums text-white outline-none placeholder:text-white/40 focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition-colors;
   }
   .chip {
-    @apply rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70;
+    @apply rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/70;
+  }
+
+  /* Shared page-header rhythm — one title scale, one subtitle scale, everywhere. */
+  .page-title {
+    @apply text-2xl md:text-3xl font-bold tracking-tight text-white;
+  }
+  .page-subtitle {
+    @apply text-sm text-white/50 mt-1;
+  }
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-wider text-white/40;
   }
 }
 

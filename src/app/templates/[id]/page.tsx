@@ -26,12 +26,12 @@ export default function TemplateEditPage() {
   const getActiveSession = useStore((s) => s.getActiveSession);
   const [picking, setPicking] = useState(false);
 
-  if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
+  if (!hydrated) return <main className="p-4 text-white/50">Loading…</main>;
   if (!template) {
     return (
       <main className="mx-auto max-w-2xl space-y-3 p-4">
-        <p className="text-muted">Plan not found.</p>
-        <Link href="/templates" className="text-accent">
+        <p className="text-white/50">Plan not found.</p>
+        <Link href="/templates" className="text-blue-400 hover:text-blue-300">
           ← Back to plans
         </Link>
       </main>
@@ -54,10 +54,13 @@ export default function TemplateEditPage() {
     <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
       <header className="flex items-center justify-between pt-2">
         <div>
-          <Link href="/templates" className="text-sm text-muted">
+          <Link
+            href="/templates"
+            className="text-sm text-white/50 hover:text-white/70 transition-colors"
+          >
             ← Plans
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">{template.name}</h1>
+          <h1 className="page-title">{template.name}</h1>
         </div>
         <button
           className="btn-primary py-3 px-6 text-base font-semibold"
@@ -68,7 +71,7 @@ export default function TemplateEditPage() {
       </header>
 
       {template.exercises.length === 0 ? (
-        <div className="card text-center py-8 text-base text-muted">
+        <div className="card text-center py-8 text-base text-white/50">
           No exercises yet.
         </div>
       ) : (
@@ -89,7 +92,7 @@ export default function TemplateEditPage() {
                       {ex?.name ?? "Exercise"}
                     </p>
                     {device && (
-                      <p className="text-sm text-muted">
+                      <p className="text-sm text-white/50">
                         {device.name}
                         {device.machineNumber
                           ? ` · No.${device.machineNumber}`
@@ -109,7 +112,7 @@ export default function TemplateEditPage() {
                 <div className="space-y-2">
                   {te.sets.map((st, i) => (
                     <div key={i} className="space-y-1">
-                      <p className="text-sm text-muted">Round {i + 1}</p>
+                      <p className="text-sm text-white/50">Round {i + 1}</p>
                       <Stepper
                         value={st.targetWeight ?? 0}
                         step={step}
@@ -137,7 +140,7 @@ export default function TemplateEditPage() {
                   >
                     − round
                   </button>
-                  <span className="text-muted font-medium">
+                  <span className="text-white/50 font-medium">
                     {te.sets.length} rounds
                   </span>
                   <button

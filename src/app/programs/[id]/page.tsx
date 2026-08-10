@@ -26,12 +26,12 @@ export default function ProgramEditPage() {
     if (sid) router.push(`/session/${sid}`);
   };
 
-  if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
+  if (!hydrated) return <main className="p-4 text-white/50">Loading…</main>;
   if (!program) {
     return (
       <main className="mx-auto max-w-2xl space-y-3 p-4">
-        <p className="text-muted">Program not found.</p>
-        <Link href="/templates" className="text-accent">
+        <p className="text-white/50">Program not found.</p>
+        <Link href="/templates" className="text-blue-400 hover:text-blue-300">
           ← Back to plans
         </Link>
       </main>
@@ -43,32 +43,35 @@ export default function ProgramEditPage() {
   return (
     <main className="mx-auto max-w-2xl space-y-4 p-4">
       <header className="pt-2">
-        <Link href="/templates" className="text-sm text-muted">
+        <Link
+          href="/templates"
+          className="text-sm text-white/50 hover:text-white/70 transition-colors"
+        >
           ← Plans
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="page-title">
           {program.name}
           {program.source === "trainer" && (
-            <span className="ml-2 rounded-full bg-accentDim/40 px-2 py-0.5 text-[10px] uppercase text-accent align-middle">
+            <span className="ml-2 rounded-full bg-blue-500/20 px-3 py-1 text-xs uppercase text-blue-400 align-middle">
               Trainer
             </span>
           )}
         </h1>
-        {program.notes && <p className="text-sm text-muted">{program.notes}</p>}
+        {program.notes && <p className="page-subtitle">{program.notes}</p>}
       </header>
 
       {days.length === 0 ? (
-        <div className="card text-center text-muted">No days yet — add the first one.</div>
+        <div className="card text-center text-white/50">No days yet — add the first one.</div>
       ) : (
         <ul className="space-y-2">
           {days.map((d, i) => (
             <li key={d.id} className="card">
               <div className="flex items-center justify-between">
                 <Link href={`/templates/${d.id}`} className="flex-1">
-                  <p className="font-semibold">
-                    <span className="text-muted">Day {i + 1}:</span> {d.name}
+                  <p className="font-semibold text-white">
+                    <span className="text-white/50">Day {i + 1}:</span> {d.name}
                   </p>
-                  <p className="text-xs text-muted">{d.exercises.length} exercises · tap to edit</p>
+                  <p className="text-xs text-white/50">{d.exercises.length} exercises · tap to edit</p>
                 </Link>
                 <button className="btn-primary px-3 py-1.5" onClick={() => start(d.id)}>
                   Start

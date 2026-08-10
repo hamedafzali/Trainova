@@ -9,6 +9,7 @@ import type {
   Exercise,
   PersonalRecord,
   Program,
+  SessionFeedback,
   TemplateSet,
   Units,
   UserProfile,
@@ -75,6 +76,7 @@ export interface TrainovaState {
   templates: WorkoutTemplate[];
   sessions: WorkoutSession[];
   sets: WorkoutSet[];
+  feedback: SessionFeedback[];
   prs: PersonalRecord[];
 
   enterGuest: () => void;
@@ -103,7 +105,17 @@ export interface TrainovaState {
   importGeneratedPlan: (plan: {
     name: string;
     notes: string | null;
-    exercises: { name: string; muscle: string | null; sets: number; reps: number }[];
+    exercises: {
+      name: string;
+      muscle: string | null;
+      sets: number;
+      reps: number;
+      restSeconds?: number;
+      tempo?: string | null;
+      targetRpe?: number | null;
+      cue?: string | null;
+      substitution?: string | null;
+    }[];
   }) => string;
   serializeTemplate: (templateId: string) => AssignedPlan | null;
   importAssignedPlan: (payload: AssignedPlan) => string;
@@ -124,6 +136,10 @@ export interface TrainovaState {
     dateKey?: string
   ) => { id: string | null; blocked: boolean };
   finishSession: (id: string) => { discarded: boolean };
+  recordSessionFeedback: (
+    sessionId: string,
+    input: Omit<SessionFeedback, "id" | "owner" | "sessionId" | "createdAt">
+  ) => void;
   discardSession: (id: string) => void;
   reopenSession: (id: string) => boolean;
   archiveSession: (id: string) => void;
@@ -174,6 +190,7 @@ export const useStore = create<TrainovaState>()(
       templates: [SEED_PLAN],
       sessions: [SEED_SESSION],
       sets: [...SEED_SESSION_SETS],
+      feedback: [],
       prs: [],
 
       enterGuest: () => set({ session: { mode: "guest", email: null } }),
@@ -341,7 +358,11 @@ export const useStore = create<TrainovaState>()(
             exerciseId: exer.id,
             deviceId: exer.defaultDeviceId,
             position: i,
-            restSeconds: 90,
+            restSeconds: ex.restSeconds ?? 90,
+            tempo: ex.tempo ?? null,
+            targetRpe: ex.targetRpe ?? null,
+            cue: ex.cue ?? null,
+            substitution: ex.substitution ?? null,
             sets: Array.from({ length: count }, () => ({ targetReps: reps, targetWeight: null })),
           };
         });
@@ -559,6 +580,19 @@ export const useStore = create<TrainovaState>()(
           ),
         }));
         return { discarded: false };
+      },
+
+      recordSessionFeedback: (sessionId, input) => {
+        const feedback: SessionFeedback = {
+          id: uid(),
+          owner: LOCAL_OWNER,
+          sessionId,
+          ...input,
+          createdAt: now(),
+        };
+        set((s) => ({
+          feedback: [feedback, ...s.feedback.filter((item) => item.sessionId !== sessionId)],
+        }));
       },
 
       discardSession: (id) =>
@@ -841,7 +875,7 @@ export const useStore = create<TrainovaState>()(
       // New key = hard reset of all existing data (local-first has no server DB).
       // Old "trainova-v1" data is abandoned; the app starts from the seed below.
       name: "trainova-2026-06",
-      version: 1,
+      version: 2,
       migrate: migrateState,
       skipHydration: true,
       storage: createJSONStorage(() =>
@@ -858,6 +892,7 @@ export const useStore = create<TrainovaState>()(
         templates: s.templates,
         sessions: s.sessions,
         sets: s.sets,
+        feedback: s.feedback,
         prs: s.prs,
       }),
     }
@@ -986,6 +1021,7 @@ function migrateState(persisted: unknown, _version: number): TrainovaState {
     templates,
     sessions: mapped,
     sets: liveSets,
+    feedback: (s.feedback ?? []).filter((item: SessionFeedback) => liveSessionIds.has(item.sessionId)),
     prs: s.prs ?? [],
   } as TrainovaState;
 }

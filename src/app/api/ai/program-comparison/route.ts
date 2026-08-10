@@ -3,15 +3,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeProgramCompletion, ProgramComparisonError } from "@/services/ai/programComparison";
-import { getToken } from "@/lib/auth";
+import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = getToken();
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authorization = await authorizeAiRequest(request);
+    if (!isAuthorizedAiRequest(authorization)) return authorization.response;
 
     const body = await request.json();
 

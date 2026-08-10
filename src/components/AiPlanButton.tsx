@@ -56,7 +56,25 @@ export function AiPlanButton() {
       const workout = j.workout;
       const template = {
         name: workout.name,
-        notes: workout.description || null,
+        notes: [
+          workout.description,
+          workout.warmup?.length
+            ? `Warm-up:\n${workout.warmup
+                .map((item: { name: string; duration: string; instructions: string }) =>
+                  `• ${item.name} (${item.duration}): ${item.instructions}`,
+                )
+                .join("\n")}`
+            : null,
+          workout.cooldown?.length
+            ? `Cooldown:\n${workout.cooldown
+                .map((item: { name: string; duration: string; instructions: string }) =>
+                  `• ${item.name} (${item.duration}): ${item.instructions}`,
+                )
+                .join("\n")}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n\n") || null,
         exercises: workout.exercises.map((ex: any) => ({
           name: ex.name,
           muscle: ex.muscleGroup || null,
@@ -65,6 +83,11 @@ export function AiPlanButton() {
             typeof ex.reps === "string"
               ? parseInt(ex.reps.split("-")[0])
               : ex.reps,
+          restSeconds: ex.rest,
+          tempo: ex.tempo || null,
+          targetRpe: ex.rpe,
+          cue: ex.cue || null,
+          substitution: ex.substitution || null,
         })),
       };
 

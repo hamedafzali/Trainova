@@ -38,22 +38,23 @@ export default function PlansPage() {
   const standalone = templates.filter((t) => !inProgram.has(t.id));
 
   return (
-    <main className="space-y-8">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-green-600/20 to-teal-600/20 p-8 md:p-12 border border-white/10">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070')] bg-cover bg-center opacity-20"></div>
-        <div className="relative z-10">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4">
-            Workout Plans
-          </h1>
-          <p className="text-lg md:text-xl text-white/70 max-w-2xl">
-            Build your perfect routine. Create programs, track progress, achieve
-            your goals.
+    <main className="space-y-6">
+      <header className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="page-title">Plans</h1>
+          <p className="page-subtitle">
+            Programs and single-day routines you can start anytime.
           </p>
         </div>
-      </div>
+        <button
+          className="btn-primary px-5 py-2.5 text-sm font-semibold shrink-0"
+          onClick={() => setCreating((v) => !v)}
+        >
+          + New
+        </button>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Create */}
           {creating && (
@@ -103,9 +104,7 @@ export default function PlansPage() {
               {/* Programs (trainer plans) */}
               {programs.length > 0 && (
                 <section className="space-y-4">
-                  <h2 className="text-lg font-semibold uppercase tracking-wide text-white/50">
-                    Programs
-                  </h2>
+                  <h2 className="section-label">Programs</h2>
                   {programs.map((p) => {
                     const days = daysForProgram(p.id);
                     return (
@@ -142,7 +141,7 @@ export default function PlansPage() {
                           {days.map((d) => (
                             <div
                               key={d.id}
-                              className="flex items-center justify-between rounded-xl bg-white/5 px-6 py-4 hover:bg-white/10 transition-all duration-300"
+                              className="flex items-center justify-between rounded-xl bg-white/[0.03] px-6 py-4 hover:bg-white/[0.07] transition-colors"
                             >
                               <span className="text-base font-medium text-white">
                                 {d.name}
@@ -179,9 +178,7 @@ export default function PlansPage() {
 
               {/* Standalone plans */}
               <section className="space-y-4">
-                <h2 className="text-lg font-semibold uppercase tracking-wide text-white/50">
-                  Single plans
-                </h2>
+                <h2 className="section-label">Single plans</h2>
                 {standalone.length === 0 ? (
                   <div className="card text-center py-12 text-base text-white/50">
                     No standalone plans yet. Create your first workout routine!
@@ -190,7 +187,7 @@ export default function PlansPage() {
                   standalone.map((t) => (
                     <div
                       key={t.id}
-                      className="card flex items-center justify-between gap-4 p-6 hover:bg-white/5 transition-all duration-300"
+                      className="card flex items-center justify-between gap-4 p-6 hover:bg-white/[0.07] transition-colors"
                     >
                       <Link
                         href={`/templates/${t.id}`}
@@ -228,25 +225,20 @@ export default function PlansPage() {
 
         <div className="space-y-6">
           <div className="card">
-            <h3 className="text-xl font-bold mb-6 text-white">Quick Info</h3>
-            <div className="space-y-4 text-base text-white/70">
-              <p>Programs are multi-day plans from trainers or yourself.</p>
-              <p>Single plans are one-off workout routines.</p>
+            <h3 className="section-label mb-4">Overview</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl">
+                <span className="text-sm text-white/60">Programs</span>
+                <span className="font-bold text-white">{programs.length}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl">
+                <span className="text-sm text-white/60">Single plans</span>
+                <span className="font-bold text-white">{standalone.length}</span>
+              </div>
             </div>
-          </div>
-
-          {/* Motivation Card */}
-          <div className="card relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=2070')] bg-cover bg-center opacity-30"></div>
-            <div className="relative z-10 p-6">
-              <h3 className="text-xl font-bold mb-3 text-white">
-                Plan Your Success
-              </h3>
-              <p className="text-base text-white/70">
-                A good plan is the foundation of great results. Start building
-                yours today!
-              </p>
-            </div>
+            <p className="text-xs text-white/40 mt-4">
+              Programs are multi-day plans. Single plans are one-off routines.
+            </p>
           </div>
         </div>
       </div>

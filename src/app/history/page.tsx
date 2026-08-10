@@ -48,21 +48,26 @@ export default function HistoryPage() {
   );
 
   return (
-    <main className="space-y-8">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600/20 to-pink-600/20 p-8 md:p-12 border border-white/10">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=2069')] bg-cover bg-center opacity-20"></div>
-        <div className="relative z-10">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4">
-            Workout History
-          </h1>
-          <p className="text-lg md:text-xl text-white/70 max-w-2xl">
-            Track your progress, analyze your performance, and celebrate your
-            gains.
+    <main className="space-y-6">
+      <header className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="page-title">History</h1>
+          <p className="page-subtitle">
+            Every workout you've logged, in one place.
           </p>
         </div>
-      </div>
+        <label className="flex items-center gap-2 text-sm text-white/50 shrink-0">
+          <input
+            type="checkbox"
+            checked={showArchived}
+            onChange={(e) => setShowArchived(e.target.checked)}
+            className="accent-blue-500"
+          />
+          Show archived
+        </label>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {!hydrated ? (
             <div className="card animate-pulse text-white/50 py-12">
@@ -84,7 +89,7 @@ export default function HistoryPage() {
                   return (
                     <li key={session.id} className="card">
                       <button
-                        className="flex w-full items-center justify-between text-left p-6 hover:bg-white/5 transition-all duration-300"
+                        className="flex w-full items-center justify-between text-left p-6 hover:bg-white/[0.07] transition-colors"
                         onClick={() => setOpen(expanded ? null : session.id)}
                       >
                         <div className="flex-1 min-w-0">
@@ -202,38 +207,22 @@ export default function HistoryPage() {
         </div>
 
         <div className="space-y-6">
-          {/* Stats Card */}
           <div className="card">
-            <h3 className="text-xl font-bold mb-6 text-white">Workout Stats</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl">
-                <span className="text-white/60">Total Workouts</span>
-                <span className="font-bold text-xl text-white">
-                  {rows.length}
-                </span>
+            <h3 className="section-label mb-4">Stats</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl">
+                <span className="text-sm text-white/60">Total workouts</span>
+                <span className="font-bold text-white">{rows.length}</span>
               </div>
-              <div className="flex justify-between items-center p-4 bg-white/5 rounded-xl">
-                <span className="text-white/60">Total Volume</span>
-                <span className="font-bold text-xl text-white">
+              <div className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl">
+                <span className="text-sm text-white/60">Total volume</span>
+                <span className="font-bold text-white">
                   {Math.round(
                     rows.reduce((sum, r) => sum + r.volume, 0),
                   ).toLocaleString()}{" "}
                   {units}
                 </span>
               </div>
-            </div>
-          </div>
-
-          {/* Motivation Card */}
-          <div className="card relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070')] bg-cover bg-center opacity-30"></div>
-            <div className="relative z-10 p-6">
-              <h3 className="text-xl font-bold mb-3 text-white">
-                Keep Pushing
-              </h3>
-              <p className="text-base text-white/70">
-                Every workout brings you closer to your goals. Stay consistent!
-              </p>
             </div>
           </div>
         </div>

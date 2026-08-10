@@ -53,5 +53,6 @@ export function mergeSnapshots(local: Snapshot, remote: Snapshot | null): Snapsh
       Number(l.value) >= Number(r.value) ? l : r
     ),
     audit: mergeArr(arr(local.audit), arr(remote.audit), (x) => String(x.id), preferLocal),
+    feedback: mergeArr(arr(local.feedback), arr(remote.feedback), (x) => String(x.id), preferLocal),
   };
 }

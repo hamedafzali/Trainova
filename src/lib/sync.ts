@@ -22,6 +22,7 @@ const SYNC_KEYS = [
   "templates",
   "sessions",
   "sets",
+  "feedback",
   "prs",
 ] as const;
 

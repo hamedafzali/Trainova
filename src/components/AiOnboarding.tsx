@@ -195,7 +195,7 @@ export function AiOnboarding() {
                 Weekly Sessions ({generatedProgram.sessions.length})
               </h3>
               {generatedProgram.sessions.map((session: any, index: number) => (
-                <div key={index} className="mt-3 p-3 bg-surface2 rounded-lg">
+                <div key={index} className="mt-3 p-3 bg-white/[0.03] rounded-lg">
                   <p className="font-semibold text-white">
                     Day {session.day}: {session.focus}
                   </p>
@@ -241,7 +241,7 @@ export function AiOnboarding() {
         </header>
 
         {error && (
-          <div className="card bg-danger/10 border-danger text-danger p-4">
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 p-4 text-sm">
             {error}
           </div>
         )}
@@ -281,10 +281,10 @@ export function AiOnboarding() {
                 <button
                   key={days}
                   onClick={() => updateField("daysPerWeek", days)}
-                  className={`py-4 rounded-xl font-semibold text-base ${
+                  className={`py-4 rounded-xl font-semibold text-base transition-colors ${
                     formData.daysPerWeek === days
-                      ? "bg-accent text-onAccent"
-                      : "bg-surface2 text-inkSoft"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
                   }`}
                 >
                   {days}
@@ -500,10 +500,10 @@ export function AiOnboarding() {
                 <button
                   key={level}
                   onClick={() => updateField("sleepQuality", level)}
-                  className={`py-4 rounded-xl font-semibold text-base ${
+                  className={`py-4 rounded-xl font-semibold text-base transition-colors ${
                     formData.sleepQuality === level
-                      ? "bg-accent text-onAccent"
-                      : "bg-surface2 text-inkSoft"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
                   }`}
                 >
                   {level}
@@ -518,10 +518,10 @@ export function AiOnboarding() {
                 <button
                   key={level}
                   onClick={() => updateField("stressLevel", level)}
-                  className={`py-4 rounded-xl font-semibold text-base ${
+                  className={`py-4 rounded-xl font-semibold text-base transition-colors ${
                     formData.stressLevel === level
-                      ? "bg-accent text-onAccent"
-                      : "bg-surface2 text-inkSoft"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
                   }`}
                 >
                   {level}
@@ -599,9 +599,7 @@ function Section({
 }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-        {title}
-      </h2>
+      <h2 className="section-label">{title}</h2>
       {children}
     </section>
   );
@@ -622,10 +620,10 @@ function Chips<T extends string>({
         <button
           key={o.key}
           onClick={() => onPick(o.key)}
-          className={`rounded-full border px-4 py-2 text-sm ${
+          className={`rounded-full border px-4 py-2 text-sm transition-colors ${
             value === o.key
-              ? "border-accent bg-accent text-onAccent"
-              : "border-border bg-surface2 text-inkSoft"
+              ? "border-blue-600 bg-blue-600 text-white"
+              : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
           }`}
         >
           {o.label}

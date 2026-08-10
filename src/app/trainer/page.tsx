@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { getToken } from "@/lib/auth";
+import { CoachAttentionInbox } from "@/components/CoachAttentionInbox";
 
 type Client = { id: string; email: string; workouts: number };
 type Progress = { workouts: number; sessions: { title: string; date: string }[] };
@@ -71,26 +72,26 @@ export default function TrainerPage() {
     }
   };
 
-  if (!hydrated || loading) return <main className="p-4 text-muted">Loading…</main>;
+  if (!hydrated || loading) return <main className="p-4 text-white/50">Loading…</main>;
   if (!isTrainer)
     return (
       <main className="mx-auto max-w-3xl space-y-3 p-4">
-        <h1 className="text-2xl font-bold">Trainer</h1>
-        <p className="text-muted">This area is for trainers. Ask an admin to enable trainer mode.</p>
-        <Link href="/" className="text-accent">
+        <h1 className="page-title">Trainer</h1>
+        <p className="text-white/50">This area is for trainers. Ask an admin to enable trainer mode.</p>
+        <Link href="/" className="text-blue-400 hover:text-blue-300">
           ← Home
         </Link>
       </main>
     );
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-4">
-      <header className="flex items-center justify-between pt-2">
+    <main className="mx-auto max-w-3xl space-y-6">
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Clients</h1>
-          <p className="text-sm text-muted">{clients.length} linked</p>
+          <h1 className="page-title">Clients</h1>
+          <p className="page-subtitle">{clients.length} linked</p>
         </div>
-        <Link href="/profile" className="text-sm text-accent">
+        <Link href="/profile" className="text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors">
           Done
         </Link>
       </header>
@@ -107,15 +108,17 @@ export default function TrainerPage() {
           Add
         </button>
       </div>
-      {msg && <p className="text-xs text-accent">{msg}</p>}
+      {msg && <p className="text-xs text-blue-400">{msg}</p>}
 
-      <ul className="space-y-2">
+      <CoachAttentionInbox />
+
+      <ul className="space-y-3">
         {clients.map((c) => (
-          <li key={c.id} className="card space-y-2">
+          <li key={c.id} className="card space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold">{c.email}</p>
-                <p className="text-xs text-muted">{c.workouts} workouts logged</p>
+                <p className="font-semibold text-white">{c.email}</p>
+                <p className="text-xs text-white/50 mt-0.5">{c.workouts} workouts logged</p>
               </div>
               <button className="btn-ghost text-xs" onClick={() => viewProgress(c.id)}>
                 Progress
@@ -123,7 +126,7 @@ export default function TrainerPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted">Assign:</span>
+              <span className="text-xs text-white/50">Assign:</span>
               <select
                 className="input flex-1 py-1.5 text-sm"
                 defaultValue=""
@@ -141,13 +144,13 @@ export default function TrainerPage() {
             </div>
 
             {progress[c.id] && (
-              <div className="rounded-lg bg-surface2 p-2 text-xs">
-                <p className="mb-1 font-semibold">Recent sessions</p>
+              <div className="rounded-lg bg-white/[0.03] p-3 text-xs">
+                <p className="mb-1 font-semibold text-white">Recent sessions</p>
                 {progress[c.id].sessions.length === 0 ? (
-                  <p className="text-muted">No completed workouts yet.</p>
+                  <p className="text-white/50">No completed workouts yet.</p>
                 ) : (
                   progress[c.id].sessions.map((s, i) => (
-                    <p key={i} className="text-muted">
+                    <p key={i} className="text-white/50">
                       {s.date} · {s.title}
                     </p>
                   ))
@@ -157,7 +160,7 @@ export default function TrainerPage() {
           </li>
         ))}
         {clients.length === 0 && (
-          <li className="card text-center text-sm text-muted">
+          <li className="card text-center py-12 text-base text-white/50">
             Add a client by their account email to assign plans and view progress.
           </li>
         )}

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MonthCalendar, dayKey } from "@/components/MonthCalendar";
 import { Onboarding } from "@/components/Onboarding";
 import { AiOnboarding } from "@/components/AiOnboarding";
 import { Welcome } from "@/components/Welcome";
 import { OnlineBadge } from "@/components/OnlineBadge";
+import { AdaptiveTodayCard } from "@/components/AdaptiveTodayCard";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function HomePage() {
@@ -21,6 +22,7 @@ export default function HomePage() {
   const sessions = useStore((s) => s.sessions);
   const getActiveSession = useStore((s) => s.getActiveSession);
   const startSession = useStore((s) => s.startSession);
+  const trainedDays = useStore((s) => s.trainedDays());
   const [useAiOnboarding, setUseAiOnboarding] = useState(false);
 
   const today = new Date();
@@ -30,6 +32,18 @@ export default function HomePage() {
     today.getDate(),
   );
   const [selected, setSelected] = useState(todayKey);
+
+  const weekTrained = useMemo(() => {
+    let n = 0;
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    for (let i = 0; i < 7; i++) {
+      const k = dayKey(d.getFullYear(), d.getMonth(), d.getDate());
+      if (trainedDays.has(k)) n++;
+      d.setDate(d.getDate() - 1);
+    }
+    return n;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trainedDays]);
 
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
   if (!session) return <Welcome />;
@@ -69,29 +83,34 @@ export default function HomePage() {
   const standalone = templates.filter((t) => !inProgram.has(t.id));
 
   return (
-    <main className="space-y-8">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-8 md:p-12 border border-white/10">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070')] bg-cover bg-center opacity-20"></div>
-        <div className="relative z-10">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4">
-            Today's Workout
-          </h1>
-          <p className="text-lg md:text-xl text-white/70 max-w-2xl">
-            Track your progress, crush your goals. Every rep counts.
-          </p>
-        </div>
-      </div>
+    <main className="space-y-6">
+      <header>
+        <h1 className="page-title">
+          {isToday
+            ? "Today"
+            : new Date(selected + "T00:00:00").toLocaleDateString(undefined, {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+        </h1>
+        <p className="page-subtitle">
+          {active
+            ? "You have a workout in progress."
+            : "Pick up where you left off, or start something new."}
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {active && (
             <Link
               href={`/session/${active.id}`}
-              className="card block border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-blue-600/10 p-6 hover:from-blue-500/20 hover:to-blue-600/20 transition-all duration-300"
+              className="card block border-blue-500/20 bg-blue-500/[0.06] p-6 hover:bg-blue-500/[0.1] transition-colors"
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                <p className="text-sm uppercase tracking-wide text-blue-400 font-semibold">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <p className="section-label text-blue-400">
                   Workout in progress
                 </p>
               </div>
@@ -100,31 +119,22 @@ export default function HomePage() {
             </Link>
           )}
 
+          {!active && <AdaptiveTodayCard onStart={start} />}
+
           <div className="card">
             <MonthCalendar selected={selected} onSelect={setSelected} />
           </div>
 
           {/* Selected-day panel */}
           <section className="space-y-4">
-            <h2 className="text-lg font-semibold uppercase tracking-wide text-white/50">
-              {isToday
-                ? "Today"
-                : new Date(selected + "T00:00:00").toLocaleDateString(
-                    undefined,
-                    {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    },
-                  )}
-            </h2>
+            <h2 className="section-label">Workouts</h2>
 
             {daySessions.length > 0 ? (
               daySessions.map((s) => (
                 <Link
                   key={s.id}
                   href={`/session/${s.id}`}
-                  className="card flex items-center justify-between p-6 hover:bg-white/10 transition-all duration-300"
+                  className="card flex items-center justify-between p-6 hover:bg-white/[0.07] transition-colors"
                 >
                   <span className="font-semibold text-lg text-white">
                     {s.title}
@@ -154,14 +164,12 @@ export default function HomePage() {
                   if (days.length === 0) return null;
                   return (
                     <div key={p.id} className="card space-y-4">
-                      <p className="text-sm uppercase tracking-wide text-white/50 font-semibold">
-                        {p.name}
-                      </p>
+                      <p className="section-label">{p.name}</p>
                       {days.map((d) => (
                         <button
                           key={d.id}
                           onClick={() => start(d.id)}
-                          className="flex w-full items-center justify-between rounded-xl bg-white/5 px-6 py-4 hover:bg-white/10 transition-all duration-300 active:scale-[0.98]"
+                          className="flex w-full items-center justify-between rounded-xl bg-white/[0.03] px-6 py-4 hover:bg-white/[0.07] transition-colors active:scale-[0.98]"
                         >
                           <span className="font-semibold text-lg text-white">
                             {d.name}
@@ -178,7 +186,7 @@ export default function HomePage() {
                   <button
                     key={t.id}
                     onClick={() => start(t.id)}
-                    className="card flex w-full items-center justify-between p-6 hover:bg-white/10 transition-all duration-300 active:scale-[0.98]"
+                    className="card flex w-full items-center justify-between p-6 hover:bg-white/[0.07] transition-colors active:scale-[0.98]"
                   >
                     <span className="font-semibold text-lg text-white">
                       {t.name}
@@ -210,7 +218,7 @@ export default function HomePage() {
         <div className="space-y-6">
           {/* Quick Actions */}
           <div className="card">
-            <h3 className="text-xl font-bold mb-6 text-white">Quick Actions</h3>
+            <h3 className="section-label mb-4">Quick Actions</h3>
             <div className="space-y-4">
               <button
                 onClick={() => start(null)}
@@ -227,17 +235,33 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Motivation Card */}
-          <div className="card relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=2070')] bg-cover bg-center opacity-30"></div>
-            <div className="relative z-10 p-6">
-              <h3 className="text-xl font-bold mb-3 text-white">
-                Stay Consistent
-              </h3>
-              <p className="text-base text-white/70">
-                Small progress every day leads to big results. Keep showing up!
-              </p>
+          {/* This Week */}
+          <div className="card">
+            <h3 className="section-label mb-4">This Week</h3>
+            <div className="flex items-end gap-1.5">
+              {Array.from({ length: 7 }).map((_, i) => {
+                const d = new Date(today);
+                d.setDate(d.getDate() - (6 - i));
+                const trained = trainedDays.has(
+                  dayKey(d.getFullYear(), d.getMonth(), d.getDate()),
+                );
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                    <div
+                      className={`h-8 w-full rounded-md ${trained ? "bg-blue-500" : "bg-white/[0.05]"}`}
+                    />
+                    <span className="text-[10px] text-white/40">
+                      {d.toLocaleDateString(undefined, { weekday: "narrow" })}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
+            <p className="text-sm text-white/60 mt-4">
+              {weekTrained === 0
+                ? "No workouts yet this week."
+                : `${weekTrained} day${weekTrained === 1 ? "" : "s"} trained this week.`}
+            </p>
           </div>
         </div>
       </div>

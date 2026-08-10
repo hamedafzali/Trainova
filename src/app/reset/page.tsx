@@ -28,12 +28,12 @@ function ResetForm() {
   return (
     <main className="flex min-h-dvh flex-col justify-center p-6">
       <div className="mx-auto w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Set a new password</h1>
+        <h1 className="page-title">Set a new password</h1>
         {!token ? (
-          <p className="text-muted">This reset link is missing its token.</p>
+          <p className="text-white/50">This reset link is missing its token.</p>
         ) : done ? (
           <>
-            <p className="text-accent">Password updated. You can sign in now.</p>
+            <p className="text-blue-400">Password updated. You can sign in now.</p>
             <Link href="/" className="btn-primary w-full">
               Go to sign in
             </Link>
@@ -47,7 +47,7 @@ function ResetForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            {error && <p className="text-xs text-danger">{error}</p>}
+            {error && <p className="text-xs text-red-400">{error}</p>}
             <button
               className="btn-primary w-full py-3"
               disabled={busy || password.length < 6}
@@ -64,7 +64,7 @@ function ResetForm() {
 
 export default function ResetPage() {
   return (
-    <Suspense fallback={<main className="p-6 text-muted">Loading…</main>}>
+    <Suspense fallback={<main className="p-6 text-white/50">Loading…</main>}>
       <ResetForm />
     </Suspense>
   );

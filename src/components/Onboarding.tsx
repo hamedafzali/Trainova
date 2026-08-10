@@ -42,10 +42,10 @@ export function Onboarding() {
               <button
                 key={u}
                 onClick={() => setUnits(u)}
-                className={`flex-1 py-2.5 font-semibold transition-all duration-200 ${
+                className={`flex-1 py-2.5 font-semibold transition-colors ${
                   units === u
-                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                    : "bg-white/5 text-white/60 hover:bg-white/10"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
                 }`}
               >
                 {u}
@@ -79,7 +79,7 @@ export function Onboarding() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>
+      <h2 className="section-label">{title}</h2>
       {children}
     </section>
   );
@@ -100,10 +100,10 @@ function Chips<T extends string>({
         <button
           key={o.key}
           onClick={() => onPick(o.key)}
-          className={`rounded-full border px-4 py-2 text-sm ${
+          className={`rounded-full border px-4 py-2 text-sm transition-colors ${
             value === o.key
-              ? "border-accent bg-accent text-onAccent"
-              : "border-border bg-surface2 text-inkSoft"
+              ? "border-blue-600 bg-blue-600 text-white"
+              : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
           }`}
         >
           {o.label}

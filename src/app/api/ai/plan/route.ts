@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { bearer, verifyToken } from "@/server/auth";
+import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
 import { generatePlan, isAiEnabled } from "@/server/ai";
 
 export const runtime = "nodejs";
@@ -9,9 +9,8 @@ export async function POST(req: Request) {
   if (!isAiEnabled()) {
     return NextResponse.json({ error: "AI is not configured on this server." }, { status: 503 });
   }
-  const token = bearer(req);
-  const user = token ? await verifyToken(token) : null;
-  if (!user) return NextResponse.json({ error: "Sign in to use AI." }, { status: 401 });
+  const authorization = await authorizeAiRequest(req);
+  if (!isAuthorizedAiRequest(authorization)) return authorization.response;
 
   const { goal, experience, equipment } = await req
     .json()

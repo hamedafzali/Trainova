@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeWorkout } from "@/services/ai/workoutAnalysis";
 import type { WorkoutAnalysisInput } from "@/services/ai/prompts/workoutAnalysis";
+import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
 
 export async function POST(request: NextRequest) {
   try {
+    const authorization = await authorizeAiRequest(request);
+    if (!isAuthorizedAiRequest(authorization)) return authorization.response;
     const body = await request.json();
     const { action, data } = body;
 

@@ -75,27 +75,27 @@ export default function CalendarPage() {
   const todayKey = key(today.getFullYear(), today.getMonth(), today.getDate());
 
   return (
-    <main className="mx-auto max-w-xl space-y-4 p-4">
-      <header className="pt-2">
-        <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
-        <p className="text-sm text-muted">Every day you trained.</p>
+    <main className="mx-auto max-w-xl space-y-6">
+      <header>
+        <h1 className="page-title">Calendar</h1>
+        <p className="page-subtitle">Every day you trained.</p>
       </header>
 
       {!hydrated ? (
-        <div className="card animate-pulse text-muted">Loading…</div>
+        <div className="card animate-pulse text-white/50">Loading…</div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <Stat value={`🔥 ${streak}`} label={streak === 1 ? "day streak" : "day streak"} />
             <Stat value={`${monthCount}`} label={`in ${MONTHS[view.m]}`} />
           </div>
 
           <div className="card">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between">
               <button onClick={() => shift(-1)} className="btn-ghost px-3 py-1.5">
                 ‹
               </button>
-              <p className="font-semibold">
+              <p className="font-semibold text-white">
                 {MONTHS[view.m]} {view.y}
               </p>
               <button onClick={() => shift(1)} className="btn-ghost px-3 py-1.5">
@@ -103,7 +103,7 @@ export default function CalendarPage() {
               </button>
             </div>
 
-            <div className="mb-1 grid grid-cols-7 text-center text-[10px] uppercase text-muted">
+            <div className="mb-1 grid grid-cols-7 text-center text-[10px] uppercase text-white/40">
               {DOW.map((d, i) => (
                 <span key={i}>{d}</span>
               ))}
@@ -120,10 +120,10 @@ export default function CalendarPage() {
                   <button
                     key={i}
                     onClick={() => setSelected(k)}
-                    className={`flex aspect-square items-center justify-center rounded-lg text-sm tabular-nums transition ${
-                      trained ? "bg-accent font-bold text-onAccent" : "text-inkSoft hover:bg-surface2"
-                    } ${isSel ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""} ${
-                      isToday && !trained ? "border border-accent/60" : ""
+                    className={`flex aspect-square items-center justify-center rounded-lg text-sm tabular-nums transition-colors ${
+                      trained ? "bg-blue-600 font-bold text-white" : "text-white/60 hover:bg-white/[0.07]"
+                    } ${isSel ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-[#0a0a0f]" : ""} ${
+                      isToday && !trained ? "border border-blue-500/60" : ""
                     }`}
                   >
                     {d}
@@ -133,8 +133,8 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+          <section className="space-y-3">
+            <h2 className="section-label">
               {new Date(selected + "T00:00:00").toLocaleDateString(undefined, {
                 weekday: "long",
                 month: "long",
@@ -142,12 +142,16 @@ export default function CalendarPage() {
               })}
             </h2>
             {selectedSessions.length === 0 ? (
-              <div className="card text-center text-sm text-muted">No workout on this day.</div>
+              <div className="card text-center py-12 text-base text-white/50">No workout on this day.</div>
             ) : (
               selectedSessions.map((s) => (
-                <Link key={s.id} href={`/session/${s.id}`} className="card flex items-center justify-between">
-                  <span className="font-semibold">{s.title}</span>
-                  <span className="text-sm text-accent">
+                <Link
+                  key={s.id}
+                  href={`/session/${s.id}`}
+                  className="card flex items-center justify-between p-6 hover:bg-white/[0.07] transition-colors"
+                >
+                  <span className="font-semibold text-white">{s.title}</span>
+                  <span className="text-sm text-blue-400 font-semibold">
                     {s.status === "active" ? "Resume →" : "View →"}
                   </span>
                 </Link>
@@ -163,8 +167,8 @@ export default function CalendarPage() {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="card">
-      <p className="text-2xl font-bold tabular-nums">{value}</p>
-      <p className="text-xs text-muted">{label}</p>
+      <p className="text-2xl font-bold tabular-nums text-white">{value}</p>
+      <p className="text-xs text-white/50 mt-1">{label}</p>
     </div>
   );
 }

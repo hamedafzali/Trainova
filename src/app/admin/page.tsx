@@ -90,14 +90,14 @@ export default function AdminPage() {
     else alert("Failed to change role.");
   };
 
-  if (!hydrated || loading) return <main className="p-4 text-muted">Loading…</main>;
+  if (!hydrated || loading) return <main className="p-4 text-white/50">Loading…</main>;
 
   if (!isAdmin) {
     return (
       <main className="mx-auto max-w-4xl space-y-3 p-4">
-        <h1 className="text-2xl font-bold">Admin</h1>
-        <p className="text-muted">Admins only.</p>
-        <Link href="/" className="text-accent">
+        <h1 className="page-title">Admin</h1>
+        <p className="text-white/50">Admins only.</p>
+        <Link href="/" className="text-blue-400 hover:text-blue-300">
           ← Home
         </Link>
       </main>
@@ -105,19 +105,19 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl space-y-4 p-4">
-      <header className="flex items-center justify-between pt-2">
+    <main className="mx-auto max-w-4xl space-y-6">
+      <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
-          <p className="text-sm text-muted">{users.length} users</p>
+          <h1 className="page-title">Admin</h1>
+          <p className="page-subtitle">{users.length} users</p>
         </div>
-        <Link href="/profile" className="text-sm text-accent">
+        <Link href="/profile" className="text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors">
           Done
         </Link>
       </header>
 
       {stats && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           <Stat label="Users" value={stats.users} sub={`+${stats.new7d} this wk`} />
           <Stat label="Active 7d" value={stats.active7d} sub="trained" />
           <Stat label="Workouts" value={stats.workouts} sub="completed" />
@@ -131,15 +131,15 @@ export default function AdminPage() {
         🏋️ Manage device library
       </Link>
 
-      {error && <p className="text-sm text-danger">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {users.map((u) => (
-          <li key={u.id} className="card space-y-2">
+          <li key={u.id} className="card space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold">{u.email}</p>
-                <p className="text-xs text-muted">
+                <p className="font-semibold text-white">{u.email}</p>
+                <p className="text-xs text-white/50 mt-0.5">
                   {u.role}
                   {u.role === "admin" ? " ★" : ""} · joined{" "}
                   {new Date(u.created_at).toLocaleDateString()} ·{" "}
@@ -173,10 +173,10 @@ export default function AdminPage() {
 
 function Stat({ label, value, sub }: { label: string; value: number; sub: string }) {
   return (
-    <div className="card p-3 text-center">
-      <p className="text-2xl font-bold tabular-nums">{value.toLocaleString()}</p>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-inkSoft">{label}</p>
-      <p className="text-[10px] text-muted">{sub}</p>
+    <div className="card p-4 text-center">
+      <p className="text-2xl font-bold tabular-nums text-white">{value.toLocaleString()}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-white/60 mt-1">{label}</p>
+      <p className="text-[10px] text-white/40">{sub}</p>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   validateUserInput,
   addMedicalDisclaimer,
 } from './safety';
+import { AiOutputValidationError, validateGeneratedWorkout } from './validate';
 
 export class WorkoutGenerationError extends Error {
   constructor(
@@ -86,10 +87,14 @@ export async function generateWorkout(
     try {
       const jsonMatch = contentString.match(/\{[\s\S]*\}/);
       const jsonString = jsonMatch ? jsonMatch[0] : contentString;
-      parsedWorkout = JSON.parse(jsonString);
+      parsedWorkout = validateGeneratedWorkout(JSON.parse(jsonString));
     } catch (parseError) {
+      const message =
+        parseError instanceof AiOutputValidationError
+          ? parseError.message
+          : 'Failed to parse AI response as JSON';
       throw new WorkoutGenerationError(
-        'Failed to parse AI response as JSON',
+        message,
         'PARSE_ERROR',
         { rawContent: contentString }
       );
@@ -172,10 +177,14 @@ export async function generateQuickWorkout(input: {
     try {
       const jsonMatch = contentString.match(/\{[\s\S]*\}/);
       const jsonString = jsonMatch ? jsonMatch[0] : contentString;
-      parsedWorkout = JSON.parse(jsonString);
+      parsedWorkout = validateGeneratedWorkout(JSON.parse(jsonString));
     } catch (parseError) {
+      const message =
+        parseError instanceof AiOutputValidationError
+          ? parseError.message
+          : 'Failed to parse AI response as JSON';
       throw new WorkoutGenerationError(
-        'Failed to parse AI response as JSON',
+        message,
         'PARSE_ERROR',
         { rawContent: contentString }
       );
@@ -242,10 +251,14 @@ export async function generateWorkoutVariation(
     try {
       const jsonMatch = contentString.match(/\{[\s\S]*\}/);
       const jsonString = jsonMatch ? jsonMatch[0] : contentString;
-      parsedWorkout = JSON.parse(jsonString);
+      parsedWorkout = validateGeneratedWorkout(JSON.parse(jsonString));
     } catch (parseError) {
+      const message =
+        parseError instanceof AiOutputValidationError
+          ? parseError.message
+          : 'Failed to parse AI response as JSON';
       throw new WorkoutGenerationError(
-        'Failed to parse AI response as JSON',
+        message,
         'PARSE_ERROR',
         { rawContent: contentString }
       );

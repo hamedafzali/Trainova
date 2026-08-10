@@ -24,18 +24,22 @@ export default function ProgressPage() {
   );
 
   return (
-    <main className="mx-auto max-w-6xl space-y-4 p-4">
-      <header className="flex items-center justify-between pt-2">
+    <main className="space-y-6">
+      <header className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Progress</h1>
-          <p className="text-sm text-muted">Your trend on every exercise.</p>
+          <h1 className="page-title">Progress</h1>
+          <p className="page-subtitle">Your trend on every exercise.</p>
         </div>
-        <div className="flex overflow-hidden rounded-xl border border-border text-sm">
+        <div className="flex overflow-hidden rounded-xl border border-white/10 text-sm shrink-0">
           {(["kg", "lb"] as const).map((u) => (
             <button
               key={u}
               onClick={() => setUnits(u)}
-              className={`px-3 py-1.5 ${units === u ? "bg-accent text-onAccent" : "text-muted"}`}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                units === u
+                  ? "bg-blue-600 text-white"
+                  : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+              }`}
             >
               {u}
             </button>
@@ -44,22 +48,22 @@ export default function ProgressPage() {
       </header>
 
       {!hydrated ? (
-        <div className="card animate-pulse text-muted">Loading…</div>
+        <div className="card animate-pulse text-white/50">Loading…</div>
       ) : exercises.length === 0 ? (
-        <div className="card text-center text-sm text-muted">
+        <div className="card text-center py-12 text-base text-white/50">
           Complete some workouts to see your progress.
         </div>
       ) : (
         <>
-          <div className="flex gap-1.5">
+          <div className="flex gap-2">
             {(["topWeight", "volume"] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setMetric(m)}
-                className={`rounded-full border px-3 py-1.5 text-xs ${
+                className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                   metric === m
-                    ? "border-accent bg-accent text-onAccent"
-                    : "border-border bg-surface2 text-inkSoft"
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
                 }`}
               >
                 {m === "topWeight" ? "Top weight" : "Volume"}
@@ -67,7 +71,7 @@ export default function ProgressPage() {
             ))}
           </div>
 
-          <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {exercises.map((exId) => {
               const ex = exerciseById(exId);
               const device = deviceForExercise(exId);
@@ -115,21 +119,21 @@ export default function ProgressPage() {
               return (
                 <li key={exId} className="card">
                   <button
-                    className="flex w-full items-center gap-2.5 text-left"
+                    className="flex w-full items-center gap-3 text-left"
                     onClick={() => setOpen(expanded ? null : exId)}
                   >
-                    <DeviceAvatar device={device} className="h-9 w-9 rounded-lg text-sm" />
+                    <DeviceAvatar device={device} className="h-10 w-10 rounded-lg text-sm" />
                     <div className="flex-1">
-                      <p className="font-semibold leading-tight">{ex?.name ?? "Exercise"}</p>
-                      <p className="text-xs text-muted">{subtitle}</p>
+                      <p className="font-semibold leading-tight text-white">{ex?.name ?? "Exercise"}</p>
+                      <p className="text-xs text-white/50 mt-0.5">{subtitle}</p>
                     </div>
-                    <span className="text-xs text-muted">{expanded ? "▲" : "▼"}</span>
+                    <span className="text-xs text-white/50">{expanded ? "▲" : "▼"}</span>
                   </button>
 
                   {expanded && (
-                    <div className="mt-3 border-t border-border pt-3">
+                    <div className="mt-4 border-t border-white/10 pt-4">
                       <LineChart data={series} unit={chartUnit} />
-                      <p className="mt-1 text-center text-[11px] text-muted">
+                      <p className="mt-2 text-center text-[11px] text-white/40">
                         {label} per session · {first?.date} → {latest?.date}
                       </p>
                     </div>

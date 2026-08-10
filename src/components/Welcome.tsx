@@ -63,18 +63,14 @@ export function Welcome() {
 
   return (
     <main className="flex min-h-screen flex-col justify-center gap-8 p-6">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600/20 to-purple-600/20 p-8 md:p-12 border border-white/10 text-center">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070')] bg-cover bg-center opacity-20"></div>
-        <div className="relative z-10">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-4xl shadow-lg shadow-blue-500/25">
-            🏋️
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-3">
-            Trainova
-          </h1>
-          <p className="text-lg text-white/70">Open. Lift. Log. Done.</p>
+      <div className="text-center">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-2xl">
+          🏋️
         </div>
+        <h1 className="text-3xl font-bold tracking-tight text-white mb-1.5">
+          Trainova
+        </h1>
+        <p className="text-base text-white/50">Open. Lift. Log. Done.</p>
       </div>
 
       <div className="card space-y-4 max-w-md mx-auto w-full">
@@ -83,10 +79,10 @@ export function Welcome() {
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`flex-1 py-3 transition-all duration-200 ${
+              className={`flex-1 py-3 transition-colors ${
                 mode === m
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                  : "bg-white/5 text-white/60 hover:bg-white/10"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
               }`}
             >
               {m === "in" ? "Sign in" : "Create account"}
@@ -113,7 +109,7 @@ export function Welcome() {
         />
 
         {!cloud && (
-          <p className="rounded-xl bg-white/5 px-4 py-3 text-sm text-white/60 border border-white/10">
+          <p className="rounded-xl bg-white/[0.03] px-4 py-3 text-sm text-white/60 border border-white/10">
             Cloud accounts aren't configured on this server yet. You can
             continue as a guest now — sign-in starts working once Supabase is
             connected.

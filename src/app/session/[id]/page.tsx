@@ -7,7 +7,9 @@ import { ExercisePicker } from "@/components/ExercisePicker";
 import { OnlineBadge } from "@/components/OnlineBadge";
 import { WorkoutCarousel } from "@/components/WorkoutCarousel";
 import { RestTimerBar } from "@/components/RestTimerBar";
+import { SessionFeedbackForm } from "@/components/SessionFeedbackForm";
 import { haptic } from "@/lib/haptics";
+import { trackEvent } from "@/lib/analytics";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function SessionPage() {
@@ -23,9 +25,11 @@ export default function SessionPage() {
   const reopenSession = useStore((s) => s.reopenSession);
   const archiveSession = useStore((s) => s.archiveSession);
   const unarchiveSession = useStore((s) => s.unarchiveSession);
+  const recordSessionFeedback = useStore((s) => s.recordSessionFeedback);
 
   const [picking, setPicking] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const sessionSets = useMemo(
     () =>
@@ -42,12 +46,12 @@ export default function SessionPage() {
     return seen;
   }, [sessionSets]);
 
-  if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
+  if (!hydrated) return <main className="p-4 text-white/50">Loading…</main>;
   if (!session) {
     return (
       <main className="mx-auto max-w-2xl space-y-3 p-4">
-        <p className="text-muted">Session not found.</p>
-        <Link href="/" className="text-accent">
+        <p className="text-white/50">Session not found.</p>
+        <Link href="/" className="text-blue-400 hover:text-blue-300">
           ← Home
         </Link>
       </main>
@@ -73,15 +77,25 @@ export default function SessionPage() {
 
   const finish = () => {
     const { discarded } = finishSession(session.id);
+    trackEvent(discarded ? "workout_discarded" : "workout_finished", {
+      session_id: session.id,
+      completed_sets: sessionSets.filter((set) => set.completed).length,
+    });
     if (!discarded) haptic("finish");
     router.push(discarded ? "/" : "/history");
   };
 
+  const requestFinish = () => {
+    const hasCompletedSet = sessionSets.some((set) => set.completed);
+    if (hasCompletedSet) setFeedbackOpen(true);
+    else finish();
+  };
+
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
-      <header className="flex items-center justify-between pt-2">
+    <main className="mx-auto max-w-2xl space-y-6">
+      <header className="flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted">
+          <p className="section-label">
             {session.status === "active"
               ? "In progress"
               : session.status === "completed"
@@ -90,13 +104,13 @@ export default function SessionPage() {
             {" · "}
             {new Date(session.startedAt).toLocaleDateString()}
           </p>
-          <h1 className="text-2xl font-bold tracking-tight">{session.title}</h1>
+          <h1 className="page-title mt-1">{session.title}</h1>
         </div>
         <OnlineBadge />
       </header>
 
       {exerciseOrder.length === 0 && (
-        <div className="card text-center text-muted">
+        <div className="card text-center py-12 text-base text-white/50">
           {isActive
             ? "Empty workout — add your first exercise below."
             : "No sets were logged."}
@@ -124,7 +138,7 @@ export default function SessionPage() {
           </button>
           <button
             className="btn-primary w-full py-4 text-base font-semibold"
-            onClick={finish}
+            onClick={requestFinish}
           >
             Finish workout
           </button>
@@ -232,6 +246,27 @@ export default function SessionPage() {
       )}
 
       {isActive && <RestTimerBar />}
+
+      {feedbackOpen && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/60 p-4 md:items-center md:justify-center" role="dialog" aria-modal="true" aria-label="Workout feedback">
+          <div className="w-full max-w-md">
+            <SessionFeedbackForm
+              onSkip={finish}
+              onSubmit={(input) => {
+                recordSessionFeedback(session.id, input);
+                trackEvent("workout_feedback_submitted", {
+                  session_id: session.id,
+                  difficulty: input.difficulty,
+                  energy: input.energy,
+                  confidence: input.confidence,
+                  reported_pain: Boolean(input.pain),
+                });
+                finish();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </main>
   );
 }

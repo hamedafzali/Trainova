@@ -54,6 +54,10 @@ export interface TemplateExercise {
   position: number;
   sets: TemplateSet[]; // per-set targets → supports ramps (30×12, 35×12, 42.5×12)
   restSeconds: number;
+  tempo?: string | null;
+  targetRpe?: number | null;
+  cue?: string | null;
+  substitution?: string | null;
 }
 
 export interface WorkoutTemplate {
@@ -116,6 +120,21 @@ export interface WorkoutSet {
   incline?: number | null;
   distance?: number | null;
   durationSec?: number | null; // a timed hold (time-mode exercises)
+}
+
+export type SessionDifficulty = "easy" | "right" | "hard";
+
+/** A short post-workout signal used for the next-session recommendation. */
+export interface SessionFeedback {
+  id: string;
+  owner: string;
+  sessionId: string;
+  difficulty: SessionDifficulty;
+  energy: 1 | 2 | 3 | 4 | 5;
+  confidence: 1 | 2 | 3 | 4 | 5;
+  pain: string | null;
+  completedInMinutes: number | null;
+  createdAt: string;
 }
 
 // Append-only correction trail (see PLATFORM.md §F).
