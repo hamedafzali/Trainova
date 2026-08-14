@@ -3,6 +3,7 @@ import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { SyncManager } from "@/components/SyncManager";
+import { NO_FLASH_THEME_SCRIPT } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "Trainova",
@@ -12,7 +13,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0f",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0d" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -26,7 +30,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gradient-to-br from-[#0a0a0f] via-[#0f0f1a] to-[#0a0a0f]">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
+      </head>
+      <body className="min-h-screen bg-bg">
         <ServiceWorker />
         <SyncManager />
         <AppShell>{children}</AppShell>
