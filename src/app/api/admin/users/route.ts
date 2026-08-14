@@ -9,13 +9,19 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const pool = getPool();
   if (!pool) return NextResponse.json({ error: "Not configured" }, { status: 503 });
-  const admin = await requireAdmin(req);
-  if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const r = await pool.query(
-    `select u.id, u.email, u.role, u.created_at,
-            (select count(*) from user_state s where s.user_id = u.id) as has_state
-     from users u order by u.created_at asc`
-  );
-  return NextResponse.json({ users: r.rows });
+  try {
+    const admin = await requireAdmin(req);
+    if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const r = await pool.query(
+      `select u.id, u.email, u.role, u.created_at,
+              (select count(*) from user_state s where s.user_id = u.id) as has_state
+       from users u order by u.created_at asc`
+    );
+    return NextResponse.json({ users: r.rows });
+  } catch (e) {
+    console.error("Failed to load users:", e);
+    return NextResponse.json({ error: "Couldn't load users." }, { status: 500 });
+  }
 }

@@ -5,6 +5,8 @@ const nextConfig = {
   output: "standalone",
   experimental: {
     typedRoutes: false,
+    // Required for instrumentation.ts (startup fail-fast checks) to load.
+    instrumentationHook: true,
   },
 };
 

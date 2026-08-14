@@ -9,6 +9,11 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const pool = getPool();
   if (!pool) return NextResponse.json({ error: "Not configured" }, { status: 503 });
-  if (!(await requireAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  return NextResponse.json(await getStats(pool));
+  try {
+    if (!(await requireAdmin(req))) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.json(await getStats(pool));
+  } catch (e) {
+    console.error("Failed to load admin stats:", e);
+    return NextResponse.json({ error: "Couldn't load stats." }, { status: 500 });
+  }
 }

@@ -10,7 +10,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const pool = getPool();
   if (!pool) return NextResponse.json({ devices: [], exercises: [] });
-  await ensureLibrary(pool);
-  const lib = await getLibrary(pool);
-  return NextResponse.json(lib);
+  try {
+    await ensureLibrary(pool);
+    const lib = await getLibrary(pool);
+    return NextResponse.json(lib);
+  } catch (e) {
+    console.error("Failed to load library:", e);
+    return NextResponse.json({ error: "Couldn't load the library." }, { status: 500 });
+  }
 }
