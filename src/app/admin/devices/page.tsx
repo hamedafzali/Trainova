@@ -16,13 +16,22 @@ export default function AdminDevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const r = await fetch("/api/admin/devices", {
-      headers: { authorization: `Bearer ${getToken()}` },
-    });
-    if (r.ok) setDevices((await r.json()).devices ?? []);
-    setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/devices", {
+        headers: { authorization: `Bearer ${getToken()}` },
+      });
+      if (r.ok) setDevices((await r.json()).devices ?? []);
+      else setError("Couldn't load the device library.");
+    } catch {
+      setError("Couldn't load the device library. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -221,7 +230,7 @@ function DeviceForm({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-xs text-white/50">{label}</span>
+      <span className="text-xs text-muted">{label}</span>
       {children}
     </label>
   );

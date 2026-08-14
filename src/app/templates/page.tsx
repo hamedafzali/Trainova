@@ -22,6 +22,14 @@ export default function PlansPage() {
   const getActiveSession = useStore((s) => s.getActiveSession);
   const [name, setName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [confirmDeleteProgram, setConfirmDeleteProgram] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [confirmDeleteTemplate, setConfirmDeleteTemplate] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const start = (templateId: string) => {
     const { id, blocked } = startSession(templateId);
@@ -36,6 +44,17 @@ export default function PlansPage() {
   // Templates not attached to any program show up as standalone plans.
   const inProgram = new Set(programs.flatMap((p) => p.dayTemplateIds));
   const standalone = templates.filter((t) => !inProgram.has(t.id));
+
+  const isEmpty = hydrated && programs.length === 0 && standalone.length === 0;
+
+  // Lead action: resume an in-progress session, or jump straight into the
+  // first available day — programs first, then standalone plans.
+  const activeSession = hydrated ? getActiveSession() : undefined;
+  const firstProgram = programs[0];
+  const firstProgramDay = firstProgram
+    ? daysForProgram(firstProgram.id)[0]
+    : undefined;
+  const heroTemplate = firstProgramDay ?? standalone[0];
 
   return (
     <main className="space-y-6">

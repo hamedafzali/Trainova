@@ -22,17 +22,17 @@ export function SessionFeedbackForm({
   const [pain, setPain] = useState("");
 
   return (
-    <div className="card space-y-5 border-blue-500/30">
+    <div className="card space-y-5 border-accent/30">
       <div>
         <p className="section-label">One-minute check-in</p>
-        <h2 className="mt-1 text-xl font-bold text-white">How did that feel?</h2>
-        <p className="mt-1 text-sm text-white/60">Your answer adjusts the next recommendation.</p>
+        <h2 className="mt-1 text-xl font-bold text-ink">How did that feel?</h2>
+        <p className="mt-1 text-sm text-inkSoft">Your answer adjusts the next recommendation.</p>
       </div>
       <FeedbackScale label="Difficulty" value={difficulty} options={["easy", "right", "hard"]} onPick={setDifficulty} />
       <FeedbackScale label="Energy" value={energy} options={[1, 2, 3, 4, 5] as const} onPick={setEnergy} />
       <FeedbackScale label="Confidence" value={confidence} options={[1, 2, 3, 4, 5] as const} onPick={setConfidence} />
-      <label className="block text-sm text-white/70">
-        Pain or limitation? <span className="text-white/40">Optional</span>
+      <label className="block text-sm text-inkSoft">
+        Pain or limitation? <span className="text-muted">Optional</span>
         <input
           className="input mt-2"
           value={pain}
@@ -72,13 +72,13 @@ function FeedbackScale<T extends string | number>({
 }) {
   return (
     <div>
-      <p className="mb-2 text-sm font-medium text-white/70">{label}</p>
+      <p className="mb-2 text-sm font-medium text-inkSoft">{label}</p>
       <div className="grid grid-cols-3 gap-2">
         {options.map((option) => (
           <button
             key={option}
-            className={`rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
-              value === option ? "bg-blue-600 text-white" : "bg-white/[0.04] text-white/60 hover:bg-white/[0.08]"
+            className={`rounded-control px-3 py-3 text-sm font-semibold transition-colors ${
+              value === option ? "bg-accent text-onAccent" : "bg-surface2 text-inkSoft hover:bg-border/60"
             }`}
             onClick={() => onPick(option)}
           >

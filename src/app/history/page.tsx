@@ -24,10 +24,7 @@ export default function HistoryPage() {
         .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
         .map((s) => {
           const mine = sets.filter((x) => x.sessionId === s.id && x.completed);
-          const volume = mine.reduce(
-            (acc, x) => acc + (x.actualWeight ?? 0) * (x.actualReps ?? 0),
-            0,
-          );
+          const volume = totalVolume(mine);
           const byExercise = new Map<string, WorkoutSet[]>();
           for (const x of mine) {
             const list = byExercise.get(x.exerciseId) ?? [];
@@ -46,6 +43,13 @@ export default function HistoryPage() {
         }),
     [sessions, sets, showArchived],
   );
+
+  const weekRows = useMemo(
+    () => rows.filter((r) => Date.now() - +new Date(r.session.startedAt) <= 7 * DAY_MS),
+    [rows],
+  );
+  const weekVolume = weekRows.reduce((sum, r) => sum + r.volume, 0);
+  const totalVol = rows.reduce((sum, r) => sum + r.volume, 0);
 
   return (
     <main className="space-y-6">

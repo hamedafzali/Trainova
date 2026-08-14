@@ -20,14 +20,23 @@ export default function TrainerPage() {
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<Record<string, Progress>>({});
 
   const auth = () => ({ authorization: `Bearer ${getToken()}` });
 
   const load = useCallback(async () => {
-    const r = await fetch("/api/trainer/clients", { headers: { authorization: `Bearer ${getToken()}` } });
-    if (r.ok) setClients((await r.json()).clients ?? []);
-    setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/trainer/clients", { headers: { authorization: `Bearer ${getToken()}` } });
+      if (r.ok) setClients((await r.json()).clients ?? []);
+      else setError("Couldn't load clients.");
+    } catch {
+      setError("Couldn't load clients. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -38,16 +47,20 @@ export default function TrainerPage() {
 
   const addClient = async () => {
     setMsg(null);
-    const r = await fetch("/api/trainer/clients", {
-      method: "POST",
-      headers: { "content-type": "application/json", ...auth() },
-      body: JSON.stringify({ email }),
-    });
-    const j = await r.json();
-    if (r.ok) {
-      setEmail("");
-      load();
-    } else setMsg(j.error ?? "Failed");
+    try {
+      const r = await fetch("/api/trainer/clients", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...auth() },
+        body: JSON.stringify({ email }),
+      });
+      const j = await r.json();
+      if (r.ok) {
+        setEmail("");
+        load();
+      } else setMsg(j.error ?? "Failed");
+    } catch {
+      setMsg("Couldn't reach the server. Check your connection and try again.");
+    }
   };
 
   const assign = async (clientId: string, templateId: string) => {

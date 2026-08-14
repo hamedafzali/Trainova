@@ -49,17 +49,7 @@ export default function HomePage() {
   if (!session) return <Welcome />;
   if (!onboarded) {
     if (useAiOnboarding) return <AiOnboarding />;
-    return (
-      <div className="space-y-4">
-        <Onboarding />
-        <button
-          className="btn-ghost mx-auto block w-full max-w-md py-3 text-sm"
-          onClick={() => setUseAiOnboarding(true)}
-        >
-          ✨ Use AI-Powered Onboarding Instead
-        </button>
-      </div>
-    );
+    return <Onboarding onUseAiOnboarding={() => setUseAiOnboarding(true)} />;
   }
 
   const active = getActiveSession();
@@ -106,16 +96,16 @@ export default function HomePage() {
           {active && (
             <Link
               href={`/session/${active.id}`}
-              className="card block border-blue-500/20 bg-blue-500/[0.06] p-6 hover:bg-blue-500/[0.1] transition-colors"
+              className="card block border-accent/20 bg-accent/[0.06] p-6 hover:bg-accent/[0.1] transition-colors"
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <p className="section-label text-blue-400">
+                <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+                <p className="section-label text-accent">
                   Workout in progress
                 </p>
               </div>
-              <p className="text-2xl font-bold text-white">{active.title}</p>
-              <p className="text-base text-white/60 mt-2">Tap to continue →</p>
+              <p className="text-2xl font-bold text-ink">{active.title}</p>
+              <p className="text-base text-inkSoft mt-2">Tap to continue →</p>
             </Link>
           )}
 
@@ -134,12 +124,12 @@ export default function HomePage() {
                 <Link
                   key={s.id}
                   href={`/session/${s.id}`}
-                  className="card flex items-center justify-between p-6 hover:bg-white/[0.07] transition-colors"
+                  className="card flex items-center justify-between p-6 hover:bg-border/60 transition-colors"
                 >
-                  <span className="font-semibold text-lg text-white">
+                  <span className="font-semibold text-lg text-ink">
                     {s.title}
                   </span>
-                  <span className="text-lg text-blue-400 font-semibold">
+                  <span className="text-lg text-accent font-semibold">
                     {s.status === "active" ? "Resume →" : "View / edit →"}
                   </span>
                 </Link>
@@ -147,7 +137,7 @@ export default function HomePage() {
             ) : isPastOrToday && !active ? (
               <>
                 {!isToday && (
-                  <p className="text-sm text-white/50">
+                  <p className="text-sm text-muted">
                     Logging a workout for{" "}
                     {new Date(selected + "T00:00:00").toLocaleDateString(
                       undefined,
@@ -169,12 +159,12 @@ export default function HomePage() {
                         <button
                           key={d.id}
                           onClick={() => start(d.id)}
-                          className="flex w-full items-center justify-between rounded-xl bg-white/[0.03] px-6 py-4 hover:bg-white/[0.07] transition-colors active:scale-[0.98]"
+                          className="flex w-full items-center justify-between rounded-control bg-surface2 px-6 py-4 hover:bg-border/60 transition-colors active:scale-[0.98]"
                         >
-                          <span className="font-semibold text-lg text-white">
+                          <span className="font-semibold text-lg text-ink">
                             {d.name}
                           </span>
-                          <span className="text-lg text-blue-400 font-semibold">
+                          <span className="text-lg text-accent font-semibold">
                             {d.exercises.length} ex · Start →
                           </span>
                         </button>
@@ -186,25 +176,25 @@ export default function HomePage() {
                   <button
                     key={t.id}
                     onClick={() => start(t.id)}
-                    className="card flex w-full items-center justify-between p-6 hover:bg-white/[0.07] transition-colors active:scale-[0.98]"
+                    className="card flex w-full items-center justify-between p-6 hover:bg-border/60 transition-colors active:scale-[0.98]"
                   >
-                    <span className="font-semibold text-lg text-white">
+                    <span className="font-semibold text-lg text-ink">
                       {t.name}
                     </span>
-                    <span className="text-lg text-blue-400 font-semibold">
+                    <span className="text-lg text-accent font-semibold">
                       Start →
                     </span>
                   </button>
                 ))}
                 <button
                   onClick={() => start(null)}
-                  className="w-full py-4 text-center text-base text-white/50 underline underline-offset-4 hover:text-white/70 transition-colors"
+                  className="w-full py-4 text-center text-base text-muted underline underline-offset-4 hover:text-inkSoft transition-colors"
                 >
                   or start an empty workout
                 </button>
               </>
             ) : (
-              <div className="card text-center py-12 text-base text-white/50">
+              <div className="card text-center py-12 text-base text-muted">
                 {active
                   ? "Finish your active workout to start another."
                   : isPastOrToday

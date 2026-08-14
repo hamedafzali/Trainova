@@ -33,23 +33,31 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState<AdminUser | null>(null);
 
   const load = useCallback(async () => {
     const t = getToken();
     if (!t) return;
-    const auth = { authorization: `Bearer ${t}` };
-    const [u, s] = await Promise.all([
-      fetch("/api/admin/users", { headers: auth }),
-      fetch("/api/admin/stats", { headers: auth }),
-    ]);
-    if (!u.ok) {
-      setError("Not authorized.");
+    setLoading(true);
+    setError(null);
+    try {
+      const auth = { authorization: `Bearer ${t}` };
+      const [u, s] = await Promise.all([
+        fetch("/api/admin/users", { headers: auth }),
+        fetch("/api/admin/stats", { headers: auth }),
+      ]);
+      if (!u.ok) {
+        const j = await u.json().catch(() => ({}) as { error?: string });
+        setError(u.status === 403 ? "Not authorized." : j.error || "Couldn't load admin data.");
+        return;
+      }
+      setUsers((await u.json()).users ?? []);
+      if (s.ok) setStats(await s.json());
+    } catch {
+      setError("Couldn't load admin data. Check your connection and try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-    setUsers((await u.json()).users ?? []);
-    if (s.ok) setStats(await s.json());
-    setLoading(false);
   }, []);
 
   useEffect(() => {

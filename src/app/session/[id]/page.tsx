@@ -92,7 +92,7 @@ export default function SessionPage() {
   };
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6">
+    <main className="mx-auto max-w-2xl space-y-8">
       <header className="flex items-center justify-between">
         <div>
           <p className="section-label">
@@ -129,33 +129,35 @@ export default function SessionPage() {
       )}
 
       {isActive && (
-        <>
+        <div className="space-y-2">
           <button
-            className="btn-ghost w-full py-4 text-base font-semibold"
-            onClick={() => setPicking(true)}
-          >
-            + Add exercise
-          </button>
-          <button
-            className="btn-primary w-full py-4 text-base font-semibold"
+            className="btn-primary w-full py-4 text-base font-semibold transition-transform active:scale-[0.99]"
             onClick={requestFinish}
           >
             Finish workout
           </button>
           <button
-            className="btn-danger w-full py-4 text-base font-semibold"
-            onClick={() => {
-              if (
-                confirm("Discard this workout? Logged sets will be deleted.")
-              ) {
-                discardSession(session.id);
-                router.push("/");
-              }
-            }}
+            className="btn-ghost w-full py-4 text-base font-semibold transition-transform active:scale-[0.99]"
+            onClick={() => setPicking(true)}
           >
-            Discard
+            + Add exercise
           </button>
-        </>
+          <button
+            className="w-full py-2 text-sm font-semibold text-danger transition-opacity active:opacity-60"
+            onClick={() =>
+              setConfirmAction({
+                title: "Discard this workout?",
+                body: "Logged sets will be deleted.",
+                onConfirm: () => {
+                  discardSession(session.id);
+                  router.push("/");
+                },
+              })
+            }
+          >
+            Discard workout
+          </button>
+        </div>
       )}
 
       {session.status === "completed" && (
@@ -184,16 +186,16 @@ export default function SessionPage() {
           </div>
           <button
             className="btn-danger w-full py-4 text-base font-semibold"
-            onClick={() => {
-              if (
-                confirm(
-                  "Delete this workout permanently? This can't be undone.",
-                )
-              ) {
-                discardSession(session.id);
-                router.push("/history");
-              }
-            }}
+            onClick={() =>
+              setConfirmAction({
+                title: "Delete this workout permanently?",
+                body: "This can't be undone.",
+                onConfirm: () => {
+                  discardSession(session.id);
+                  router.push("/history");
+                },
+              })
+            }
           >
             Delete workout
           </button>
@@ -213,16 +215,16 @@ export default function SessionPage() {
           </button>
           <button
             className="btn-danger py-4 text-base font-semibold"
-            onClick={() => {
-              if (
-                confirm(
-                  "Delete this workout permanently? This can't be undone.",
-                )
-              ) {
-                discardSession(session.id);
-                router.push("/history");
-              }
-            }}
+            onClick={() =>
+              setConfirmAction({
+                title: "Delete this workout permanently?",
+                body: "This can't be undone.",
+                onConfirm: () => {
+                  discardSession(session.id);
+                  router.push("/history");
+                },
+              })
+            }
           >
             Delete
           </button>

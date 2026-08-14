@@ -169,15 +169,15 @@ export function SessionExercise({
   };
 
   return (
-    <section className="card space-y-3">
+    <section className="card space-y-5">
       {/* header */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3">
         <DeviceAvatar
           device={device}
-          className="h-10 w-10 rounded-lg text-sm"
+          className="h-10 w-10 rounded-control text-sm"
         />
         <div className="flex-1">
-          <h3 className="font-semibold leading-tight text-ink">
+          <h3 className="text-h3 leading-tight text-ink">
             {ex?.name ?? "Exercise"}
           </h3>
           {device && (
@@ -187,11 +187,11 @@ export function SessionExercise({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {sets.map((s) => (
             <span
               key={s.id}
-              className={`h-2 w-2 rounded-full ${
+              className={`h-1.5 w-1.5 rounded-full transition-colors ${
                 s.completed
                   ? "bg-green"
                   : s === activeSet
@@ -204,25 +204,28 @@ export function SessionExercise({
       </div>
 
       {/* rounds (sets) */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {sets.map((s) => {
           const prev = prevWeight(s.setIndex);
 
           if (s === activeSet && isTime) {
             return (
-              <div key={s.id} className="space-y-2 rounded-xl bg-bg/60 p-2.5">
-                <div className="flex items-center justify-between text-xs text-muted">
-                  <span>
-                    Hold {s.setIndex + 1} · last{" "}
-                    <b className="text-inkSoft">
-                      {lastHold?.durationSec ? `${lastHold.durationSec}s` : "—"}
-                    </b>
-                  </span>
+              <div key={s.id} className="space-y-5 rounded-card bg-bg/60 p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] text-muted">
+                    Hold {s.setIndex + 1}
+                    {lastHold?.durationSec != null && (
+                      <>
+                        {" "}
+                        · last <b className="text-inkSoft">{lastHold.durationSec}s</b>
+                      </>
+                    )}
+                  </p>
                   <button
-                    className="text-danger"
+                    className="text-xs text-danger transition-opacity active:opacity-60"
                     onClick={() => removeSet(s.id)}
                   >
-                    ✕ remove
+                    Remove
                   </button>
                 </div>
                 <CardioField
@@ -240,21 +243,22 @@ export function SessionExercise({
 
           if (s === activeSet && isCardio) {
             return (
-              <div key={s.id} className="space-y-2 rounded-xl bg-bg/60 p-2.5">
-                <div className="flex items-center justify-between text-xs text-muted">
-                  <span>
-                    Cardio · last{" "}
-                    <b className="text-inkSoft">
-                      {lastCardio?.durationMin
-                        ? `${lastCardio.durationMin} min`
-                        : "—"}
-                    </b>
-                  </span>
+              <div key={s.id} className="space-y-5 rounded-card bg-bg/60 p-5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] text-muted">
+                    Cardio
+                    {lastCardio?.durationMin != null && (
+                      <>
+                        {" "}
+                        · last <b className="text-inkSoft">{lastCardio.durationMin} min</b>
+                      </>
+                    )}
+                  </p>
                   <button
-                    className="text-danger"
+                    className="text-xs text-danger transition-opacity active:opacity-60"
                     onClick={() => removeSet(s.id)}
                   >
-                    ✕ remove
+                    Remove
                   </button>
                 </div>
                 <CardioField
@@ -298,32 +302,38 @@ export function SessionExercise({
             return (
               <div
                 key={s.id}
-                className="space-y-2 rounded-xl bg-bg/60 p-2.5"
+                className="space-y-6 rounded-card bg-bg/60 p-5"
                 onTouchStart={(e) => handleTouchStart(e, s.id)}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={(e) => handleTouchEnd(e, s)}
               >
-                <div className="flex items-center justify-between text-xs text-muted">
-                  <span>
-                    Round {s.setIndex + 1} · last{" "}
-                    <b className="text-inkSoft">
-                      {prev != null ? `${prev} ${units}` : "—"}
-                    </b>
-                  </span>
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] text-muted">
+                    Round {s.setIndex + 1}
+                    {prev != null && (
+                      <>
+                        {" "}
+                        · last <b className="text-inkSoft">{prev} {units}</b>
+                      </>
+                    )}
+                  </p>
                   <button
-                    className="text-danger"
+                    className="text-xs text-danger transition-opacity active:opacity-60"
                     onClick={() => removeSet(s.id)}
                   >
-                    ✕ remove
+                    Remove
                   </button>
                 </div>
+
                 <Stepper
                   value={startWeight(s)}
                   step={plateIncrement(units)}
                   unit={units}
+                  size="lg"
                   onChange={(v) => updateSet(s.id, { actualWeight: v })}
                 />
-                <div className="space-y-1">
+
+                <div className="space-y-1.5">
                   <p className="text-[11px] text-muted">
                     Reps (defaults to 10 — set 0 to skip)
                   </p>
@@ -335,16 +345,17 @@ export function SessionExercise({
                     onChange={(v) => updateSet(s.id, { actualReps: v })}
                   />
                 </div>
-                <div className="space-y-1">
+
+                <div className="space-y-1.5">
                   <p className="text-[11px] text-muted">
                     RPE (6=easy, 7=moderate, 8=standard, 9=hard, 10=max)
                   </p>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5">
                     {[6, 7, 8, 9, 10].map((rpe) => (
                       <button
                         key={rpe}
                         onClick={() => updateSet(s.id, { rpe })}
-                        className={`flex-1 rounded-lg py-2 text-sm font-semibold ${
+                        className={`flex-1 rounded-control py-2.5 text-sm font-semibold transition-transform duration-100 active:scale-95 ${
                           s.rpe === rpe
                             ? "bg-accent text-onAccent"
                             : "bg-surface2 text-inkSoft"
@@ -355,6 +366,7 @@ export function SessionExercise({
                     ))}
                   </div>
                 </div>
+
                 <CompleteButton onComplete={() => complete(s)} />
               </div>
             );
@@ -386,24 +398,24 @@ export function SessionExercise({
             <div
               key={s.id}
               onClick={() => editable && s.completed && setEditingId(s.id)}
-              className={`flex items-center gap-2 rounded-xl px-2 py-2.5 text-sm ${
+              className={`flex items-center gap-2 rounded-control px-2.5 py-2 text-sm transition-opacity ${
                 s.completed
-                  ? "bg-green/15 animate-completeWipe"
-                  : "bg-surface2/50"
+                  ? "bg-green/10 opacity-70 animate-completeWipe"
+                  : "bg-surface2/40 opacity-80"
               } ${editable && s.completed ? "cursor-pointer" : ""}`}
             >
-              <span className="w-12 shrink-0 text-xs text-muted">
+              <span className="w-12 shrink-0 text-[10px] uppercase tracking-wide text-muted">
                 {isCardio
                   ? "Cardio"
                   : isTime
                     ? "Hold"
-                    : `Round ${s.setIndex + 1}`}
+                    : `Rd ${s.setIndex + 1}`}
               </span>
-              <span className="flex-1 text-center text-base font-bold tabular-nums text-ink">
+              <span className="flex-1 text-center text-sm font-semibold tabular-nums text-inkSoft">
                 {isTime ? (
-                  <span className="text-base">{s.durationSec ?? "–"}s</span>
+                  <span>{s.durationSec ?? "–"}s</span>
                 ) : isCardio ? (
-                  <span className="text-sm">
+                  <span className="text-xs">
                     {s.durationMin ?? "–"} min
                     {s.incline ? ` · ${s.incline}% incline` : ""}
                     {s.distance ? ` · ${s.distance}` : ""}
@@ -414,7 +426,7 @@ export function SessionExercise({
                     {(s.completed ? s.actualWeight : s.targetWeight) ?? "–"}{" "}
                     {units}
                     {s.completed && s.actualReps ? (
-                      <span className="text-sm font-normal text-muted">
+                      <span className="text-xs font-normal text-muted">
                         {" "}
                         × {s.actualReps}
                       </span>
@@ -444,12 +456,12 @@ export function SessionExercise({
                   onClick={() =>
                     !readOnly && updateSet(s.id, { completed: false })
                   }
-                  className="flex h-7 w-7 items-center justify-center rounded-lg bg-green text-onAccent"
+                  className="flex h-6 w-6 items-center justify-center rounded-control bg-green text-onAccent transition-transform active:scale-90"
                 >
                   ✓
                 </button>
               ) : (
-                <span className="h-7 w-7 rounded-lg border border-border" />
+                <span className="h-6 w-6 rounded-control border border-border" />
               )}
             </div>
           );
@@ -524,7 +536,7 @@ function EditRoundRow({
   const [r, setR] = useState(set.actualReps ?? 10);
   const step = units === "kg" ? 2.5 : 5;
   return (
-    <div className="space-y-2 rounded-xl border border-accent/40 bg-bg/60 p-2.5">
+    <div className="space-y-2 rounded-control border border-accent/40 bg-bg/60 p-2.5">
       <div className="flex items-center justify-between text-xs text-muted">
         <span>Correct round {set.setIndex + 1}</span>
         {set.editedAt && (

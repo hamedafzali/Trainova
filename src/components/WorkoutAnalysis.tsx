@@ -209,7 +209,7 @@ export function WorkoutAnalysis() {
 
         {/* Overall Assessment */}
         <div
-          className={`rounded-xl p-4 ${performanceLevelColors[analysis.overallAssessment.performanceLevel]}`}
+          className={`rounded-card p-4 ${performanceLevelColors[analysis.overallAssessment.performanceLevel]}`}
         >
           <p className="font-semibold text-base">
             {analysis.overallAssessment.summary}
@@ -224,7 +224,7 @@ export function WorkoutAnalysis() {
           <div className="space-y-2">
             <h3 className="font-semibold text-base">Strengths</h3>
             {analysis.strengths.map((strength, idx) => (
-              <div key={idx} className="rounded-xl bg-green/15 p-3">
+              <div key={idx} className="rounded-card bg-green/15 p-3">
                 <p className="font-semibold text-sm text-green">
                   {strength.category}
                 </p>
@@ -242,7 +242,7 @@ export function WorkoutAnalysis() {
           <div className="space-y-2">
             <h3 className="font-semibold text-base">Areas for Improvement</h3>
             {analysis.weaknesses.map((weakness, idx) => (
-              <div key={idx} className="rounded-xl bg-danger/15 p-3">
+              <div key={idx} className="rounded-card bg-danger/15 p-3">
                 <p className="font-semibold text-sm text-danger">
                   {weakness.category}
                 </p>
@@ -264,7 +264,7 @@ export function WorkoutAnalysis() {
         <div className="space-y-2">
           <h3 className="font-semibold text-base">Muscle Balance</h3>
           <div
-            className={`rounded-xl p-3 ${analysis.muscleBalance.balanced ? "bg-green/15" : "bg-amber/15"}`}
+            className={`rounded-card p-3 ${analysis.muscleBalance.balanced ? "bg-green/15" : "bg-amber/15"}`}
           >
             <p className="text-sm">
               {analysis.muscleBalance.balanced
@@ -286,7 +286,7 @@ export function WorkoutAnalysis() {
         {/* Progression Analysis */}
         <div className="space-y-2">
           <h3 className="font-semibold text-base">Progression Analysis</h3>
-          <div className="rounded-xl bg-surface2 p-3">
+          <div className="rounded-card bg-surface2 p-3">
             <p className="text-sm">
               Overall Trend:{" "}
               <span className="font-semibold">
@@ -308,7 +308,7 @@ export function WorkoutAnalysis() {
           </div>
           {/* Progress Chart for top exercise */}
           {exercises.length > 0 && exercises[0].weights.length > 0 && (
-            <div className="rounded-xl bg-surface2 p-3">
+            <div className="rounded-card bg-surface2 p-3">
               <p className="text-xs text-muted mb-2">
                 {exercises[0].exerciseName} Progress
               </p>
@@ -329,7 +329,7 @@ export function WorkoutAnalysis() {
             <h3 className="font-semibold text-base">Recommendations</h3>
             <div className="space-y-2">
               {analysis.actionableRecommendations.map((rec, idx) => (
-                <div key={idx} className="rounded-xl bg-accentDim/20 p-3">
+                <div key={idx} className="rounded-card bg-accentDim/20 p-3">
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
@@ -357,7 +357,7 @@ export function WorkoutAnalysis() {
         {/* Next Steps */}
         <div className="space-y-2">
           <h3 className="font-semibold text-base">Next Steps</h3>
-          <div className="rounded-xl bg-surface2 p-3 space-y-2">
+          <div className="rounded-card bg-surface2 p-3 space-y-2">
             <div>
               <p className="text-xs text-muted">Focus Areas</p>
               <p className="text-sm">

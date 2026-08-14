@@ -29,15 +29,19 @@ export function Welcome() {
       setError("Enter your email first.");
       return;
     }
-    const r = await fetch("/api/auth/forgot", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: email.trim() }),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (r.ok)
-      setNote("If that email is registered, a reset link is on its way.");
-    else setError(j.error || "Couldn’t start a reset.");
+    try {
+      const r = await fetch("/api/auth/forgot", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok)
+        setNote("If that email is registered, a reset link is on its way.");
+      else setError(j.error || "Couldn’t start a reset.");
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.");
+    }
   };
 
   const submit = async () => {
@@ -64,25 +68,23 @@ export function Welcome() {
   return (
     <main className="flex min-h-screen flex-col justify-center gap-8 p-6">
       <div className="text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-2xl">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-card bg-accent text-2xl">
           🏋️
         </div>
-        <h1 className="text-3xl font-bold tracking-tight text-white mb-1.5">
-          Trainova
-        </h1>
-        <p className="text-base text-white/50">Open. Lift. Log. Done.</p>
+        <h1 className="text-h1 text-ink mb-1.5">Trainova</h1>
+        <p className="text-body text-inkSoft">Open. Lift. Log. Done.</p>
       </div>
 
       <div className="card space-y-4 max-w-md mx-auto w-full">
-        <div className="flex overflow-hidden rounded-xl border border-white/10 text-sm font-semibold">
+        <div className="flex overflow-hidden rounded-control border border-border text-sm font-semibold">
           {(["in", "up"] as const).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
               className={`flex-1 py-3 transition-colors ${
                 mode === m
-                  ? "bg-blue-600 text-white"
-                  : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                  ? "bg-accent text-onAccent"
+                  : "bg-surface2 text-inkSoft hover:bg-border/60"
               }`}
             >
               {m === "in" ? "Sign in" : "Create account"}
@@ -109,14 +111,14 @@ export function Welcome() {
         />
 
         {!cloud && (
-          <p className="rounded-xl bg-white/[0.03] px-4 py-3 text-sm text-white/60 border border-white/10">
+          <p className="rounded-control bg-surface2 px-4 py-3 text-sm text-inkSoft border border-border">
             Cloud accounts aren't configured on this server yet. You can
             continue as a guest now — sign-in starts working once Supabase is
             connected.
           </p>
         )}
-        {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-        {note && <p className="text-sm text-blue-400 text-center">{note}</p>}
+        {error && <p className="text-sm text-danger text-center">{error}</p>}
+        {note && <p className="text-sm text-accent text-center">{note}</p>}
 
         <button
           className="btn-primary w-full py-4"
@@ -129,7 +131,7 @@ export function Welcome() {
         {cloud && mode === "in" && (
           <button
             onClick={forgot}
-            className="w-full text-center text-sm text-white/50 underline hover:text-white/70 transition-colors"
+            className="w-full text-center text-sm text-inkSoft underline hover:text-ink transition-colors"
           >
             Forgot password?
           </button>
@@ -138,7 +140,7 @@ export function Welcome() {
 
       <button
         onClick={enterGuest}
-        className="text-center text-base font-semibold text-white/50 underline underline-offset-4 hover:text-white/70 transition-colors"
+        className="text-center text-base font-semibold text-inkSoft underline underline-offset-4 hover:text-ink transition-colors"
       >
         Continue as guest
       </button>

@@ -14,8 +14,12 @@ export function AssignmentsInbox() {
 
   const load = useCallback(async () => {
     if (!account || !getToken()) return;
-    const r = await fetch("/api/assignments", { headers: { authorization: `Bearer ${getToken()}` } });
-    if (r.ok) setItems((await r.json()).assignments ?? []);
+    try {
+      const r = await fetch("/api/assignments", { headers: { authorization: `Bearer ${getToken()}` } });
+      if (r.ok) setItems((await r.json()).assignments ?? []);
+    } catch {
+      // offline/unreachable — inbox just stays empty, no visible error state by design
+    }
   }, [account]);
 
   useEffect(() => {
@@ -24,11 +28,15 @@ export function AssignmentsInbox() {
 
   const accept = async (a: Assignment) => {
     importAssignedPlan(a.payload);
-    await fetch("/api/assignments", {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify({ id: a.id }),
-    });
+    try {
+      await fetch("/api/assignments", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ id: a.id }),
+      });
+    } catch {
+      // local import already succeeded; server ack failing is non-fatal
+    }
     setItems((cur) => cur.filter((x) => x.id !== a.id));
   };
 

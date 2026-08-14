@@ -17,7 +17,7 @@ const LEVELS: { key: NonNullable<UserProfile["experience"]>; label: string }[] =
 ];
 
 /** One-screen onboarding (local). Real cross-device accounts come with the backend phase. */
-export function Onboarding() {
+export function Onboarding({ onUseAiOnboarding }: { onUseAiOnboarding?: () => void }) {
   const setUnits = useStore((s) => s.setUnits);
   const units = useStore((s) => s.units);
   const completeOnboarding = useStore((s) => s.completeOnboarding);
@@ -28,24 +28,22 @@ export function Onboarding() {
     <main className="flex min-h-screen flex-col justify-center p-6">
       <div className="card mx-auto w-full max-w-md space-y-6">
         <header>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            Welcome to Trainova
-          </h1>
-          <p className="mt-1 text-sm text-white/50">
+          <h1 className="text-h1 text-ink">Welcome to Trainova</h1>
+          <p className="mt-1 text-body-sm text-inkSoft">
             A couple of taps and you’re training.
           </p>
         </header>
 
         <Section title="Units">
-          <div className="flex overflow-hidden rounded-xl border border-white/10 text-sm">
+          <div className="flex overflow-hidden rounded-control border border-border text-sm">
             {(["kg", "lb"] as Units[]).map((u) => (
               <button
                 key={u}
                 onClick={() => setUnits(u)}
                 className={`flex-1 py-2.5 font-semibold transition-colors ${
                   units === u
-                    ? "bg-blue-600 text-white"
-                    : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                    ? "bg-accent text-onAccent"
+                    : "bg-surface2 text-inkSoft hover:bg-border/60"
                 }`}
               >
                 {u}
@@ -68,9 +66,20 @@ export function Onboarding() {
         >
           Start training →
         </button>
-        <p className="text-center text-xs text-white/40">
+        <p className="text-center text-xs text-muted">
           Your data stays on this device. Cloud sync &amp; coaching arrive with accounts.
         </p>
+
+        {onUseAiOnboarding && (
+          <div className="border-t border-border pt-4">
+            <button
+              className="btn-ghost w-full py-3 text-sm"
+              onClick={onUseAiOnboarding}
+            >
+              ✨ Use AI-Powered Onboarding Instead
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
@@ -102,8 +111,8 @@ function Chips<T extends string>({
           onClick={() => onPick(o.key)}
           className={`rounded-full border px-4 py-2 text-sm transition-colors ${
             value === o.key
-              ? "border-blue-600 bg-blue-600 text-white"
-              : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+              ? "border-accent bg-accent text-onAccent"
+              : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
           }`}
         >
           {o.label}

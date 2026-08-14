@@ -19,6 +19,7 @@ import type {
 } from "@/domain/types";
 import { detectPrs, epley1rm } from "@/domain/progression";
 import type { LastPerformance } from "@/domain/progression";
+import { bestWeight, totalVolume } from "@/domain/volume";
 import {
   activeSession,
   canCreateSession,
@@ -807,16 +808,14 @@ export const useStore = create<TrainovaState>()(
           (x) => x.exerciseId === exerciseId && x.completed && x.actualWeight != null
         );
         let e1rm = 0;
-        let maxWeight = 0;
         let maxReps = 0;
         for (const x of sets) {
-          maxWeight = Math.max(maxWeight, x.actualWeight as number);
           if (x.actualReps != null) {
             e1rm = Math.max(e1rm, epley1rm(x.actualWeight as number, x.actualReps));
             maxReps = Math.max(maxReps, x.actualReps);
           }
         }
-        return { e1rm, maxWeight, maxReps };
+        return { e1rm, maxWeight: bestWeight(sets), maxReps };
       },
 
       exercisesWithHistory: () => {
@@ -841,18 +840,13 @@ export const useStore = create<TrainovaState>()(
             (x) => x.sessionId === s.id && x.exerciseId === exerciseId && x.completed
           );
           if (sets.length === 0) continue;
-          let topWeight = 0;
           let e1rm = 0;
-          let volume = 0;
           let durationMin = 0;
           let distance = 0;
           let durationSec = 0;
           for (const x of sets) {
-            if (x.actualWeight != null) {
-              const w = x.actualWeight;
-              topWeight = Math.max(topWeight, w);
-              volume += w * (x.actualReps ?? 1);
-              if (x.actualReps) e1rm = Math.max(e1rm, epley1rm(w, x.actualReps));
+            if (x.actualWeight != null && x.actualReps) {
+              e1rm = Math.max(e1rm, epley1rm(x.actualWeight, x.actualReps));
             }
             durationMin += x.durationMin ?? 0;
             distance += x.distance ?? 0;
@@ -860,9 +854,9 @@ export const useStore = create<TrainovaState>()(
           }
           out.push({
             date: s.date,
-            topWeight,
+            topWeight: bestWeight(sets),
             e1rm: Math.round(e1rm * 10) / 10,
-            volume,
+            volume: totalVolume(sets),
             durationMin: Math.round(durationMin * 10) / 10,
             distance: Math.round(distance * 100) / 100,
             durationSec,

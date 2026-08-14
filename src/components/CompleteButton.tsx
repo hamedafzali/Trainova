@@ -16,7 +16,7 @@ export function CompleteButton({ onComplete }: { onComplete: () => void }) {
   return (
     <button
       ref={ref}
-      className="relative w-full overflow-hidden rounded-2xl bg-accent py-4 text-base font-bold text-onAccent active:scale-[0.99]"
+      className="relative w-full overflow-hidden rounded-card bg-accent py-5 text-base font-bold text-onAccent shadow-elevated transition-transform active:scale-[0.99]"
       style={{ touchAction: "pan-y" }}
       onPointerDown={(e) => {
         start.current = e.clientX;

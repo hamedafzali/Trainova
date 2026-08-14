@@ -172,7 +172,7 @@ export function AiOnboarding() {
       <main className="flex justify-center p-6">
         <div className="w-full max-w-2xl space-y-6">
           <header className="pt-6">
-            <h1 className="text-3xl font-bold tracking-tight text-white">
+            <h1 className="text-h1 text-ink">
               Your AI Program
             </h1>
             <p className="mt-1 text-muted">{generatedProgram.name}</p>
@@ -180,7 +180,7 @@ export function AiOnboarding() {
 
           <div className="card space-y-4">
             <div>
-              <h3 className="font-semibold text-white">Program Overview</h3>
+              <h3 className="font-semibold text-ink">Program Overview</h3>
               <p className="text-sm text-muted">{generatedProgram.description}</p>
               <p className="text-sm text-muted mt-2">
                 <strong>Focus:</strong> {generatedProgram.focus}
@@ -191,12 +191,12 @@ export function AiOnboarding() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-white">
+              <h3 className="font-semibold text-ink">
                 Weekly Sessions ({generatedProgram.sessions.length})
               </h3>
               {generatedProgram.sessions.map((session: any, index: number) => (
-                <div key={index} className="mt-3 p-3 bg-white/[0.03] rounded-lg">
-                  <p className="font-semibold text-white">
+                <div key={index} className="mt-3 p-3 bg-surface2 rounded-control">
+                  <p className="font-semibold text-ink">
                     Day {session.day}: {session.focus}
                   </p>
                   <p className="text-sm text-muted">
@@ -207,7 +207,7 @@ export function AiOnboarding() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-white">Recommendations</h3>
+              <h3 className="font-semibold text-ink">Recommendations</h3>
               <p className="text-sm text-muted mt-1">
                 {generatedProgram.recommendations?.nutrition}
               </p>
@@ -232,7 +232,7 @@ export function AiOnboarding() {
     <main className="flex justify-center p-4 pb-20">
       <div className="w-full max-w-2xl space-y-6">
         <header className="pt-4">
-          <h1 className="text-3xl font-bold tracking-tight text-white">
+          <h1 className="text-h1 text-ink">
             AI-Powered Onboarding
           </h1>
           <p className="mt-2 text-base text-muted">
@@ -241,7 +241,7 @@ export function AiOnboarding() {
         </header>
 
         {error && (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 p-4 text-sm">
+          <div className="rounded-card border border-danger/20 bg-danger/10 text-danger p-4 text-sm">
             {error}
           </div>
         )}
@@ -281,10 +281,10 @@ export function AiOnboarding() {
                 <button
                   key={days}
                   onClick={() => updateField("daysPerWeek", days)}
-                  className={`py-4 rounded-xl font-semibold text-base transition-colors ${
+                  className={`py-4 rounded-control font-semibold text-base transition-colors ${
                     formData.daysPerWeek === days
-                      ? "bg-blue-600 text-white"
-                      : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                      ? "bg-accent text-onAccent"
+                      : "bg-surface2 text-inkSoft hover:bg-border/60"
                   }`}
                 >
                   {days}
@@ -500,10 +500,10 @@ export function AiOnboarding() {
                 <button
                   key={level}
                   onClick={() => updateField("sleepQuality", level)}
-                  className={`py-4 rounded-xl font-semibold text-base transition-colors ${
+                  className={`py-4 rounded-control font-semibold text-base transition-colors ${
                     formData.sleepQuality === level
-                      ? "bg-blue-600 text-white"
-                      : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                      ? "bg-accent text-onAccent"
+                      : "bg-surface2 text-inkSoft hover:bg-border/60"
                   }`}
                 >
                   {level}
@@ -518,10 +518,10 @@ export function AiOnboarding() {
                 <button
                   key={level}
                   onClick={() => updateField("stressLevel", level)}
-                  className={`py-4 rounded-xl font-semibold text-base transition-colors ${
+                  className={`py-4 rounded-control font-semibold text-base transition-colors ${
                     formData.stressLevel === level
-                      ? "bg-blue-600 text-white"
-                      : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                      ? "bg-accent text-onAccent"
+                      : "bg-surface2 text-inkSoft hover:bg-border/60"
                   }`}
                 >
                   {level}
@@ -622,8 +622,8 @@ function Chips<T extends string>({
           onClick={() => onPick(o.key)}
           className={`rounded-full border px-4 py-2 text-sm transition-colors ${
             value === o.key
-              ? "border-blue-600 bg-blue-600 text-white"
-              : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+              ? "border-accent bg-accent text-onAccent"
+              : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
           }`}
         >
           {o.label}

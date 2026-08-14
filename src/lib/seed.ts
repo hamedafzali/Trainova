@@ -180,7 +180,7 @@ export const SEED_SESSION_SETS: WorkoutSet[] = PLAN.flatMap((p, exIdx) =>
     setIndex: setIdx,
     targetReps: null,
     targetWeight: w,
-    actualReps: null,
+    actualReps: PLAN_REPS,
     actualWeight: w,
     rpe: null,
     completed: true,

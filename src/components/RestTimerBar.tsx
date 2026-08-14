@@ -13,6 +13,8 @@ export function RestTimerBar() {
   const { endsAt, duration, add, stop } = useRestTimer();
   const [now, setNow] = useState(Date.now());
   const buzzedFor = useRef<number | null>(null);
+  const [justFlipped, setJustFlipped] = useState(false);
+  const wasOver = useRef(false);
 
   useEffect(() => {
     if (!endsAt) return;
@@ -32,10 +34,21 @@ export function RestTimerBar() {
     }
   }, [now, endsAt]);
 
+  const remainingSec = endsAt ? (endsAt - now) / 1000 : 0;
+  const over = !!endsAt && remainingSec <= 0;
+
+  useEffect(() => {
+    if (over && !wasOver.current) {
+      setJustFlipped(true);
+      const t = setTimeout(() => setJustFlipped(false), 220);
+      wasOver.current = true;
+      return () => clearTimeout(t);
+    }
+    if (!over) wasOver.current = false;
+  }, [over]);
+
   if (!endsAt) return null;
 
-  const remainingSec = (endsAt - now) / 1000;
-  const over = remainingSec <= 0;
   const pct = over
     ? 100
     : Math.min(100, ((duration - remainingSec) / duration) * 100);
@@ -43,7 +56,7 @@ export function RestTimerBar() {
   return (
     <div className="fixed inset-x-0 bottom-[60px] z-30 mx-auto max-w-md px-3">
       <div
-        className={`overflow-hidden rounded-2xl border shadow-lg ${
+        className={`overflow-hidden rounded-card border shadow-elevated transition-colors ${
           over
             ? "border-green bg-green text-onAccent"
             : "border-border bg-surface text-ink"
@@ -55,15 +68,15 @@ export function RestTimerBar() {
             style={{ width: `${pct}%` }}
           />
         )}
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-4 px-5 py-4">
           <span
             className={`text-base font-semibold ${over ? "" : "text-inkSoft"}`}
           >
             {over ? "💪 Rest over" : "Resting"}
           </span>
           <span
-            className={`flex-1 text-center text-3xl font-bold tabular-nums ${
-              over ? "" : "text-accentDim animate-breathe"
+            className={`flex-1 text-center text-display tabular-nums transition-transform duration-200 ease-out ${
+              over ? (justFlipped ? "scale-110" : "scale-100") : "text-accentDim animate-breathe"
             }`}
           >
             {over ? "Go!" : mmss(remainingSec)}
@@ -72,13 +85,13 @@ export function RestTimerBar() {
             <>
               <button
                 onClick={() => add(-15)}
-                className="rounded-xl bg-surface2 px-5 py-3 text-base font-bold text-ink active:scale-95"
+                className="rounded-control bg-surface2 px-5 py-3 text-base font-bold text-ink transition-transform active:scale-95"
               >
                 −15
               </button>
               <button
                 onClick={() => add(15)}
-                className="rounded-xl bg-surface2 px-5 py-3 text-base font-bold text-ink active:scale-95"
+                className="rounded-control bg-surface2 px-5 py-3 text-base font-bold text-ink transition-transform active:scale-95"
               >
                 +15
               </button>
@@ -86,8 +99,8 @@ export function RestTimerBar() {
           )}
           <button
             onClick={stop}
-            className={`rounded-xl px-4 py-2 text-sm font-bold ${
-              over ? "bg-black/10" : "bg-accentDim text-onAccent"
+            className={`rounded-control px-4 py-2 text-sm font-bold transition-transform active:scale-95 ${
+              over ? "bg-onAccent/10" : "bg-accentDim text-onAccent"
             }`}
           >
             {over ? "Dismiss" : "Skip"}

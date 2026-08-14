@@ -92,7 +92,7 @@ export function ExercisePicker({
                 <button
                   key={e.id}
                   onClick={() => onPick(e.id)}
-                  className="flex w-16 shrink-0 flex-col items-center gap-1 rounded-xl border border-border bg-surface2 p-2 active:scale-95"
+                  className="flex w-16 shrink-0 flex-col items-center gap-1 rounded-control border border-border bg-surface2 p-2 active:scale-95"
                 >
                   <DeviceAvatar device={deviceOf(e)} />
                   <span className="line-clamp-1 text-[10px] text-inkSoft">{e.name}</span>
@@ -128,9 +128,9 @@ export function ExercisePicker({
                 key={e.id}
                 onClick={() => onPick(e.id)}
                 title={d?.guidance ?? undefined}
-                className="flex w-32 shrink-0 snap-start flex-col gap-2 rounded-2xl border border-border bg-surface2 p-3 text-left active:scale-[0.98]"
+                className="flex w-32 shrink-0 snap-start flex-col gap-2 rounded-card border border-border bg-surface2 p-3 text-left active:scale-[0.98]"
               >
-                <DeviceAvatar device={d} className="h-20 w-full rounded-xl text-3xl" />
+                <DeviceAvatar device={d} className="h-20 w-full rounded-control text-3xl" />
                 <span className="block truncate font-semibold leading-tight text-ink">{e.name}</span>
                 <span className="flex items-center gap-1.5 text-[11px] text-muted">
                   <span
@@ -153,7 +153,7 @@ export function ExercisePicker({
           {q.trim() && !filtered.some((e) => e.name.toLowerCase() === q.trim().toLowerCase()) && (
             <button
               onClick={createAndPick}
-              className="flex w-32 shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border bg-surface p-3 text-center text-sm text-inkSoft active:scale-[0.98]"
+              className="flex w-32 shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-card border border-dashed border-border bg-surface p-3 text-center text-sm text-inkSoft active:scale-[0.98]"
             >
               <span className="text-2xl">＋</span>
               Create “{q.trim()}”

@@ -15,10 +15,10 @@ export function SidebarNav() {
   const path = usePathname();
 
   return (
-    <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 md:bg-white/[0.02] md:border-r md:border-white/10 md:px-5 md:py-7">
+    <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 md:bg-elevated md:border-r md:border-border md:px-5 md:py-7">
       <div className="mb-8 px-3">
-        <h1 className="text-xl font-bold text-white">Trainova</h1>
-        <p className="text-xs text-white/40 mt-0.5">Strength Training Tracker</p>
+        <h1 className="text-h3 text-ink">Trainova</h1>
+        <p className="section-label mt-0.5">Strength Training Tracker</p>
       </div>
 
       <nav className="flex-1 space-y-0.5">
@@ -29,10 +29,10 @@ export function SidebarNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-control text-sm font-medium transition-colors ${
                 active
-                  ? "bg-blue-600/15 text-blue-400"
-                  : "text-white/55 hover:bg-white/5 hover:text-white"
+                  ? "bg-accent/15 text-accent"
+                  : "text-inkSoft hover:bg-surface2 hover:text-ink"
               }`}
             >
               <span className="text-lg leading-none">{item.icon}</span>
@@ -42,8 +42,8 @@ export function SidebarNav() {
         })}
       </nav>
 
-      <div className="mt-auto pt-5 border-t border-white/10 px-3">
-        <p className="text-[11px] text-white/25">© 2024 Trainova</p>
+      <div className="mt-auto pt-5 border-t border-border px-3">
+        <p className="text-[11px] text-muted">© 2024 Trainova</p>
       </div>
     </aside>
   );

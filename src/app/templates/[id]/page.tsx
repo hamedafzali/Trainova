@@ -52,18 +52,29 @@ export default function TemplateEditPage() {
 
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
-      <header className="flex items-center justify-between pt-2">
-        <div>
+      <header className="flex items-center justify-between pt-2 gap-4">
+        <div className="min-w-0">
           <Link
             href="/templates"
-            className="text-sm text-white/50 hover:text-white/70 transition-colors"
+            className="text-sm text-muted hover:text-inkSoft transition-colors"
           >
             ← Plans
           </Link>
-          <h1 className="page-title">{template.name}</h1>
+          <h1 className="page-title flex items-center flex-wrap gap-2">
+            {template.name}
+            {template.id === SEED_PLAN_ID && (
+              <span className="badge-accent">
+                <span aria-hidden>✦</span> Sample
+              </span>
+            )}
+          </h1>
+          <p className="page-subtitle">
+            {template.exercises.length} exercise
+            {template.exercises.length === 1 ? "" : "s"}
+          </p>
         </div>
         <button
-          className="btn-primary py-3 px-6 text-base font-semibold"
+          className="btn-primary py-3 px-6 text-base font-semibold shrink-0"
           onClick={start}
         >
           Start
@@ -81,18 +92,21 @@ export default function TemplateEditPage() {
             const device = deviceById(te.deviceId ?? ex?.defaultDeviceId);
             const step = plateIncrement(units);
             return (
-              <li key={te.id} className="card space-y-3">
+              <li
+                key={te.id}
+                className="rounded-card border border-border bg-surface shadow-card p-6 space-y-3"
+              >
                 <div className="flex items-center gap-3">
                   <DeviceAvatar
                     device={device}
-                    className="h-10 w-10 rounded-lg text-sm"
+                    className="h-10 w-10 rounded-control text-sm"
                   />
                   <div className="flex-1">
                     <p className="font-semibold text-base leading-tight">
                       {ex?.name ?? "Exercise"}
                     </p>
                     {device && (
-                      <p className="text-sm text-white/50">
+                      <p className="text-sm text-muted">
                         {device.name}
                         {device.machineNumber
                           ? ` · No.${device.machineNumber}`
@@ -112,7 +126,7 @@ export default function TemplateEditPage() {
                 <div className="space-y-2">
                   {te.sets.map((st, i) => (
                     <div key={i} className="space-y-1">
-                      <p className="text-sm text-white/50">Round {i + 1}</p>
+                      <p className="text-sm text-muted">Round {i + 1}</p>
                       <Stepper
                         value={st.targetWeight ?? 0}
                         step={step}
@@ -140,7 +154,7 @@ export default function TemplateEditPage() {
                   >
                     − round
                   </button>
-                  <span className="text-white/50 font-medium">
+                  <span className="text-muted font-medium">
                     {te.sets.length} rounds
                   </span>
                   <button

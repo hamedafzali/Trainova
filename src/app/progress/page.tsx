@@ -30,15 +30,15 @@ export default function ProgressPage() {
           <h1 className="page-title">Progress</h1>
           <p className="page-subtitle">Your trend on every exercise.</p>
         </div>
-        <div className="flex overflow-hidden rounded-xl border border-white/10 text-sm shrink-0">
+        <div className="flex overflow-hidden rounded-control border border-border text-sm shrink-0">
           {(["kg", "lb"] as const).map((u) => (
             <button
               key={u}
               onClick={() => setUnits(u)}
               className={`px-4 py-2 font-semibold transition-colors ${
                 units === u
-                  ? "bg-blue-600 text-white"
-                  : "bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                  ? "bg-accent text-onAccent"
+                  : "bg-surface2 text-inkSoft hover:bg-border/60"
               }`}
             >
               {u}
@@ -62,8 +62,8 @@ export default function ProgressPage() {
                 onClick={() => setMetric(m)}
                 className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                   metric === m
-                    ? "border-blue-600 bg-blue-600 text-white"
-                    : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.07]"
+                    ? "border-accent bg-accent text-onAccent"
+                    : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
                 }`}
               >
                 {m === "topWeight" ? "Top weight" : "Volume"}
@@ -90,12 +90,16 @@ export default function ProgressPage() {
               let chartUnit = "";
               let label: string;
               let subtitle: string;
+              let headline: string;
+              let headlineUnit: string;
               if (isTime) {
                 series = hist.map((h) => ({ label: h.date, value: h.durationSec }));
                 chartUnit = "s";
                 label = "Longest holds";
                 const best = Math.max(0, ...hist.map((h) => h.durationSec));
-                subtitle = `best ${best}s · ${hist.length} sessions`;
+                subtitle = `${hist.length} session${hist.length === 1 ? "" : "s"}`;
+                headline = `${best}`;
+                headlineUnit = "s best";
               } else if (isCardio) {
                 series = hist.map((h) => ({
                   label: h.date,
@@ -103,7 +107,9 @@ export default function ProgressPage() {
                 }));
                 label = hasDistance ? "Distance" : "Minutes";
                 const best = Math.max(0, ...series.map((s) => s.value));
-                subtitle = `best ${best}${hasDistance ? "" : " min"} · ${hist.length} sessions`;
+                subtitle = `${hist.length} session${hist.length === 1 ? "" : "s"}`;
+                headline = `${best}`;
+                headlineUnit = hasDistance ? " best" : " min best";
               } else {
                 series = hist.map((h) => ({
                   label: h.date,
@@ -111,29 +117,47 @@ export default function ProgressPage() {
                 }));
                 chartUnit = metric === "topWeight" ? units : "";
                 label = metric === "topWeight" ? "Top weight" : "Volume";
-                subtitle = `best ${bests.maxWeight}${units}${
-                  bests.e1rm ? ` · est 1RM ${Math.round(bests.e1rm)}${units}` : ""
-                } · ${hist.length} sessions`;
+                subtitle = bests.e1rm
+                  ? `est 1RM ${Math.round(bests.e1rm)}${units} · ${hist.length} sessions`
+                  : `${hist.length} session${hist.length === 1 ? "" : "s"}`;
+                headline = `${bests.maxWeight}`;
+                headlineUnit = `${units} best`;
               }
 
               return (
-                <li key={exId} className="card">
+                <li
+                  key={exId}
+                  className="rounded-card border border-border bg-surface shadow-card p-6"
+                >
                   <button
-                    className="flex w-full items-center gap-3 text-left"
+                    className="flex w-full items-center gap-4 text-left"
                     onClick={() => setOpen(expanded ? null : exId)}
                   >
-                    <DeviceAvatar device={device} className="h-10 w-10 rounded-lg text-sm" />
-                    <div className="flex-1">
-                      <p className="font-semibold leading-tight text-white">{ex?.name ?? "Exercise"}</p>
-                      <p className="text-xs text-white/50 mt-0.5">{subtitle}</p>
+                    <DeviceAvatar device={device} className="h-11 w-11 rounded-control text-sm shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-base leading-tight text-ink truncate">
+                        {ex?.name ?? "Exercise"}
+                      </p>
+                      <p className="text-body-sm text-muted mt-1">{subtitle}</p>
                     </div>
-                    <span className="text-xs text-white/50">{expanded ? "▲" : "▼"}</span>
+                    <div className="text-right shrink-0">
+                      <p className="text-h3 font-semibold tabular-nums text-ink">
+                        {headline}
+                        <span className="text-body-sm font-normal text-muted">
+                          {" "}
+                          {headlineUnit}
+                        </span>
+                      </p>
+                      <p className="text-body-sm text-muted mt-1">
+                        {expanded ? "▲" : "▼"}
+                      </p>
+                    </div>
                   </button>
 
                   {expanded && (
-                    <div className="mt-4 border-t border-white/10 pt-4">
+                    <div className="mt-5 border-t border-border pt-5">
                       <LineChart data={series} unit={chartUnit} />
-                      <p className="mt-2 text-center text-[11px] text-white/40">
+                      <p className="mt-3 text-center text-body-sm text-muted">
                         {label} per session · {first?.date} → {latest?.date}
                       </p>
                     </div>

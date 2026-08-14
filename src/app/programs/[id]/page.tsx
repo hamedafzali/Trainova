@@ -15,6 +15,10 @@ export default function ProgramEditPage() {
   const removeDayFromProgram = useStore((s) => s.removeDayFromProgram);
   const startSession = useStore((s) => s.startSession);
   const getActiveSession = useStore((s) => s.getActiveSession);
+  const [confirmRemoveDay, setConfirmRemoveDay] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const start = (templateId: string) => {
     const { id: sid, blocked } = startSession(templateId);
@@ -45,14 +49,14 @@ export default function ProgramEditPage() {
       <header className="pt-2">
         <Link
           href="/templates"
-          className="text-sm text-white/50 hover:text-white/70 transition-colors"
+          className="text-sm text-muted hover:text-inkSoft transition-colors"
         >
           ← Plans
         </Link>
         <h1 className="page-title">
           {program.name}
           {program.source === "trainer" && (
-            <span className="ml-2 rounded-full bg-blue-500/20 px-3 py-1 text-xs uppercase text-blue-400 align-middle">
+            <span className="ml-2 rounded-full bg-accent/20 px-3 py-1 text-xs uppercase text-accent align-middle">
               Trainer
             </span>
           )}
