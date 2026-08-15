@@ -5,6 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { getToken } from "@/lib/auth";
 import { CoachAttentionInbox } from "@/components/CoachAttentionInbox";
+import { ListSkeleton } from "@/components/Skeleton";
+import { ErrorState } from "@/components/ErrorState";
+import { EmptyState } from "@/components/EmptyState";
 
 type Client = { id: string; email: string; workouts: number };
 type Progress = { workouts: number; sessions: { title: string; date: string }[] };
@@ -68,32 +71,52 @@ export default function TrainerPage() {
     const payload = serializeTemplate(templateId);
     const tpl = templates.find((t) => t.id === templateId);
     if (!payload || !tpl) return;
-    const r = await fetch("/api/trainer/assign", {
-      method: "POST",
-      headers: { "content-type": "application/json", ...auth() },
-      body: JSON.stringify({ clientId, name: tpl.name, payload }),
-    });
-    setMsg(r.ok ? `Assigned “${tpl.name}”.` : "Assign failed");
+    try {
+      const r = await fetch("/api/trainer/assign", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...auth() },
+        body: JSON.stringify({ clientId, name: tpl.name, payload }),
+      });
+      setMsg(r.ok ? `Assigned “${tpl.name}”.` : "Assign failed");
+    } catch {
+      setMsg("Couldn't reach the server. Check your connection and try again.");
+    }
     setTimeout(() => setMsg(null), 2500);
   };
 
   const viewProgress = async (clientId: string) => {
-    const r = await fetch(`/api/trainer/progress?clientId=${clientId}`, { headers: auth() });
-    if (r.ok) {
-      const data = (await r.json()) as Progress;
-      setProgress((p) => ({ ...p, [clientId]: data }));
+    try {
+      const r = await fetch(`/api/trainer/progress?clientId=${clientId}`, { headers: auth() });
+      if (r.ok) {
+        const data = (await r.json()) as Progress;
+        setProgress((p) => ({ ...p, [clientId]: data }));
+      } else {
+        const j = await r.json().catch(() => ({}) as { error?: string });
+        setMsg(j.error || "Couldn't load progress.");
+        setTimeout(() => setMsg(null), 2500);
+      }
+    } catch {
+      setMsg("Couldn't load progress. Check your connection and try again.");
+      setTimeout(() => setMsg(null), 2500);
     }
   };
 
-  if (!hydrated || loading) return <main className="p-4 text-white/50">Loading…</main>;
+  if (!hydrated || loading)
+    return (
+      <main className="mx-auto max-w-3xl p-4">
+        <ListSkeleton />
+      </main>
+    );
   if (!isTrainer)
     return (
       <main className="mx-auto max-w-3xl space-y-3 p-4">
         <h1 className="page-title">Trainer</h1>
-        <p className="text-white/50">This area is for trainers. Ask an admin to enable trainer mode.</p>
-        <Link href="/" className="text-blue-400 hover:text-blue-300">
-          ← Home
-        </Link>
+        <div className="rounded-card border border-border bg-surface shadow-card p-6">
+          <p className="text-muted">This area is for trainers. Ask an admin to enable trainer mode.</p>
+          <Link href="/" className="mt-2 inline-block text-accent hover:text-accentHover">
+            ← Home
+          </Link>
+        </div>
       </main>
     );
 
@@ -104,80 +127,91 @@ export default function TrainerPage() {
           <h1 className="page-title">Clients</h1>
           <p className="page-subtitle">{clients.length} linked</p>
         </div>
-        <Link href="/profile" className="text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+        <Link href="/profile" className="text-sm text-accent hover:text-accentHover font-semibold transition-colors">
           Done
         </Link>
       </header>
 
-      <div className="flex gap-2">
-        <input
-          className="input"
-          type="email"
-          placeholder="Client’s account email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <button className="btn-primary shrink-0" onClick={addClient}>
-          Add
-        </button>
-      </div>
-      {msg && <p className="text-xs text-blue-400">{msg}</p>}
-
+      {/* What needs a trainer's attention today leads; the roster is reference below it. */}
       <CoachAttentionInbox />
 
-      <ul className="space-y-3">
-        {clients.map((c) => (
-          <li key={c.id} className="card space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-white">{c.email}</p>
-                <p className="text-xs text-white/50 mt-0.5">{c.workouts} workouts logged</p>
-              </div>
-              <button className="btn-ghost text-xs" onClick={() => viewProgress(c.id)}>
-                Progress
-              </button>
-            </div>
+      <div className="rounded-card border border-border bg-surface shadow-card p-4 space-y-2">
+        <div className="flex gap-2">
+          <input
+            className="input"
+            type="email"
+            placeholder="Client’s account email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <button className="btn-primary shrink-0" onClick={addClient}>
+            Add
+          </button>
+        </div>
+        {msg && <p className="text-xs text-accent">{msg}</p>}
+      </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white/50">Assign:</span>
-              <select
-                className="input flex-1 py-1.5 text-sm"
-                defaultValue=""
-                onChange={(e) => assign(c.id, e.target.value)}
-              >
-                <option value="" disabled>
-                  Pick a plan…
-                </option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
+      {error ? (
+        <ErrorState body={error} onRetry={load} />
+      ) : (
+        <ul className="space-y-3">
+          {clients.map((c) => (
+            <li key={c.id} className="rounded-card border border-border bg-surface shadow-card p-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-ink">{c.email}</p>
+                  <p className="text-xs text-muted mt-0.5">{c.workouts} workouts logged</p>
+                </div>
+                <button className="btn-ghost text-xs" onClick={() => viewProgress(c.id)}>
+                  Progress
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted">Assign:</span>
+                <select
+                  className="input flex-1 py-1.5 text-sm"
+                  defaultValue=""
+                  onChange={(e) => assign(c.id, e.target.value)}
+                >
+                  <option value="" disabled>
+                    Pick a plan…
                   </option>
-                ))}
-              </select>
-            </div>
-
-            {progress[c.id] && (
-              <div className="rounded-lg bg-white/[0.03] p-3 text-xs">
-                <p className="mb-1 font-semibold text-white">Recent sessions</p>
-                {progress[c.id].sessions.length === 0 ? (
-                  <p className="text-white/50">No completed workouts yet.</p>
-                ) : (
-                  progress[c.id].sessions.map((s, i) => (
-                    <p key={i} className="text-white/50">
-                      {s.date} · {s.title}
-                    </p>
-                  ))
-                )}
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-            )}
-          </li>
-        ))}
-        {clients.length === 0 && (
-          <li className="card text-center py-12 text-base text-white/50">
-            Add a client by their account email to assign plans and view progress.
-          </li>
-        )}
-      </ul>
+
+              {progress[c.id] && (
+                <div className="rounded-control bg-surface2 p-3 text-xs">
+                  <p className="mb-1 font-semibold text-ink">Recent sessions</p>
+                  {progress[c.id].sessions.length === 0 ? (
+                    <p className="text-muted">No completed workouts yet.</p>
+                  ) : (
+                    progress[c.id].sessions.map((s, i) => (
+                      <p key={i} className="text-muted">
+                        {s.date} · {s.title}
+                      </p>
+                    ))
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+          {clients.length === 0 && (
+            <li>
+              <EmptyState
+                icon="🧑‍🏫"
+                title="No clients yet"
+                body="Add a client by their account email to assign plans and view progress."
+              />
+            </li>
+          )}
+        </ul>
+      )}
     </main>
   );
 }

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { LineChart } from "@/components/LineChart";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
+import { StatSkeleton } from "@/components/Skeleton";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function ProgressPage() {
@@ -48,10 +49,20 @@ export default function ProgressPage() {
       </header>
 
       {!hydrated ? (
-        <div className="card animate-pulse text-white/50">Loading…</div>
+        <div className="grid grid-cols-2 gap-4">
+          <StatSkeleton />
+          <StatSkeleton />
+        </div>
       ) : exercises.length === 0 ? (
-        <div className="card text-center py-12 text-base text-white/50">
-          Complete some workouts to see your progress.
+        <div className="rounded-card border border-dashed border-border bg-surface text-center py-14 px-6 space-y-3">
+          <p className="text-3xl" aria-hidden>
+            📊
+          </p>
+          <p className="font-semibold text-lg text-ink">No trends yet</p>
+          <p className="text-body-sm text-inkSoft max-w-xs mx-auto">
+            Complete a few workouts for the same exercise and your progress
+            will start showing up here.
+          </p>
         </div>
       ) : (
         <>
@@ -71,7 +82,7 @@ export default function ProgressPage() {
             ))}
           </div>
 
-          <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ul key={metric} className="enter-fade grid grid-cols-1 gap-4 lg:grid-cols-2">
             {exercises.map((exId) => {
               const ex = exerciseById(exId);
               const device = deviceForExercise(exId);

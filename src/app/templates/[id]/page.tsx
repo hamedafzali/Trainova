@@ -6,8 +6,12 @@ import { useState } from "react";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { Stepper } from "@/components/Stepper";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ListSkeleton } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
 import { plateIncrement } from "@/domain/progression";
 import { useHydrated, useStore } from "@/lib/store";
+import { SEED_PLAN_ID } from "@/lib/seed";
 
 export default function TemplateEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,12 +30,17 @@ export default function TemplateEditPage() {
   const getActiveSession = useStore((s) => s.getActiveSession);
   const [picking, setPicking] = useState(false);
 
-  if (!hydrated) return <main className="p-4 text-white/50">Loading…</main>;
+  if (!hydrated)
+    return (
+      <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
+        <ListSkeleton variant="row" />
+      </main>
+    );
   if (!template) {
     return (
       <main className="mx-auto max-w-2xl space-y-3 p-4">
-        <p className="text-white/50">Plan not found.</p>
-        <Link href="/templates" className="text-blue-400 hover:text-blue-300">
+        <p className="text-muted">Plan not found.</p>
+        <Link href="/templates" className="text-accent hover:text-accentHover">
           ← Back to plans
         </Link>
       </main>
@@ -82,9 +91,11 @@ export default function TemplateEditPage() {
       </header>
 
       {template.exercises.length === 0 ? (
-        <div className="card text-center py-8 text-base text-white/50">
-          No exercises yet.
-        </div>
+        <EmptyState
+          icon="💪"
+          title="No exercises yet"
+          body="Add your first exercise below to build out this plan."
+        />
       ) : (
         <ul className="space-y-3">
           {template.exercises.map((te) => {

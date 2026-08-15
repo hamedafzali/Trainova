@@ -8,8 +8,12 @@ import { OnlineBadge } from "@/components/OnlineBadge";
 import { WorkoutCarousel } from "@/components/WorkoutCarousel";
 import { RestTimerBar } from "@/components/RestTimerBar";
 import { SessionFeedbackForm } from "@/components/SessionFeedbackForm";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CardSkeleton, ListSkeleton } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
 import { haptic } from "@/lib/haptics";
 import { trackEvent } from "@/lib/analytics";
+import { toast } from "@/lib/toast";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function SessionPage() {
@@ -28,8 +32,12 @@ export default function SessionPage() {
   const recordSessionFeedback = useStore((s) => s.recordSessionFeedback);
 
   const [picking, setPicking] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    body?: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const sessionSets = useMemo(
     () =>
@@ -46,12 +54,18 @@ export default function SessionPage() {
     return seen;
   }, [sessionSets]);
 
-  if (!hydrated) return <main className="p-4 text-white/50">Loading…</main>;
+  if (!hydrated)
+    return (
+      <main className="mx-auto max-w-2xl space-y-8 p-4">
+        <CardSkeleton />
+        <ListSkeleton count={3} />
+      </main>
+    );
   if (!session) {
     return (
       <main className="mx-auto max-w-2xl space-y-3 p-4">
-        <p className="text-white/50">Session not found.</p>
-        <Link href="/" className="text-blue-400 hover:text-blue-300">
+        <p className="text-muted">Session not found.</p>
+        <Link href="/" className="text-accent hover:text-accentHover">
           ← Home
         </Link>
       </main>
@@ -71,8 +85,7 @@ export default function SessionPage() {
             : "rep",
       )
       .join(" & ");
-    setToast(`🏆 New ${label} PR!`);
-    setTimeout(() => setToast(null), 2500);
+    toast(`🏆 New ${label} PR!`, { variant: "success" });
   };
 
   const finish = () => {
@@ -109,12 +122,16 @@ export default function SessionPage() {
         <OnlineBadge />
       </header>
 
-      {exerciseOrder.length === 0 && (
-        <div className="card text-center py-12 text-base text-white/50">
-          {isActive
-            ? "Empty workout — add your first exercise below."
-            : "No sets were logged."}
-        </div>
+      {exerciseOrder.length === 0 && isActive && (
+        <EmptyState
+          icon="🏋️"
+          title="Empty workout"
+          body="Add your first exercise below to get started."
+        />
+      )}
+
+      {exerciseOrder.length === 0 && !isActive && (
+        <EmptyState icon="📭" title="No sets logged" body="This workout has no recorded sets." />
       )}
 
       {exerciseOrder.length > 0 && (
@@ -166,10 +183,8 @@ export default function SessionPage() {
             <button
               className="btn-ghost py-4 text-base font-semibold"
               onClick={() => {
-                if (reopenSession(session.id))
-                  setToast("Re-opened for editing");
-                else setToast("Finish the active workout first");
-                setTimeout(() => setToast(null), 2000);
+                if (reopenSession(session.id)) toast("Re-opened for editing");
+                else toast("Finish the active workout first");
               }}
             >
               Edit workout
@@ -241,17 +256,28 @@ export default function SessionPage() {
         />
       )}
 
-      {toast && (
-        <div className="fixed inset-x-0 bottom-28 z-40 mx-auto w-fit rounded-full bg-gold px-5 py-2.5 font-semibold text-onAccent shadow-lg animate-popIn">
-          {toast}
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmAction}
+        title={confirmAction?.title ?? ""}
+        body={confirmAction?.body}
+        danger
+        onConfirm={() => {
+          confirmAction?.onConfirm();
+          setConfirmAction(null);
+        }}
+        onCancel={() => setConfirmAction(null)}
+      />
 
       {isActive && <RestTimerBar />}
 
       {feedbackOpen && (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/60 p-4 md:items-center md:justify-center" role="dialog" aria-modal="true" aria-label="Workout feedback">
-          <div className="w-full max-w-md">
+        <div
+          className="sheet-enter-backdrop fixed inset-0 z-50 flex items-end bg-black/60 p-4 md:items-center md:justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Workout feedback"
+        >
+          <div className="sheet-enter-panel enter-fade w-full max-w-md">
             <SessionFeedbackForm
               onSkip={finish}
               onSubmit={(input) => {

@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ListSkeleton } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function ProgramEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,12 +34,17 @@ export default function ProgramEditPage() {
     if (sid) router.push(`/session/${sid}`);
   };
 
-  if (!hydrated) return <main className="p-4 text-white/50">Loading…</main>;
+  if (!hydrated)
+    return (
+      <main className="mx-auto max-w-2xl space-y-4 p-4">
+        <ListSkeleton variant="row" />
+      </main>
+    );
   if (!program) {
     return (
       <main className="mx-auto max-w-2xl space-y-3 p-4">
-        <p className="text-white/50">Program not found.</p>
-        <Link href="/templates" className="text-blue-400 hover:text-blue-300">
+        <p className="text-muted">Program not found.</p>
+        <Link href="/templates" className="text-accent hover:text-accentHover">
           ← Back to plans
         </Link>
       </main>
@@ -65,27 +74,30 @@ export default function ProgramEditPage() {
       </header>
 
       {days.length === 0 ? (
-        <div className="card text-center text-white/50">No days yet — add the first one.</div>
+        <EmptyState
+          icon="📅"
+          title="No days yet"
+          body="Add the first one to start building this program."
+        />
       ) : (
         <ul className="space-y-2">
           {days.map((d, i) => (
             <li key={d.id} className="card">
               <div className="flex items-center justify-between">
                 <Link href={`/templates/${d.id}`} className="flex-1">
-                  <p className="font-semibold text-white">
-                    <span className="text-white/50">Day {i + 1}:</span> {d.name}
+                  <p className="font-semibold text-ink">
+                    <span className="text-muted">Day {i + 1}:</span> {d.name}
                   </p>
-                  <p className="text-xs text-white/50">{d.exercises.length} exercises · tap to edit</p>
+                  <p className="text-xs text-muted">{d.exercises.length} exercises · tap to edit</p>
                 </Link>
                 <button className="btn-primary px-3 py-1.5" onClick={() => start(d.id)}>
                   Start
                 </button>
                 <button
                   className="btn-danger"
-                  onClick={() => {
-                    if (confirm(`Remove “${d.name}” from this program?`))
-                      removeDayFromProgram(program.id, d.id);
-                  }}
+                  onClick={() =>
+                    setConfirmRemoveDay({ id: d.id, name: d.name })
+                  }
                 >
                   ✕
                 </button>
@@ -104,6 +116,24 @@ export default function ProgramEditPage() {
       >
         + Add day
       </button>
+
+      <ConfirmDialog
+        open={!!confirmRemoveDay}
+        title="Remove day"
+        body={
+          confirmRemoveDay
+            ? `Remove "${confirmRemoveDay.name}" from this program?`
+            : undefined
+        }
+        confirmLabel="Remove"
+        danger
+        onConfirm={() => {
+          if (confirmRemoveDay)
+            removeDayFromProgram(program.id, confirmRemoveDay.id);
+          setConfirmRemoveDay(null);
+        }}
+        onCancel={() => setConfirmRemoveDay(null)}
+      />
     </main>
   );
 }

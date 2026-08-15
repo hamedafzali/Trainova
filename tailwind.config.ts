@@ -122,12 +122,20 @@ const config: Config = {
           "0%,100%": { opacity: "1" },
           "50%": { opacity: "0.7" },
         },
+        // Entry animation for routed page content and empty/error/skeleton
+        // swaps — content "arrives" rather than snapping in. Kept subtle
+        // (6px) per the "fast, not showy" brief.
+        enterFade: {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         completeWipe: "completeWipe 600ms ease-out",
         popIn: "popIn 180ms ease-out",
         prRing: "prRing 700ms ease-in-out 2",
         breathe: "breathe 1.6s ease-in-out infinite",
+        enterFade: "enterFade 250ms cubic-bezier(0.22, 1, 0.36, 1) both",
       },
     },
   },

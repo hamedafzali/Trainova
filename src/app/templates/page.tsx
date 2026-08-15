@@ -6,6 +6,18 @@ import { useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { AiPlanButton } from "@/components/AiPlanButton";
 import { AssignmentsInbox } from "@/components/AssignmentsInbox";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { ListSkeleton } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
+import { SEED_PLAN_ID, SEED_PROGRAM_ID } from "@/lib/seed";
+
+function SeedBadge() {
+  return (
+    <span className="badge-accent">
+      <span aria-hidden>✦</span> Sample
+    </span>
+  );
+}
 
 export default function PlansPage() {
   const hydrated = useHydrated();
@@ -73,194 +85,285 @@ export default function PlansPage() {
         </button>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Create */}
-          {creating && (
-            <div className="card space-y-4 p-6">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="New plan name…"
-                className="input w-full text-base"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  className="btn-primary py-4 text-base font-semibold"
-                  onClick={() => {
-                    if (!name.trim()) return;
-                    createTemplate(name);
-                    setName("");
-                    setCreating(false);
-                  }}
-                >
-                  + Plan
-                </button>
-                <button
-                  className="btn-ghost py-4 text-base font-semibold"
-                  onClick={() => {
-                    if (!name.trim()) return;
-                    const id = createProgram(name, "trainer");
-                    setName("");
-                    router.push(`/programs/${id}`);
-                    setCreating(false);
-                  }}
-                >
-                  + Program
-                </button>
-              </div>
+      {hydrated && activeSession && (
+        <div className="rounded-card border border-accent/30 bg-accent/[0.06] shadow-elevated p-6 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="section-label text-accent">In progress</p>
+              <p className="font-semibold text-xl text-ink mt-1">
+                Resume your workout
+              </p>
             </div>
-          )}
+            <button
+              className="btn-primary px-6 py-3 text-base font-semibold shrink-0"
+              onClick={() => router.push(`/session/${activeSession.id}`)}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
 
-          <AiPlanButton />
+      {hydrated && !activeSession && heroTemplate && (
+        <div className="rounded-card border border-border bg-surface shadow-elevated p-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="section-label text-accent">Start here</p>
+              <p className="font-semibold text-xl text-ink mt-1 truncate">
+                {heroTemplate.name}
+                {heroTemplate.id === SEED_PLAN_ID && (
+                  <span className="ml-2 align-middle">
+                    <SeedBadge />
+                  </span>
+                )}
+              </p>
+              <p className="text-sm text-inkSoft mt-1">
+                {heroTemplate.exercises.length} exercise
+                {heroTemplate.exercises.length === 1 ? "" : "s"}
+                {firstProgramDay ? ` · ${firstProgram.name}` : ""}
+              </p>
+            </div>
+            <button
+              className="btn-primary px-6 py-3 text-base font-semibold shrink-0"
+              onClick={() => start(heroTemplate.id)}
+            >
+              Start
+            </button>
+          </div>
+        </div>
+      )}
 
-          <AssignmentsInbox />
+      {hydrated && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-card border border-border bg-surface shadow-card p-5 flex flex-col gap-1">
+            <span className="text-xs text-inkSoft">Programs</span>
+            <span className="text-stat text-ink">{programs.length}</span>
+          </div>
+          <div className="rounded-card border border-border bg-surface shadow-card p-5 flex flex-col gap-1">
+            <span className="text-xs text-inkSoft">Single plans</span>
+            <span className="text-stat text-ink">{standalone.length}</span>
+          </div>
+        </div>
+      )}
 
-          {!hydrated ? (
-            <div className="card animate-pulse text-white/50">Loading…</div>
-          ) : (
-            <>
-              {/* Programs (trainer plans) */}
-              {programs.length > 0 && (
-                <section className="space-y-4">
-                  <h2 className="section-label">Programs</h2>
-                  {programs.map((p) => {
-                    const days = daysForProgram(p.id);
-                    return (
-                      <div key={p.id} className="card space-y-4 p-6">
-                        <div className="flex items-start justify-between gap-4">
-                          <Link
-                            href={`/programs/${p.id}`}
-                            className="flex-1 min-w-0"
-                          >
-                            <p className="font-semibold text-xl text-white">
-                              {p.name}
-                              {p.source === "trainer" && (
-                                <span className="ml-2 rounded-full bg-blue-500/20 px-3 py-1 text-xs uppercase text-blue-400">
-                                  Trainer
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-base text-white/60 mt-2">
-                              {days.length} day{days.length === 1 ? "" : "s"} ·
-                              tap to edit
-                            </p>
-                          </Link>
-                          <button
-                            className="btn-danger px-4 py-2 text-base shrink-0"
-                            onClick={() => {
-                              if (confirm(`Delete program "${p.name}"?`))
-                                deleteProgram(p.id);
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                        <div className="space-y-3">
-                          {days.map((d) => (
-                            <div
-                              key={d.id}
-                              className="flex items-center justify-between rounded-xl bg-white/[0.03] px-6 py-4 hover:bg-white/[0.07] transition-colors"
-                            >
-                              <span className="text-base font-medium text-white">
-                                {d.name}
-                                <span className="ml-2 text-sm text-white/50">
-                                  ({d.exercises.length})
-                                </span>
-                              </span>
-                              <button
-                                className="btn-primary px-4 py-2 text-base font-semibold"
-                                onClick={() => start(d.id)}
-                              >
-                                Start
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            className="btn-ghost w-full py-4 text-base font-semibold"
-                            onClick={() => {
-                              const tid = addDayToProgram(
-                                p.id,
-                                `Day ${days.length + 1}`,
-                              );
-                              router.push(`/templates/${tid}`);
-                            }}
-                          >
-                            + Add day
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </section>
-              )}
+      {/* Create */}
+      {creating && (
+        <div className="card shadow-card space-y-4">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="New plan name…"
+            className="input w-full text-base"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              className="btn-primary py-4 text-base font-semibold"
+              onClick={() => {
+                if (!name.trim()) return;
+                createTemplate(name);
+                setName("");
+                setCreating(false);
+              }}
+            >
+              + Plan
+            </button>
+            <button
+              className="btn-ghost py-4 text-base font-semibold"
+              onClick={() => {
+                if (!name.trim()) return;
+                const id = createProgram(name, "trainer");
+                setName("");
+                router.push(`/programs/${id}`);
+                setCreating(false);
+              }}
+            >
+              + Program
+            </button>
+          </div>
+        </div>
+      )}
 
-              {/* Standalone plans */}
-              <section className="space-y-4">
-                <h2 className="section-label">Single plans</h2>
-                {standalone.length === 0 ? (
-                  <div className="card text-center py-12 text-base text-white/50">
-                    No standalone plans yet. Create your first workout routine!
-                  </div>
-                ) : (
-                  standalone.map((t) => (
-                    <div
-                      key={t.id}
-                      className="card flex items-center justify-between gap-4 p-6 hover:bg-white/[0.07] transition-colors"
-                    >
-                      <Link
-                        href={`/templates/${t.id}`}
-                        className="flex-1 min-w-0"
-                      >
-                        <p className="font-semibold text-xl text-white">
-                          {t.name}
+      <AiPlanButton />
+
+      <AssignmentsInbox />
+
+      {!hydrated ? (
+        <ListSkeleton />
+      ) : isEmpty ? (
+        <div className="rounded-card border border-dashed border-border bg-surface text-center py-14 px-6 space-y-3">
+          <p className="text-3xl" aria-hidden>
+            🏋️
+          </p>
+          <p className="font-semibold text-lg text-ink">Build your first plan</p>
+          <p className="text-sm text-inkSoft max-w-xs mx-auto">
+            Create a single workout or a multi-day program — either one, you
+            can start it right away.
+          </p>
+          <button
+            className="btn-primary px-6 py-3 text-base font-semibold mt-2"
+            onClick={() => setCreating(true)}
+          >
+            + New plan
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* Programs (trainer plans) */}
+          {programs.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="section-label">Programs</h2>
+              {programs.map((p) => {
+                const days = daysForProgram(p.id);
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-card border border-border bg-surface shadow-card p-6 space-y-4"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <Link href={`/programs/${p.id}`} className="flex-1 min-w-0">
+                        <p className="font-semibold text-xl text-ink flex items-center flex-wrap gap-2">
+                          {p.name}
+                          {p.source === "trainer" && (
+                            <span className="badge-accent">Trainer</span>
+                          )}
+                          {p.id === SEED_PROGRAM_ID && <SeedBadge />}
                         </p>
-                        <p className="text-base text-white/60 mt-2">
-                          {t.exercises.length} exercises · tap to edit
+                        <p className="text-sm text-inkSoft mt-1.5">
+                          {days.length} day{days.length === 1 ? "" : "s"} · tap
+                          to edit
                         </p>
                       </Link>
                       <button
-                        className="btn-primary px-4 py-2 text-base font-semibold shrink-0"
+                        className="btn-danger px-4 py-2 text-base shrink-0"
+                        onClick={() =>
+                          setConfirmDeleteProgram({ id: p.id, name: p.name })
+                        }
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {days.map((d) => (
+                        <div
+                          key={d.id}
+                          className="flex items-center justify-between rounded-control bg-surface2 px-6 py-4 hover:bg-border/60 transition-colors"
+                        >
+                          <span className="text-base font-medium text-ink">
+                            {d.name}
+                            <span className="ml-2 text-sm text-muted">
+                              ({d.exercises.length})
+                            </span>
+                          </span>
+                          <button
+                            className="btn-primary px-4 py-2 text-base font-semibold"
+                            onClick={() => start(d.id)}
+                          >
+                            Start
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        className="btn-ghost w-full py-4 text-base font-semibold"
+                        onClick={() => {
+                          const tid = addDayToProgram(
+                            p.id,
+                            `Day ${days.length + 1}`,
+                          );
+                          router.push(`/templates/${tid}`);
+                        }}
+                      >
+                        + Add day
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+          )}
+
+          {/* Standalone plans */}
+          <section className="space-y-4">
+            <h2 className="section-label">Single plans</h2>
+            {standalone.length === 0 ? (
+              <EmptyState
+                icon="✦"
+                title="No single-day plans yet"
+                body="Add one whenever you want a routine outside your programs."
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {standalone.map((t) => (
+                  <div
+                    key={t.id}
+                    className="rounded-card border border-border bg-surface shadow-card p-6 flex flex-col gap-4"
+                  >
+                    <Link href={`/templates/${t.id}`} className="min-w-0">
+                      <p className="font-semibold text-xl text-ink flex items-center flex-wrap gap-2">
+                        {t.name}
+                        {t.id === SEED_PLAN_ID && <SeedBadge />}
+                      </p>
+                      <p className="text-sm text-inkSoft mt-1.5">
+                        {t.exercises.length} exercise
+                        {t.exercises.length === 1 ? "" : "s"} · tap to edit
+                      </p>
+                    </Link>
+                    <div className="flex items-center gap-3">
+                      <button
+                        className="btn-primary flex-1 py-2.5 text-base font-semibold"
                         onClick={() => start(t.id)}
                       >
                         Start
                       </button>
                       <button
-                        className="btn-danger px-3 py-2 text-base shrink-0"
-                        onClick={() => {
-                          if (confirm(`Delete "${t.name}"?`))
-                            deleteTemplate(t.id);
-                        }}
+                        className="btn-danger px-3 py-2.5 text-base shrink-0"
+                        onClick={() =>
+                          setConfirmDeleteTemplate({ id: t.id, name: t.name })
+                        }
                       >
                         ✕
                       </button>
                     </div>
-                  ))
-                )}
-              </section>
-            </>
-          )}
-        </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      )}
 
-        <div className="space-y-6">
-          <div className="card">
-            <h3 className="section-label mb-4">Overview</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl">
-                <span className="text-sm text-white/60">Programs</span>
-                <span className="font-bold text-white">{programs.length}</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl">
-                <span className="text-sm text-white/60">Single plans</span>
-                <span className="font-bold text-white">{standalone.length}</span>
-              </div>
-            </div>
-            <p className="text-xs text-white/40 mt-4">
-              Programs are multi-day plans. Single plans are one-off routines.
-            </p>
-          </div>
-        </div>
-      </div>
+      <ConfirmDialog
+        open={!!confirmDeleteProgram}
+        title="Delete program"
+        body={
+          confirmDeleteProgram
+            ? `Delete program "${confirmDeleteProgram.name}"?`
+            : undefined
+        }
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => {
+          if (confirmDeleteProgram) deleteProgram(confirmDeleteProgram.id);
+          setConfirmDeleteProgram(null);
+        }}
+        onCancel={() => setConfirmDeleteProgram(null)}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDeleteTemplate}
+        title="Delete plan"
+        body={
+          confirmDeleteTemplate
+            ? `Delete "${confirmDeleteTemplate.name}"?`
+            : undefined
+        }
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => {
+          if (confirmDeleteTemplate) deleteTemplate(confirmDeleteTemplate.id);
+          setConfirmDeleteTemplate(null);
+        }}
+        onCancel={() => setConfirmDeleteTemplate(null)}
+      />
     </main>
   );
 }

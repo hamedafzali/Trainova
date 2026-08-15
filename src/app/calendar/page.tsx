@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
+import { CalendarSkeleton } from "@/components/Skeleton";
 
 const DOW = ["M", "T", "W", "T", "F", "S", "S"];
 const MONTHS = [
@@ -75,100 +76,111 @@ export default function CalendarPage() {
   const todayKey = key(today.getFullYear(), today.getMonth(), today.getDate());
 
   return (
-    <main className="mx-auto max-w-xl space-y-6">
+    <main className="mx-auto max-w-2xl space-y-6">
       <header>
         <h1 className="page-title">Calendar</h1>
         <p className="page-subtitle">Every day you trained.</p>
       </header>
 
       {!hydrated ? (
-        <div className="card animate-pulse text-white/50">Loading…</div>
+        <CalendarSkeleton />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4">
-            <Stat value={`🔥 ${streak}`} label={streak === 1 ? "day streak" : "day streak"} />
-            <Stat value={`${monthCount}`} label={`in ${MONTHS[view.m]}`} />
+          {/* Streak leads — the one number this screen exists to reinforce. */}
+          <div className="rounded-card border border-accent/30 bg-accent/[0.06] shadow-elevated p-6 text-center space-y-1">
+            <p className="text-display tabular-nums text-ink">🔥 {streak}</p>
+            <p className="text-body-sm text-inkSoft">day streak</p>
           </div>
 
-          <div className="card">
-            <div className="mb-4 flex items-center justify-between">
-              <button onClick={() => shift(-1)} className="btn-ghost px-3 py-1.5">
-                ‹
-              </button>
-              <p className="font-semibold text-white">
-                {MONTHS[view.m]} {view.y}
-              </p>
-              <button onClick={() => shift(1)} className="btn-ghost px-3 py-1.5">
-                ›
-              </button>
+          <div className="rounded-card border border-border bg-surface shadow-card overflow-hidden">
+            <div className="p-4 sm:p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <button onClick={() => shift(-1)} className="btn-ghost px-3 py-1.5">
+                  ‹
+                </button>
+                <div className="text-center">
+                  <p className="font-semibold text-ink">
+                    {MONTHS[view.m]} {view.y}
+                  </p>
+                  <p className="text-xs text-muted mt-0.5">
+                    {monthCount} session{monthCount === 1 ? "" : "s"} this month
+                  </p>
+                </div>
+                <button onClick={() => shift(1)} className="btn-ghost px-3 py-1.5">
+                  ›
+                </button>
+              </div>
+
+              <div className="mb-1.5 grid grid-cols-7 text-center text-[10px] uppercase text-muted">
+                {DOW.map((d, i) => (
+                  <span key={i}>{d}</span>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1.5">
+                {cells.map((d, i) => {
+                  if (d === null) return <span key={i} />;
+                  const k = key(view.y, view.m, d);
+                  const trained = trainedDays.has(k);
+                  const isToday = k === todayKey;
+                  const isSel = k === selected;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setSelected(k)}
+                      className={`relative flex aspect-square items-center justify-center rounded-control text-sm tabular-nums transition-colors ${
+                        isSel
+                          ? "bg-accent font-bold text-onAccent shadow-sm"
+                          : isToday
+                          ? "text-accent font-semibold hover:bg-accent/10"
+                          : "text-inkSoft hover:bg-border/60"
+                      }`}
+                    >
+                      {d}
+                      {trained && (
+                        <span
+                          className={`absolute bottom-1.5 h-1 w-1 rounded-full ${
+                            isSel ? "bg-onAccent/70" : "bg-accent"
+                          }`}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="mb-1 grid grid-cols-7 text-center text-[10px] uppercase text-white/40">
-              {DOW.map((d, i) => (
-                <span key={i}>{d}</span>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1">
-              {cells.map((d, i) => {
-                if (d === null) return <span key={i} />;
-                const k = key(view.y, view.m, d);
-                const trained = trainedDays.has(k);
-                const isToday = k === todayKey;
-                const isSel = k === selected;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => setSelected(k)}
-                    className={`flex aspect-square items-center justify-center rounded-lg text-sm tabular-nums transition-colors ${
-                      trained ? "bg-blue-600 font-bold text-white" : "text-white/60 hover:bg-white/[0.07]"
-                    } ${isSel ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-[#0a0a0f]" : ""} ${
-                      isToday && !trained ? "border border-blue-500/60" : ""
-                    }`}
-                  >
-                    {d}
-                  </button>
-                );
-              })}
+            {/* Selected-day detail lives inside the same shelf as the grid, not a floating panel. */}
+            <div className="border-t border-border p-4 sm:p-6 space-y-3">
+              <h2 className="section-label">
+                {new Date(selected + "T00:00:00").toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </h2>
+              {selectedSessions.length === 0 ? (
+                <div className="py-8 text-center text-body-sm text-muted">No workout on this day.</div>
+              ) : (
+                <div className="-mx-4 sm:-mx-6 divide-y divide-border">
+                  {selectedSessions.map((s) => (
+                    <Link
+                      key={s.id}
+                      href={`/session/${s.id}`}
+                      className="flex items-center justify-between px-4 sm:px-6 py-3.5 hover:bg-border/60 transition-colors"
+                    >
+                      <span className="font-semibold text-ink">{s.title}</span>
+                      <span className="text-sm text-accent font-semibold">
+                        {s.status === "active" ? "Resume →" : "View →"}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-
-          <section className="space-y-3">
-            <h2 className="section-label">
-              {new Date(selected + "T00:00:00").toLocaleDateString(undefined, {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
-            </h2>
-            {selectedSessions.length === 0 ? (
-              <div className="card text-center py-12 text-base text-white/50">No workout on this day.</div>
-            ) : (
-              selectedSessions.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/session/${s.id}`}
-                  className="card flex items-center justify-between p-6 hover:bg-white/[0.07] transition-colors"
-                >
-                  <span className="font-semibold text-white">{s.title}</span>
-                  <span className="text-sm text-blue-400 font-semibold">
-                    {s.status === "active" ? "Resume →" : "View →"}
-                  </span>
-                </Link>
-              ))
-            )}
-          </section>
         </>
       )}
     </main>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="card">
-      <p className="text-2xl font-bold tabular-nums text-white">{value}</p>
-      <p className="text-xs text-white/50 mt-1">{label}</p>
-    </div>
   );
 }

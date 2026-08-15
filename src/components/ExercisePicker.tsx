@@ -68,9 +68,12 @@ export function ExercisePicker({
   };
 
   return (
-    <div className="fixed inset-0 z-30 flex items-end bg-black/60" onClick={onClose}>
+    <div
+      className="sheet-enter-backdrop fixed inset-0 z-30 flex items-end bg-black/60"
+      onClick={onClose}
+    >
       <div
-        className="mx-auto flex max-h-[85dvh] w-full max-w-md flex-col rounded-t-3xl border-t border-border bg-surface p-4"
+        className="sheet-enter-panel enter-fade mx-auto flex max-h-[85dvh] w-full max-w-md flex-col rounded-t-sheet border-t border-border bg-surface p-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />

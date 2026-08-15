@@ -238,16 +238,16 @@ export default function HomePage() {
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                     <div
-                      className={`h-8 w-full rounded-md ${trained ? "bg-blue-500" : "bg-white/[0.05]"}`}
+                      className={`h-8 w-full rounded-control ${trained ? "bg-accent" : "bg-surface2"}`}
                     />
-                    <span className="text-[10px] text-white/40">
+                    <span className="text-[10px] text-muted">
                       {d.toLocaleDateString(undefined, { weekday: "narrow" })}
                     </span>
                   </div>
                 );
               })}
             </div>
-            <p className="text-sm text-white/60 mt-4">
+            <p key={weekTrained} className="enter-fade text-sm text-inkSoft mt-4">
               {weekTrained === 0
                 ? "No workouts yet this week."
                 : `${weekTrained} day${weekTrained === 1 ? "" : "s"} trained this week.`}

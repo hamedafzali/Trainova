@@ -5,7 +5,11 @@ import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { WorkoutAnalysis } from "@/components/WorkoutAnalysis";
+import { ListSkeleton } from "@/components/Skeleton";
 import type { WorkoutSet } from "@/domain/types";
+import { totalVolume } from "@/domain/volume";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function HistoryPage() {
   const hydrated = useHydrated();
@@ -60,177 +64,203 @@ export default function HistoryPage() {
             Every workout you've logged, in one place.
           </p>
         </div>
-        <label className="flex items-center gap-2 text-sm text-white/50 shrink-0">
+        <label className="flex items-center gap-2 text-body-sm text-muted shrink-0">
           <input
             type="checkbox"
             checked={showArchived}
             onChange={(e) => setShowArchived(e.target.checked)}
-            className="accent-blue-500"
+            className="accent-accent"
           />
           Show archived
         </label>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {!hydrated ? (
-            <div className="card animate-pulse text-white/50 py-12">
-              Loading…
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="card text-center py-12 text-base text-white/50">
-              No workouts logged yet. Start your fitness journey today!
-            </div>
-          ) : (
-            <>
-              {/* AI Analysis Section */}
-              <WorkoutAnalysis />
-
-              {/* Workout History */}
-              <ul className="space-y-4">
-                {rows.map(({ session, count, volume, byExercise, mins }) => {
-                  const expanded = open === session.id;
-                  return (
-                    <li key={session.id} className="card">
-                      <button
-                        className="flex w-full items-center justify-between text-left p-6 hover:bg-white/[0.07] transition-colors"
-                        onClick={() => setOpen(expanded ? null : session.id)}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-lg text-white">
-                            {session.title}
-                            {session.status === "active" && (
-                              <span className="ml-2 text-sm text-blue-400">
-                                ● in progress
-                              </span>
-                            )}
-                            {session.status === "archived" && (
-                              <span className="ml-2 text-sm text-white/50">
-                                archived
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-base text-white/60 mt-2">
-                            {new Date(session.startedAt).toLocaleDateString(
-                              undefined,
-                              {
-                                weekday: "short",
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )}
-                            {mins ? ` · ${mins} min` : ""} · {byExercise.size}{" "}
-                            exercises
-                          </p>
-                        </div>
-                        <div className="text-right ml-4">
-                          <p className="text-lg font-semibold tabular-nums text-white">
-                            {Math.round(volume).toLocaleString()}
-                            <span className="text-sm text-white/50">
-                              {" "}
-                              {units}·vol
-                            </span>
-                          </p>
-                          <p className="text-sm text-white/50 mt-1">
-                            {expanded ? "▲" : "▼"} {count} sets
-                          </p>
-                        </div>
-                      </button>
-
-                      {expanded && (
-                        <ul className="mt-4 space-y-3 border-t border-white/10 pt-4 px-6 pb-6">
-                          {[...byExercise.entries()].map(([exId, exSets]) => {
-                            const ex = exerciseById(exId);
-                            const device = deviceForExercise(exId);
-                            return (
-                              <li key={exId} className="flex items-start gap-4">
-                                <DeviceAvatar
-                                  device={device}
-                                  className="mt-0.5 h-12 w-12 rounded-md text-base"
-                                />
-                                <div className="flex-1">
-                                  <p className="text-lg font-medium leading-tight text-white">
-                                    {ex?.name ?? "Exercise"}
-                                  </p>
-                                  {exSets[0]?.durationSec != null ? (
-                                    <p className="text-base text-white/60 mt-2">
-                                      {exSets
-                                        .map((s) => `${s.durationSec ?? "–"}s`)
-                                        .join(" · ")}{" "}
-                                      · {exSets.length}{" "}
-                                      {exSets.length === 1 ? "hold" : "holds"}
-                                    </p>
-                                  ) : exSets[0]?.durationMin != null ? (
-                                    <p className="text-base text-white/60 mt-2">
-                                      {exSets
-                                        .map(
-                                          (s) =>
-                                            `${s.durationMin ?? "–"} min${
-                                              s.incline
-                                                ? ` · ${s.incline}%`
-                                                : ""
-                                            }${s.distance ? ` · ${s.distance}` : ""}`,
-                                        )
-                                        .join("  ·  ")}
-                                    </p>
-                                  ) : (
-                                    <p className="text-base text-white/60 mt-2">
-                                      {exSets
-                                        .map((s) =>
-                                          s.actualReps
-                                            ? `${s.actualWeight ?? "–"}×${s.actualReps}`
-                                            : `${s.actualWeight ?? "–"}`,
-                                        )
-                                        .join(" · ")}{" "}
-                                      {units} · {exSets.length}{" "}
-                                      {exSets.length === 1 ? "round" : "rounds"}
-                                    </p>
-                                  )}
-                                </div>
-                              </li>
-                            );
-                          })}
-                          {session.status === "active" && (
-                            <li>
-                              <Link
-                                href={`/session/${session.id}`}
-                                className="text-lg text-blue-400 font-semibold hover:text-blue-300 transition-colors"
-                              >
-                                Resume workout →
-                              </Link>
-                            </li>
-                          )}
-                        </ul>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
+      {hydrated && rows.length > 0 && (
+        <div className="rounded-card border border-accent/30 bg-accent/[0.06] shadow-elevated p-6 flex items-center justify-between gap-4">
+          <div>
+            <p className="section-label text-accent">This week</p>
+            <p className="text-stat text-ink mt-1">
+              {Math.round(weekVolume).toLocaleString()}
+              <span className="text-body-sm font-normal text-inkSoft ml-1">
+                {units}·vol
+              </span>
+            </p>
+          </div>
+          <p className="text-body-sm text-inkSoft text-right">
+            {weekRows.length} workout{weekRows.length === 1 ? "" : "s"}
+            <br />
+            in the last 7 days
+          </p>
         </div>
+      )}
 
-        <div className="space-y-6">
-          <div className="card">
-            <h3 className="section-label mb-4">Stats</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl">
-                <span className="text-sm text-white/60">Total workouts</span>
-                <span className="font-bold text-white">{rows.length}</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-white/[0.03] rounded-xl">
-                <span className="text-sm text-white/60">Total volume</span>
-                <span className="font-bold text-white">
-                  {Math.round(
-                    rows.reduce((sum, r) => sum + r.volume, 0),
-                  ).toLocaleString()}{" "}
-                  {units}
-                </span>
-              </div>
-            </div>
+      {hydrated && rows.length > 0 && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-card border border-border bg-surface shadow-card p-5 flex flex-col gap-1">
+            <span className="text-caption text-muted">Total workouts</span>
+            <span className="text-stat text-ink">{rows.length}</span>
+          </div>
+          <div className="rounded-card border border-border bg-surface shadow-card p-5 flex flex-col gap-1">
+            <span className="text-caption text-muted">Total volume</span>
+            <span className="text-stat text-ink">
+              {Math.round(totalVol).toLocaleString()}
+              <span className="text-body-sm font-normal text-muted"> {units}·vol</span>
+            </span>
           </div>
         </div>
-      </div>
+      )}
+
+      {!hydrated ? (
+        <ListSkeleton />
+      ) : rows.length === 0 ? (
+        <div className="rounded-card border border-dashed border-border bg-surface text-center py-14 px-6 space-y-3">
+          <p className="text-3xl" aria-hidden>
+            📈
+          </p>
+          <p className="font-semibold text-lg text-ink">No workouts yet</p>
+          <p className="text-body-sm text-inkSoft max-w-xs mx-auto">
+            Once you log a workout, it'll show up here with your trends over
+            time.
+          </p>
+          <Link
+            href="/templates"
+            className="btn-primary inline-flex px-6 py-3 text-base font-semibold mt-2"
+          >
+            Start a workout
+          </Link>
+        </div>
+      ) : (
+        <>
+          <WorkoutAnalysis />
+
+          <ul className="space-y-4">
+            {rows.map(({ session, count, volume, byExercise, mins }) => {
+              const expanded = open === session.id;
+              return (
+                <li
+                  key={session.id}
+                  className="rounded-card border border-border bg-surface shadow-card overflow-hidden"
+                >
+                  <button
+                    className="flex w-full items-center justify-between text-left p-6 hover:bg-border/60 transition-colors"
+                    onClick={() => setOpen(expanded ? null : session.id)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-h3 text-ink">
+                        {session.title}
+                        {session.status === "active" && (
+                          <span className="ml-2 text-body-sm text-accent">
+                            ● in progress
+                          </span>
+                        )}
+                        {session.status === "archived" && (
+                          <span className="ml-2 text-body-sm text-muted">
+                            archived
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-body-sm text-muted mt-1.5">
+                        {new Date(session.startedAt).toLocaleDateString(
+                          undefined,
+                          {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          },
+                        )}
+                        {mins ? ` · ${mins} min` : ""} · {byExercise.size}{" "}
+                        exercises
+                      </p>
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className="text-h3 font-semibold tabular-nums text-ink">
+                        {Math.round(volume).toLocaleString()}
+                        <span className="text-body-sm font-normal text-muted">
+                          {" "}
+                          {units}·vol
+                        </span>
+                      </p>
+                      <p className="text-body-sm text-muted mt-1">
+                        {expanded ? "▲" : "▼"} {count} sets
+                      </p>
+                    </div>
+                  </button>
+
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-200 ease-standard ${
+                      expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <ul className="space-y-3 border-t border-border p-6">
+                      {[...byExercise.entries()].map(([exId, exSets]) => {
+                        const ex = exerciseById(exId);
+                        const device = deviceForExercise(exId);
+                        return (
+                          <li key={exId} className="flex items-start gap-4">
+                            <DeviceAvatar
+                              device={device}
+                              className="mt-0.5 h-10 w-10 rounded-control text-sm"
+                            />
+                            <div className="flex-1">
+                              <p className="text-base font-medium leading-tight text-ink">
+                                {ex?.name ?? "Exercise"}
+                              </p>
+                              {exSets[0]?.durationSec != null ? (
+                                <p className="text-body-sm text-inkSoft mt-1">
+                                  {exSets
+                                    .map((s) => `${s.durationSec ?? "–"}s`)
+                                    .join(" · ")}{" "}
+                                  · {exSets.length}{" "}
+                                  {exSets.length === 1 ? "hold" : "holds"}
+                                </p>
+                              ) : exSets[0]?.durationMin != null ? (
+                                <p className="text-body-sm text-inkSoft mt-1">
+                                  {exSets
+                                    .map(
+                                      (s) =>
+                                        `${s.durationMin ?? "–"} min${
+                                          s.incline ? ` · ${s.incline}%` : ""
+                                        }${s.distance ? ` · ${s.distance}` : ""}`,
+                                    )
+                                    .join("  ·  ")}
+                                </p>
+                              ) : (
+                                <p className="text-body-sm text-inkSoft mt-1">
+                                  {exSets
+                                    .map((s) =>
+                                      s.actualReps
+                                        ? `${s.actualWeight ?? "–"}×${s.actualReps}`
+                                        : `${s.actualWeight ?? "–"}`,
+                                    )
+                                    .join(" · ")}{" "}
+                                  {units} · {exSets.length}{" "}
+                                  {exSets.length === 1 ? "round" : "rounds"}
+                                </p>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                      {session.status === "active" && (
+                        <li>
+                          <Link
+                            href={`/session/${session.id}`}
+                            className="text-base text-accent font-semibold hover:text-accentHover transition-colors"
+                          >
+                            Resume workout →
+                          </Link>
+                        </li>
+                      )}
+                    </ul>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
     </main>
   );
 }

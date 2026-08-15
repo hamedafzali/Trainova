@@ -6,6 +6,9 @@ import { useHydrated, useStore } from "@/lib/store";
 import { getToken } from "@/lib/auth";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import type { Device } from "@/domain/types";
+import { toast } from "@/lib/toast";
+import { ListSkeleton } from "@/components/Skeleton";
+import { ErrorState } from "@/components/ErrorState";
 
 const CATEGORIES = ["machine", "free_weight", "cable", "bodyweight", "cardio"];
 const LEVELS = ["beginner", "intermediate", "advanced"];
@@ -41,25 +44,36 @@ export default function AdminDevicesPage() {
   }, [hydrated, isAdmin, load]);
 
   const save = async (d: Device) => {
-    const r = await fetch("/api/admin/devices", {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
-      body: JSON.stringify(d),
-    });
-    if (r.ok) {
-      setEditing(null);
-      load();
-    } else alert("Save failed.");
+    try {
+      const r = await fetch("/api/admin/devices", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify(d),
+      });
+      if (r.ok) {
+        setEditing(null);
+        load();
+      } else toast("Save failed.", { variant: "error" });
+    } catch {
+      toast("Couldn't reach the server. Check your connection and try again.", { variant: "error" });
+    }
   };
 
-  if (!hydrated || loading) return <main className="p-4 text-white/50">Loading…</main>;
+  if (!hydrated || loading)
+    return (
+      <main className="mx-auto max-w-3xl p-4">
+        <ListSkeleton variant="row" />
+      </main>
+    );
   if (!isAdmin)
     return (
       <main className="mx-auto max-w-3xl space-y-3 p-4">
-        <p className="text-white/50">Admins only.</p>
-        <Link href="/" className="text-blue-400 hover:text-blue-300">
-          ← Home
-        </Link>
+        <div className="rounded-card border border-border bg-surface shadow-card p-6">
+          <p className="text-muted">Admins only.</p>
+          <Link href="/" className="mt-2 inline-block text-accent hover:text-accentHover">
+            ← Home
+          </Link>
+        </div>
       </main>
     );
 
@@ -70,34 +84,41 @@ export default function AdminDevicesPage() {
           <h1 className="page-title">Devices</h1>
           <p className="page-subtitle">Shared equipment library · {devices.length}</p>
         </div>
-        <Link href="/admin" className="text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors">
+        <Link href="/admin" className="text-sm text-accent hover:text-accentHover font-semibold transition-colors">
           ← Admin
         </Link>
       </header>
 
-      <ul className="space-y-3">
-        {devices.map((d) =>
-          editing === d.id ? (
-            <DeviceForm key={d.id} device={d} onCancel={() => setEditing(null)} onSave={save} />
-          ) : (
-            <li key={d.id} className="card flex items-center gap-3">
-              <DeviceAvatar device={d} className="h-11 w-11 rounded-lg text-lg" />
-              <div className="flex-1">
-                <p className="font-semibold leading-tight text-white">{d.name}</p>
-                <p className="text-xs text-white/50 mt-0.5">
-                  {d.machineNumber ? `No.${d.machineNumber} · ` : ""}
-                  {d.category.replace("_", " ")}
-                  {d.primaryMuscle ? ` · ${d.primaryMuscle}` : ""}
-                  {d.difficulty ? ` · ${d.difficulty}` : ""}
-                </p>
-              </div>
-              <button className="btn-ghost text-xs" onClick={() => setEditing(d.id)}>
-                Edit
-              </button>
-            </li>
-          )
-        )}
-      </ul>
+      {error ? (
+        <ErrorState body={error} onRetry={load} />
+      ) : (
+        <ul className="space-y-3">
+          {devices.map((d) =>
+            editing === d.id ? (
+              <DeviceForm key={d.id} device={d} onCancel={() => setEditing(null)} onSave={save} />
+            ) : (
+              <li
+                key={d.id}
+                className="rounded-card border border-border bg-surface shadow-card p-5 flex items-center gap-3"
+              >
+                <DeviceAvatar device={d} className="h-11 w-11 rounded-control text-lg" />
+                <div className="flex-1">
+                  <p className="font-semibold leading-tight text-ink">{d.name}</p>
+                  <p className="text-xs text-muted mt-0.5">
+                    {d.machineNumber ? `No.${d.machineNumber} · ` : ""}
+                    {d.category.replace("_", " ")}
+                    {d.primaryMuscle ? ` · ${d.primaryMuscle}` : ""}
+                    {d.difficulty ? ` · ${d.difficulty}` : ""}
+                  </p>
+                </div>
+                <button className="btn-ghost text-xs" onClick={() => setEditing(d.id)}>
+                  Edit
+                </button>
+              </li>
+            )
+          )}
+        </ul>
+      )}
     </main>
   );
 }
@@ -128,18 +149,20 @@ function DeviceForm({
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok) set({ imageUrl: j.url });
-      else alert(j.error ?? "Upload failed");
+      else toast(j.error ?? "Upload failed", { variant: "error" });
+    } catch {
+      toast("Couldn't reach the server. Check your connection and try again.", { variant: "error" });
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <li className="card space-y-3">
-      <p className="text-sm font-semibold text-white">Edit {device.name}</p>
+    <li className="rounded-card border border-accent/30 bg-accent/[0.04] shadow-card p-6 space-y-4">
+      <p className="section-label">Edit {device.name}</p>
 
       <div className="flex items-center gap-3">
-        <DeviceAvatar device={d} className="h-16 w-16 rounded-xl text-2xl" />
+        <DeviceAvatar device={d} className="h-16 w-16 rounded-control text-2xl" />
         <label className="btn-ghost cursor-pointer text-xs">
           {uploading ? "Uploading…" : "Upload photo"}
           <input
