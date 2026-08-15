@@ -188,10 +188,10 @@ export function WorkoutAnalysis() {
   }
 
   const performanceLevelColors = {
-    excellent: "bg-green text-onAccent",
-    good: "bg-accent text-onAccent",
-    moderate: "bg-amber text-onAccent",
-    needs_improvement: "bg-danger text-onAccent",
+    excellent: "bg-green text-onStatus",
+    good: "bg-accentFill text-onAccent",
+    moderate: "bg-amber text-onStatus",
+    needs_improvement: "bg-danger text-onStatus",
   };
 
   return (
@@ -224,7 +224,7 @@ export function WorkoutAnalysis() {
           <div className="space-y-2">
             <h3 className="font-semibold text-base">Strengths</h3>
             {analysis.strengths.map((strength, idx) => (
-              <div key={idx} className="rounded-card bg-green/15 p-3">
+              <div key={idx} className="rounded-card bg-green/[0.08] p-3">
                 <p className="font-semibold text-sm text-green">
                   {strength.category}
                 </p>
@@ -242,7 +242,7 @@ export function WorkoutAnalysis() {
           <div className="space-y-2">
             <h3 className="font-semibold text-base">Areas for Improvement</h3>
             {analysis.weaknesses.map((weakness, idx) => (
-              <div key={idx} className="rounded-card bg-danger/15 p-3">
+              <div key={idx} className="rounded-card bg-danger/[0.08] p-3">
                 <p className="font-semibold text-sm text-danger">
                   {weakness.category}
                 </p>
@@ -264,7 +264,7 @@ export function WorkoutAnalysis() {
         <div className="space-y-2">
           <h3 className="font-semibold text-base">Muscle Balance</h3>
           <div
-            className={`rounded-card p-3 ${analysis.muscleBalance.balanced ? "bg-green/15" : "bg-amber/15"}`}
+            className={`rounded-card p-3 ${analysis.muscleBalance.balanced ? "bg-green/[0.08]" : "bg-amber/[0.08]"}`}
           >
             <p className="text-sm">
               {analysis.muscleBalance.balanced
@@ -334,10 +334,10 @@ export function WorkoutAnalysis() {
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
                         rec.priority === "high"
-                          ? "bg-danger text-onAccent"
+                          ? "bg-danger text-onStatus"
                           : rec.priority === "medium"
-                            ? "bg-amber text-onAccent"
-                            : "bg-green text-onAccent"
+                            ? "bg-amber text-onStatus"
+                            : "bg-green text-onStatus"
                       }`}
                     >
                       {rec.priority}

@@ -38,7 +38,7 @@ export function CoachAttentionInbox() {
           <div key={`${item.clientId}:${item.type}`} className="px-5 sm:px-6 py-4">
             <span
               className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${
-                item.severity === "high" ? "bg-danger/10 text-danger" : "bg-amber/10 text-amber"
+                item.severity === "high" ? "bg-danger/[0.08] text-danger" : "bg-amber/[0.08] text-amber"
               }`}
             >
               <span

@@ -130,7 +130,7 @@ export default function CalendarPage() {
                       onClick={() => setSelected(k)}
                       className={`relative flex aspect-square items-center justify-center rounded-control text-sm tabular-nums transition-colors ${
                         isSel
-                          ? "bg-accent font-bold text-onAccent shadow-sm"
+                          ? "bg-accentFill font-bold text-onAccent shadow-sm"
                           : isToday
                           ? "text-accent font-semibold hover:bg-accent/10"
                           : "text-inkSoft hover:bg-border/60"

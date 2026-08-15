@@ -26,6 +26,8 @@ const config: Config = {
         accentHover: themed("--c-accent-hover"),
         accentPressed: themed("--c-accent-pressed"),
         accentDim: themed("--c-accent-dim"), // muted slate-blue — rest / secondary
+        accentFill: themed("--c-accent-fill"), // solid-fill button/chip backgrounds (onAccent text)
+        accentFillHover: themed("--c-accent-fill-hover"),
         danger: themed("--c-error"),
         muted: themed("--c-text-muted"),
         ink: themed("--c-text-primary"), // primary text
@@ -34,6 +36,7 @@ const config: Config = {
         gold: themed("--c-gold"), // PR / highlight
         amber: themed("--c-warning"), // fatigue (RPE >= 9)
         onAccent: themed("--c-on-accent"), // text on accent fills
+        onStatus: themed("--c-on-status"), // text on solid green/amber/danger/gold fills
         clayDeep: themed("--c-accent-pressed"), // pressed accent (alias, kept for callers)
       },
       fontFamily: {

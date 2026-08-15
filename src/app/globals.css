@@ -29,18 +29,21 @@
 
   --c-text-primary: 20 21 26; /* #14151A */
   --c-text-secondary: 85 88 106; /* #55586A */
-  --c-text-muted: 139 142 156; /* #8B8E9C */
+  --c-text-muted: 100 102 112; /* #646670 — darkened from #8B8E9C, that value read at 2.9-3.3:1 against surfaces, below WCAG AA's 4.5:1 for normal text */
 
   --c-accent: 47 95 224; /* #2F5FE0 */
   --c-accent-hover: 38 80 190; /* #2650BE */
   --c-accent-pressed: 31 69 160; /* #1F45A0 */
   --c-accent-dim: 91 107 140; /* #5B6B8C — muted accent fill (rest/secondary state) */
+  --c-accent-fill: 47 95 224; /* same as --c-accent in light: solid-fill buttons/chips already clear 4.5:1 for white text here */
+  --c-accent-fill-hover: 38 80 190; /* same as --c-accent-hover in light, for the same reason */
   --c-on-accent: 255 255 255;
 
-  --c-success: 31 161 96; /* #1FA160 */
-  --c-error: 214 69 54; /* #D64536 */
-  --c-warning: 199 127 10; /* #C77F0A */
-  --c-gold: 179 130 10; /* #B3820A — PR highlight */
+  --c-success: 24 126 75; /* #187E4B — darkened from #1FA160 (3.1:1 against bg, below AA) */
+  --c-error: 175 57 44; /* #AF392C — darkened from #D64536 (4.1:1 against bg, below AA) */
+  --c-warning: 153 98 8; /* #996208 — darkened from #C77F0A (3.0:1 against bg, below AA) */
+  --c-gold: 143 104 8; /* #8F6808 — darkened from #B3820A (3.2:1 against bg, below AA) */
+  --c-on-status: 255 255 255; /* text on solid green/amber/danger/gold fills — white clears 4.5:1 against these darkened light-mode tones */
 
   --shadow-card: 0 1px 2px 0 rgb(15 15 20 / 0.04), 0 1px 1px 0 rgb(15 15 20 / 0.03);
   --shadow-elevated: 0 12px 32px -8px rgb(15 15 20 / 0.18), 0 4px 12px -4px rgb(15 15 20 / 0.08);
@@ -59,18 +62,21 @@
 
     --c-text-primary: 245 245 247; /* #F5F5F7 */
     --c-text-secondary: 168 172 184; /* #A8ACB8 */
-    --c-text-muted: 111 115 128; /* #6F7380 */
+    --c-text-muted: 137 140 151; /* #898C97 — lightened from #6F7380, that value read at 3.5-4.2:1 against surfaces, below WCAG AA's 4.5:1 for normal text */
 
     --c-accent: 79 127 255; /* #4F7FFF */
     --c-accent-hover: 102 144 255; /* #6690FF */
     --c-accent-pressed: 47 90 209; /* #2F5AD1 */
     --c-accent-dim: 58 74 99; /* #3A4A63 */
+    --c-accent-fill: 66 107 214; /* #426BD6 — darker than --c-accent; solid-fill buttons need white text at >=4.5:1, which #4F7FFF only clears at 3.6:1 */
+    --c-accent-fill-hover: 78 109 194; /* #4E6DC2 — same reasoning for the hover fill */
     --c-on-accent: 255 255 255;
 
     --c-success: 52 199 123; /* #34C77B */
     --c-error: 242 86 75; /* #F2564B */
     --c-warning: 245 166 35; /* #F5A623 */
     --c-gold: 255 201 74; /* #FFC94A */
+    --c-on-status: 10 10 13; /* text on solid green/amber/danger/gold fills — dark-mode tones are bright, white text fails; near-black clears >9:1 */
 
     --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.3);
@@ -89,18 +95,21 @@
 
   --c-text-primary: 245 245 247;
   --c-text-secondary: 168 172 184;
-  --c-text-muted: 111 115 128;
+  --c-text-muted: 137 140 151;
 
   --c-accent: 79 127 255;
   --c-accent-hover: 102 144 255;
   --c-accent-pressed: 47 90 209;
   --c-accent-dim: 58 74 99;
+  --c-accent-fill: 66 107 214;
+  --c-accent-fill-hover: 78 109 194;
   --c-on-accent: 255 255 255;
 
   --c-success: 52 199 123;
   --c-error: 242 86 75;
   --c-warning: 245 166 35;
   --c-gold: 255 201 74;
+  --c-on-status: 10 10 13;
 
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.3);
@@ -125,16 +134,16 @@ body {
     @apply inline-flex items-center justify-center gap-2 rounded-control px-6 py-3 text-sm font-semibold transition-colors duration-150 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
   }
   .btn-primary {
-    @apply btn bg-accent text-onAccent hover:bg-accentHover;
+    @apply btn bg-accentFill text-onAccent hover:bg-accentFillHover;
   }
   .btn-secondary {
-    @apply btn border border-accent/30 bg-accent/[0.08] text-accent hover:bg-accent/[0.14];
+    @apply btn border border-accent/30 bg-accent/[0.06] text-accent hover:bg-accent/[0.14];
   }
   .btn-ghost {
     @apply btn bg-surface2 text-ink hover:bg-border/60;
   }
   .btn-danger {
-    @apply btn bg-danger/10 text-danger hover:bg-danger/20;
+    @apply btn bg-danger/[0.08] text-danger hover:bg-danger/[0.14];
   }
 
   .input {
@@ -156,16 +165,16 @@ body {
     @apply badge bg-surface2 text-inkSoft;
   }
   .badge-accent {
-    @apply badge bg-accent/15 text-accent;
+    @apply badge bg-accent/15 text-ink;
   }
   .badge-success {
-    @apply badge bg-green/15 text-green;
+    @apply badge bg-green/[0.08] text-green;
   }
   .badge-warning {
-    @apply badge bg-amber/15 text-amber;
+    @apply badge bg-amber/[0.08] text-amber;
   }
   .badge-danger {
-    @apply badge bg-danger/15 text-danger;
+    @apply badge bg-danger/[0.08] text-danger;
   }
 
   /* Shared page-header rhythm — one title scale, one subtitle scale, everywhere. */

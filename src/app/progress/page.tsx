@@ -38,7 +38,7 @@ export default function ProgressPage() {
               onClick={() => setUnits(u)}
               className={`px-4 py-2 font-semibold transition-colors ${
                 units === u
-                  ? "bg-accent text-onAccent"
+                  ? "bg-accentFill text-onAccent"
                   : "bg-surface2 text-inkSoft hover:bg-border/60"
               }`}
             >
@@ -73,7 +73,7 @@ export default function ProgressPage() {
                 onClick={() => setMetric(m)}
                 className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                   metric === m
-                    ? "border-accent bg-accent text-onAccent"
+                    ? "border-accentFill bg-accentFill text-onAccent"
                     : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
                 }`}
               >

@@ -32,7 +32,7 @@ export function ThemeToggle() {
           onClick={() => pick(o.key)}
           className={`py-4 text-base font-semibold transition-colors ${
             pref === o.key
-              ? "bg-accent text-onAccent"
+              ? "bg-accentFill text-onAccent"
               : "bg-surface2 text-inkSoft hover:bg-border/60"
           }`}
         >

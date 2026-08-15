@@ -64,10 +64,13 @@ export default function ProfilePage() {
       {/* About you — identity + training profile */}
       <section className="rounded-card border border-border bg-surface shadow-card p-6 space-y-5">
         <div className="space-y-3">
-          <h2 className="section-label">Name</h2>
+          <h2 id="profile-name-label" className="section-label">
+            Name
+          </h2>
           <input
             className="input text-base py-3"
             placeholder="Your name"
+            aria-labelledby="profile-name-label"
             value={profile.displayName ?? ""}
             onChange={(e) =>
               updateProfile({ displayName: e.target.value || null })
@@ -88,7 +91,7 @@ export default function ProfilePage() {
                 }}
                 className={`rounded-full border px-5 py-3 text-base font-semibold transition-colors ${
                   profile.goal === g.key
-                    ? "border-accent bg-accent text-onAccent"
+                    ? "border-accentFill bg-accentFill text-onAccent"
                     : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
                 }`}
               >
@@ -110,7 +113,7 @@ export default function ProfilePage() {
                 }}
                 className={`rounded-full border px-5 py-3 text-base font-semibold transition-colors ${
                   profile.experience === l.key
-                    ? "border-accent bg-accent text-onAccent"
+                    ? "border-accentFill bg-accentFill text-onAccent"
                     : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
                 }`}
               >
@@ -140,7 +143,7 @@ export default function ProfilePage() {
                 }}
                 className={`py-4 text-base font-semibold transition-colors ${
                   units === u
-                    ? "bg-accent text-onAccent"
+                    ? "bg-accentFill text-onAccent"
                     : "bg-surface2 text-inkSoft hover:bg-border/60"
                 }`}
               >

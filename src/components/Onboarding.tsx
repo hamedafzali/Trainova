@@ -42,7 +42,7 @@ export function Onboarding({ onUseAiOnboarding }: { onUseAiOnboarding?: () => vo
                 onClick={() => setUnits(u)}
                 className={`flex-1 py-2.5 font-semibold transition-colors ${
                   units === u
-                    ? "bg-accent text-onAccent"
+                    ? "bg-accentFill text-onAccent"
                     : "bg-surface2 text-inkSoft hover:bg-border/60"
                 }`}
               >
@@ -111,7 +111,7 @@ function Chips<T extends string>({
           onClick={() => onPick(o.key)}
           className={`rounded-full border px-4 py-2 text-sm transition-colors ${
             value === o.key
-              ? "border-accent bg-accent text-onAccent"
+              ? "border-accentFill bg-accentFill text-onAccent"
               : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
           }`}
         >

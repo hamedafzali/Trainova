@@ -357,7 +357,7 @@ export function SessionExercise({
                         onClick={() => updateSet(s.id, { rpe })}
                         className={`flex-1 rounded-control py-2.5 text-sm font-semibold transition-transform duration-100 active:scale-95 ${
                           s.rpe === rpe
-                            ? "bg-accent text-onAccent"
+                            ? "bg-accentFill text-onAccent"
                             : "bg-surface2 text-inkSoft"
                         }`}
                       >
@@ -398,6 +398,14 @@ export function SessionExercise({
             <div
               key={s.id}
               onClick={() => editable && s.completed && setEditingId(s.id)}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && editable && s.completed) {
+                  e.preventDefault();
+                  setEditingId(s.id);
+                }
+              }}
+              role={editable && s.completed ? "button" : undefined}
+              tabIndex={editable && s.completed ? 0 : undefined}
               className={`flex items-center gap-2 rounded-control px-2.5 py-2 text-sm transition-opacity ${
                 s.completed
                   ? "bg-green/10 opacity-70 animate-completeWipe"
@@ -456,7 +464,7 @@ export function SessionExercise({
                   onClick={() =>
                     !readOnly && updateSet(s.id, { completed: false })
                   }
-                  className="flex h-6 w-6 items-center justify-center rounded-control bg-green text-onAccent transition-transform active:scale-90"
+                  className="flex h-6 w-6 items-center justify-center rounded-control bg-green text-onStatus transition-transform active:scale-90"
                 >
                   ✓
                 </button>

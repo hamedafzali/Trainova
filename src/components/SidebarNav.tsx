@@ -21,7 +21,7 @@ export function SidebarNav() {
         <p className="section-label mt-0.5">Strength Training Tracker</p>
       </div>
 
-      <nav className="flex-1 space-y-0.5">
+      <nav className="flex-1 space-y-0.5" aria-label="Primary">
         {navItems.map((item) => {
           const active =
             item.href === "/" ? path === "/" : path.startsWith(item.href);
@@ -29,13 +29,17 @@ export function SidebarNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
+              data-testid={`nav-${item.label.toLowerCase()}`}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-control text-sm font-medium transition-colors ${
                 active
-                  ? "bg-accent/15 text-accent"
+                  ? "bg-accent/15 text-ink"
                   : "text-inkSoft hover:bg-surface2 hover:text-ink"
               }`}
             >
-              <span className="text-lg leading-none">{item.icon}</span>
+              <span className="text-lg leading-none" aria-hidden>
+                {item.icon}
+              </span>
               {item.label}
             </Link>
           );

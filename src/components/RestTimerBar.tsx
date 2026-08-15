@@ -58,7 +58,7 @@ export function RestTimerBar() {
       <div
         className={`overflow-hidden rounded-card border shadow-elevated transition-colors ${
           over
-            ? "border-green bg-green text-onAccent"
+            ? "border-green bg-green text-onStatus"
             : "border-border bg-surface text-ink"
         }`}
       >

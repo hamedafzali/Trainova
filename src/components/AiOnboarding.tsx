@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, isValidElement, cloneElement, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { getToken } from "@/lib/auth";
@@ -283,7 +283,7 @@ export function AiOnboarding() {
                   onClick={() => updateField("daysPerWeek", days)}
                   className={`py-4 rounded-control font-semibold text-base transition-colors ${
                     formData.daysPerWeek === days
-                      ? "bg-accent text-onAccent"
+                      ? "bg-accentFill text-onAccent"
                       : "bg-surface2 text-inkSoft hover:bg-border/60"
                   }`}
                 >
@@ -502,7 +502,7 @@ export function AiOnboarding() {
                   onClick={() => updateField("sleepQuality", level)}
                   className={`py-4 rounded-control font-semibold text-base transition-colors ${
                     formData.sleepQuality === level
-                      ? "bg-accent text-onAccent"
+                      ? "bg-accentFill text-onAccent"
                       : "bg-surface2 text-inkSoft hover:bg-border/60"
                   }`}
                 >
@@ -520,7 +520,7 @@ export function AiOnboarding() {
                   onClick={() => updateField("stressLevel", level)}
                   className={`py-4 rounded-control font-semibold text-base transition-colors ${
                     formData.stressLevel === level
-                      ? "bg-accent text-onAccent"
+                      ? "bg-accentFill text-onAccent"
                       : "bg-surface2 text-inkSoft hover:bg-border/60"
                   }`}
                 >
@@ -597,10 +597,21 @@ function Section({
   title: string;
   children: React.ReactNode;
 }) {
+  const headingId = `section-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
+  const labeled =
+    isValidElement(children) &&
+    typeof children.type === "string" &&
+    ["input", "select", "textarea"].includes(children.type)
+      ? cloneElement(children as ReactElement<any>, {
+          "aria-labelledby": headingId,
+        })
+      : children;
   return (
-    <section className="space-y-2">
-      <h2 className="section-label">{title}</h2>
-      {children}
+    <section className="space-y-2" aria-labelledby={headingId}>
+      <h2 id={headingId} className="section-label">
+        {title}
+      </h2>
+      {labeled}
     </section>
   );
 }
@@ -622,7 +633,7 @@ function Chips<T extends string>({
           onClick={() => onPick(o.key)}
           className={`rounded-full border px-4 py-2 text-sm transition-colors ${
             value === o.key
-              ? "border-accent bg-accent text-onAccent"
+              ? "border-accentFill bg-accentFill text-onAccent"
               : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
           }`}
         >
