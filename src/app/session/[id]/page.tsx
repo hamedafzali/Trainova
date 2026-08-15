@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { OnlineBadge } from "@/components/OnlineBadge";
 import { WorkoutCarousel } from "@/components/WorkoutCarousel";
@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { haptic } from "@/lib/haptics";
 import { trackEvent } from "@/lib/analytics";
 import { toast } from "@/lib/toast";
+import { useDialogA11y } from "@/lib/useDialogA11y";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function SessionPage() {
@@ -38,6 +39,7 @@ export default function SessionPage() {
     body?: string;
     onConfirm: () => void;
   } | null>(null);
+  const feedbackPanelRef = useRef<HTMLDivElement>(null);
 
   const sessionSets = useMemo(
     () =>
@@ -103,6 +105,8 @@ export default function SessionPage() {
     if (hasCompletedSet) setFeedbackOpen(true);
     else finish();
   };
+
+  useDialogA11y(feedbackOpen, finish, feedbackPanelRef);
 
   return (
     <main className="mx-auto max-w-2xl space-y-8">
@@ -271,13 +275,16 @@ export default function SessionPage() {
       {isActive && <RestTimerBar />}
 
       {feedbackOpen && (
-        <div
-          className="sheet-enter-backdrop fixed inset-0 z-50 flex items-end bg-black/60 p-4 md:items-center md:justify-center"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Workout feedback"
-        >
-          <div className="sheet-enter-panel enter-fade w-full max-w-md">
+        <div className="sheet-enter-backdrop fixed inset-0 z-50 flex items-end bg-black/60 p-4 md:items-center md:justify-center">
+          <div
+            ref={feedbackPanelRef}
+            className="sheet-enter-panel enter-fade w-full max-w-md"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Workout feedback"
+            tabIndex={-1}
+            data-testid="session-feedback-modal"
+          >
             <SessionFeedbackForm
               onSkip={finish}
               onSubmit={(input) => {

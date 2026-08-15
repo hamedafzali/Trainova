@@ -144,6 +144,9 @@ export default function HistoryPage() {
                   <button
                     className="flex w-full items-center justify-between text-left p-6 hover:bg-border/60 transition-colors"
                     onClick={() => setOpen(expanded ? null : session.id)}
+                    aria-expanded={expanded}
+                    aria-controls={`session-detail-${session.id}`}
+                    data-testid="history-session-toggle"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-h3 text-ink">
@@ -187,6 +190,7 @@ export default function HistoryPage() {
                   </button>
 
                   <div
+                    id={`session-detail-${session.id}`}
                     className={`grid transition-[grid-template-rows] duration-200 ease-standard ${
                       expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
                     }`}

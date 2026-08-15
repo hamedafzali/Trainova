@@ -45,7 +45,11 @@ function ResetForm() {
           </>
         ) : (
           <div className="card space-y-3">
+            <label htmlFor="reset-password" className="sr-only">
+              New password
+            </label>
             <input
+              id="reset-password"
               className="input"
               type="password"
               placeholder="New password (6+ chars)"

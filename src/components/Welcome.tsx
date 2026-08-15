@@ -83,7 +83,7 @@ export function Welcome() {
               onClick={() => setMode(m)}
               className={`flex-1 py-3 transition-colors ${
                 mode === m
-                  ? "bg-accent text-onAccent"
+                  ? "bg-accentFill text-onAccent"
                   : "bg-surface2 text-inkSoft hover:bg-border/60"
               }`}
             >
@@ -92,7 +92,11 @@ export function Welcome() {
           ))}
         </div>
 
+        <label htmlFor="welcome-email" className="sr-only">
+          Email
+        </label>
         <input
+          id="welcome-email"
           className="input"
           type="email"
           inputMode="email"
@@ -101,7 +105,11 @@ export function Welcome() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
+        <label htmlFor="welcome-password" className="sr-only">
+          Password
+        </label>
         <input
+          id="welcome-password"
           className="input"
           type="password"
           autoComplete={mode === "up" ? "new-password" : "current-password"}

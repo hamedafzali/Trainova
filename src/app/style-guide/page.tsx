@@ -108,8 +108,8 @@ export default function StyleGuidePage() {
       <section className="space-y-4">
         <h2 className="section-label">Inputs</h2>
         <div className="card flex flex-wrap gap-4">
-          <input className="input max-w-xs" placeholder="Text input" />
-          <input className="num w-24" placeholder="0" />
+          <input className="input max-w-xs" aria-label="Text input" placeholder="Text input" />
+          <input className="num w-24" aria-label="Number input" placeholder="0" />
         </div>
       </section>
 

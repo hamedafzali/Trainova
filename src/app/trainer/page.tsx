@@ -136,8 +136,12 @@ export default function TrainerPage() {
       <CoachAttentionInbox />
 
       <div className="rounded-card border border-border bg-surface shadow-card p-4 space-y-2">
+        <label htmlFor="trainer-add-client-email" className="sr-only">
+          Client's account email
+        </label>
         <div className="flex gap-2">
           <input
+            id="trainer-add-client-email"
             className="input"
             type="email"
             placeholder="Client’s account email"
@@ -168,10 +172,13 @@ export default function TrainerPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted">Assign:</span>
+                <span id={`assign-label-${c.id}`} className="text-xs text-muted">
+                  Assign:
+                </span>
                 <select
                   className="input flex-1 py-1.5 text-sm"
                   defaultValue=""
+                  aria-labelledby={`assign-label-${c.id}`}
                   onChange={(e) => assign(c.id, e.target.value)}
                 >
                   <option value="" disabled>

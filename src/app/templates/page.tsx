@@ -149,7 +149,11 @@ export default function PlansPage() {
       {/* Create */}
       {creating && (
         <div className="card shadow-card space-y-4">
+          <label htmlFor="new-plan-name" className="sr-only">
+            New plan name
+          </label>
           <input
+            id="new-plan-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="New plan name…"
