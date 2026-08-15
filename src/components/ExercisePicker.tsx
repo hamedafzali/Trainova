@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { muscleColor } from "@/lib/format";
+import { useDialogA11y } from "@/lib/useDialogA11y";
 import type { Device, DeviceCategory, Exercise } from "@/domain/types";
 
 const CATEGORIES: { key: DeviceCategory | "all"; label: string }[] = [
@@ -32,6 +33,8 @@ export function ExercisePicker({
   const recentIds = useStore((s) => s.recentExerciseIds(8));
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<DeviceCategory | "all">("all");
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogA11y(true, onClose, panelRef);
 
   const deviceOf = useMemo(() => {
     const map = new Map<string, Device>();
@@ -73,13 +76,22 @@ export function ExercisePicker({
       onClick={onClose}
     >
       <div
+        ref={panelRef}
         className="sheet-enter-panel enter-fade mx-auto flex max-h-[85dvh] w-full max-w-md flex-col rounded-t-sheet border-t border-border bg-surface p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Choose exercise"
+        tabIndex={-1}
+        data-testid="exercise-picker"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
 
+        <label htmlFor="exercise-picker-search" className="sr-only">
+          Search device or exercise
+        </label>
         <input
-          autoFocus
+          id="exercise-picker-search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search device or exercise…"
@@ -111,7 +123,7 @@ export function ExercisePicker({
               key={c.key}
               onClick={() => setCat(c.key)}
               className={`shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs ${
-                cat === c.key ? "border-accent bg-accent text-onAccent" : "border-border bg-surface2 text-inkSoft"
+                cat === c.key ? "border-accentFill bg-accentFill text-onAccent" : "border-border bg-surface2 text-inkSoft"
               }`}
             >
               {c.label}

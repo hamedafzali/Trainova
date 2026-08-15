@@ -78,7 +78,7 @@ function FeedbackScale<T extends string | number>({
           <button
             key={option}
             className={`rounded-control px-3 py-3 text-sm font-semibold transition-colors ${
-              value === option ? "bg-accent text-onAccent" : "bg-surface2 text-inkSoft hover:bg-border/60"
+              value === option ? "bg-accentFill text-onAccent" : "bg-surface2 text-inkSoft hover:bg-border/60"
             }`}
             onClick={() => onPick(option)}
           >

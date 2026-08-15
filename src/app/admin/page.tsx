@@ -6,6 +6,7 @@ import { useHydrated, useStore } from "@/lib/store";
 import { getToken } from "@/lib/auth";
 import { toast } from "@/lib/toast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { PromptDialog } from "@/components/PromptDialog";
 import { ListSkeleton } from "@/components/Skeleton";
 import { ErrorState } from "@/components/ErrorState";
 
@@ -38,6 +39,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<AdminUser | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
 
   const load = useCallback(async () => {
     const t = getToken();
@@ -70,9 +72,14 @@ export default function AdminPage() {
     else setLoading(false);
   }, [hydrated, isAdmin, load]);
 
-  const resetPassword = async (u: AdminUser) => {
-    const pw = prompt(`New password for ${u.email} (6+ chars):`);
-    if (!pw) return;
+  const resetPassword = (u: AdminUser) => {
+    setResetPasswordUser(u);
+  };
+
+  const submitResetPassword = async (pw: string) => {
+    const u = resetPasswordUser;
+    if (!u) return;
+    setResetPasswordUser(null);
     try {
       const r = await fetch("/api/admin/reset-password", {
         method: "POST",
@@ -196,7 +203,11 @@ export default function AdminPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <label htmlFor={`role-${u.id}`} className="sr-only">
+                    Role for {u.email}
+                  </label>
                   <select
+                    id={`role-${u.id}`}
                     className="input flex-1 py-1.5 text-xs"
                     value={u.role}
                     onChange={(e) => setRole(u, e.target.value)}
@@ -226,6 +237,18 @@ export default function AdminPage() {
         danger
         onConfirm={confirmDeleteUserAction}
         onCancel={() => setConfirmDeleteUser(null)}
+      />
+
+      <PromptDialog
+        open={!!resetPasswordUser}
+        title="Reset password"
+        body={resetPasswordUser ? `Set a new password for ${resetPasswordUser.email}.` : undefined}
+        label="New password"
+        placeholder="6+ characters"
+        confirmLabel="Save"
+        minLength={6}
+        onConfirm={submitResetPassword}
+        onCancel={() => setResetPasswordUser(null)}
       />
     </main>
   );
