@@ -158,6 +158,12 @@ export interface UserProfile {
   goal: "strength" | "hypertrophy" | "fat_loss" | "health" | null;
   experience: "beginner" | "intermediate" | "advanced" | null;
   onboarded: boolean;
+  // Optional body stats — only collected if the user opts into nutrition
+  // guidance from the AI Coach screen. Absent for most users; never required.
+  sex?: "male" | "female" | null;
+  ageYears?: number | null;
+  heightCm?: number | null;
+  weightKg?: number | null;
 }
 
 export type PrKind = "e1rm" | "max_weight" | "max_reps";

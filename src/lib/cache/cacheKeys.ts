@@ -6,7 +6,9 @@ export const CACHE_KEYS = {
   AI_ONBOARDING_PROGRAM: (userId: string) => `ai:onboarding:${userId}`,
   AI_WORKOUT_GENERATION: (params: string) => `ai:workout:${params}`,
   AI_WEEKLY_CHECKIN: (userId: string, week: number) => `ai:checkin:${userId}:${week}`,
-  
+  AI_COACH_INTRO: (userId: string, contextHash: string) => `ai:coach:intro:${userId}:${contextHash}`,
+  AI_COACH_MEALS: (userId: string, contextHash: string) => `ai:coach:meals:${userId}:${contextHash}`,
+
   // User data cache keys
   USER_PROFILE: (userId: string) => `user:profile:${userId}`,
   USER_TEMPLATES: (userId: string) => `user:templates:${userId}`,
@@ -33,7 +35,11 @@ export const CACHE_KEYS = {
 export const CACHE_TTL = {
   // AI responses - cache for 1 hour
   AI_RESPONSE: 3600,
-  
+
+  // AI Coach responses - training/nutrition context only changes a handful
+  // of times a day at most, so cache longer than a one-off generation call.
+  AI_COACH: 6 * 3600,
+
   // User data - cache for 5 minutes
   USER_DATA: 300,
   
