@@ -56,6 +56,12 @@ function ResetForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            {password.length < 6 &&
+              (password.length > 0 ? (
+                <p className="text-xs text-danger">Too short — at least 6 characters</p>
+              ) : (
+                <p className="text-xs text-inkSoft">At least 6 characters</p>
+              ))}
             {error && <p className="text-xs text-danger">{error}</p>}
             <button
               className="btn-primary w-full py-3"

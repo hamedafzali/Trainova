@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { deviceBadge } from "@/lib/format";
 import type { Device } from "@/domain/types";
 
@@ -17,13 +18,18 @@ export function DeviceAvatar({
   const machine = device?.category === "machine";
   return (
     <span
-      className={`flex shrink-0 items-center justify-center overflow-hidden font-bold ${className} ${
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden font-bold ${className} ${
         hasImg ? "bg-bg p-1" : machine ? "bg-accentFill text-onAccent" : "bg-surface2 text-ink"
       }`}
     >
       {hasImg ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={device!.imageUrl!} alt={device!.name} className="h-full w-full object-contain" />
+        <Image
+          src={device!.imageUrl!}
+          alt={device!.name}
+          fill
+          sizes="64px"
+          className="object-contain"
+        />
       ) : (
         deviceBadge(device)
       )}

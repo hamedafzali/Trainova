@@ -2,25 +2,15 @@ import { NextResponse } from "next/server";
 import { getPool } from "@/server/db";
 import { signToken, verifyPassword } from "@/server/auth";
 import { isBootstrapAdmin } from "@/server/admin";
+import { checkRateLimit, resetRateLimit } from "@/server/rateLimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// In-memory brute-force guard (per server process). 10 tries / 5 min per ip+email.
+// Redis-backed brute-force guard (shared across instances, survives
+// restarts). 10 tries / 5 min per ip+email. Fails open if Redis is down.
 const WINDOW_MS = 5 * 60 * 1000;
 const MAX_TRIES = 10;
-const tries = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimited(key: string): boolean {
-  const now = Date.now();
-  const e = tries.get(key);
-  if (!e || now > e.resetAt) {
-    tries.set(key, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  e.count += 1;
-  return e.count > MAX_TRIES;
-}
 
 export async function POST(req: Request) {
   const pool = getPool();
@@ -32,8 +22,8 @@ export async function POST(req: Request) {
   }
 
   const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for") ?? "local";
-  const key = `${ip}:${String(email).trim().toLowerCase()}`;
-  if (rateLimited(key)) {
+  const key = `ratelimit:login:${ip}:${String(email).trim().toLowerCase()}`;
+  if (await checkRateLimit(key, { windowMs: WINDOW_MS, max: MAX_TRIES })) {
     return NextResponse.json(
       { error: "Too many attempts. Try again in a few minutes." },
       { status: 429 }
@@ -56,7 +46,7 @@ export async function POST(req: Request) {
     role = "admin";
   }
 
-  tries.delete(key); // success clears the counter
+  await resetRateLimit(key); // success clears the counter
   const token = await signToken(row.id, normalized, role);
   return NextResponse.json({ token, email: normalized, role });
 }
