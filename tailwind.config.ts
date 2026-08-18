@@ -41,6 +41,9 @@ const config: Config = {
         flame: themed("--c-flame"), // streak momentum — consecutive training days (absence of color = streak broken)
         onAccent: themed("--c-on-accent"), // text on accent fills
         onStatus: themed("--c-on-status"), // text on solid green/amber/danger/gold fills
+        successSoft: themed("--c-success-soft"), // opaque badge fill for text-green — guaranteed-contrast pairing, not an alpha blend over whatever panel it sits on
+        warningSoft: themed("--c-warning-soft"), // opaque badge fill for text-amber — same reasoning
+        goldSoft: themed("--c-gold-soft"), // opaque badge fill for text-gold — same reasoning
         clayDeep: themed("--c-accent-pressed"), // pressed accent (alias, kept for callers)
       },
       fontFamily: {

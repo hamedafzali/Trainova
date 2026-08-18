@@ -46,6 +46,19 @@
   --c-flame: 190 70 20; /* #BE4614 — streak momentum. Calibrated to the same ~0.155 relative luminance as --c-warning/--c-gold so it clears 4.5:1 the same way; hue shifted toward red-orange to read distinctly from amber/gold at a glance */
   --c-on-status: 255 255 255; /* text on solid green/amber/danger/gold/flame fills — white clears 4.5:1 against these darkened light-mode tones */
 
+  /* Opaque (not alpha-blended) soft-fill tokens for status text badges (trend
+     pills, .badge-success/.badge-warning). Baked-in solid colors rather than
+     bg-green/[x%] so contrast is guaranteed regardless of what panel the
+     badge sits on — an alpha-blended fill measures differently depending on
+     the backdrop behind it (e.g. inside an accent-tinted hero vs. plain
+     surface), which is exactly what let a trend badge fail AA contrast at
+     3.87:1 even though the raw text-green/white pairing clears 5:1. These
+     pre-mix the status color into white/black at ~5% so the badge always
+     renders the same, verified-AA color no matter what it's placed on. */
+  --c-success-soft: 243 249 246; /* #F3F9F6 — text-green clears 4.77:1 here */
+  --c-warning-soft: 250 247 243; /* #FAF7F3 — text-amber clears 4.79:1 here */
+  --c-gold-soft: 250 246 238; /* #FAF6EE — text-gold clears 4.61:1 here */
+
   --shadow-card: 0 1px 2px 0 rgb(15 15 20 / 0.04), 0 1px 1px 0 rgb(15 15 20 / 0.03);
   --shadow-elevated: 0 12px 32px -8px rgb(15 15 20 / 0.18), 0 4px 12px -4px rgb(15 15 20 / 0.08);
 }
@@ -80,6 +93,10 @@
     --c-flame: 255 138 61; /* #FF8A3D */
     --c-on-status: 10 10 13; /* text on solid green/amber/danger/gold/flame fills — dark-mode tones are bright, white text fails; near-black clears >9:1 */
 
+    --c-success-soft: 12 19 19; /* #0C1313 — text-green clears 8.6:1 here */
+    --c-warning-soft: 22 18 14; /* #16120E — text-amber clears 9.2:1 here */
+    --c-gold-soft: 24 20 11; /* #18140B — text-gold clears 9.4:1 here */
+
     --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.3);
   }
@@ -113,6 +130,10 @@
   --c-gold: 255 201 74;
   --c-flame: 255 138 61;
   --c-on-status: 10 10 13;
+
+  --c-success-soft: 12 19 19;
+  --c-warning-soft: 22 18 14;
+  --c-gold-soft: 24 20 11;
 
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.3);
@@ -171,13 +192,16 @@ body {
     @apply badge bg-accent/15 text-ink;
   }
   .badge-success {
-    @apply badge bg-green/[0.08] text-green;
+    @apply badge bg-successSoft text-green;
   }
   .badge-warning {
-    @apply badge bg-amber/[0.08] text-amber;
+    @apply badge bg-warningSoft text-amber;
   }
   .badge-danger {
     @apply badge bg-danger/[0.08] text-danger;
+  }
+  .badge-gold {
+    @apply badge bg-goldSoft text-gold;
   }
   .badge-flame {
     @apply badge bg-flame/[0.1] text-flame;

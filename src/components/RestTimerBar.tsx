@@ -64,7 +64,7 @@ export function RestTimerBar() {
       >
         {!over && (
           <div
-            className="h-1 bg-accentDim transition-all duration-200"
+            className="h-1 bg-accentDim transition-all duration-200 animate-breathe"
             style={{ width: `${pct}%` }}
           />
         )}
@@ -76,7 +76,7 @@ export function RestTimerBar() {
           </span>
           <span
             className={`flex-1 text-center text-display tabular-nums transition-transform duration-200 ease-out ${
-              over ? (justFlipped ? "scale-110" : "scale-100") : "text-accentDim animate-breathe"
+              over ? (justFlipped ? "scale-110" : "scale-100") : "text-inkSoft"
             }`}
           >
             {over ? "Go!" : mmss(remainingSec)}
