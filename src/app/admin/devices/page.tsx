@@ -103,7 +103,7 @@ export default function AdminDevicesPage() {
               >
                 <DeviceAvatar device={d} className="h-11 w-11 rounded-control text-lg" />
                 <div className="flex-1">
-                  <p className="font-semibold leading-tight text-ink">{d.name}</p>
+                  <p className="font-semibold text-h3 leading-tight text-ink">{d.name}</p>
                   <p className="text-xs text-muted mt-0.5">
                     {d.machineNumber ? `No.${d.machineNumber} · ` : ""}
                     {d.category.replace("_", " ")}

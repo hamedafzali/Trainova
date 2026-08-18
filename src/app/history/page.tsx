@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
+import { VolumeHeatmap } from "@/components/VolumeHeatmap";
 import { WorkoutAnalysis } from "@/components/WorkoutAnalysis";
 import { ListSkeleton } from "@/components/Skeleton";
 import type { WorkoutSet } from "@/domain/types";
@@ -16,6 +17,7 @@ export default function HistoryPage() {
   const units = useStore((s) => s.units);
   const sessions = useStore((s) => s.sessions);
   const sets = useStore((s) => s.sets);
+  const prs = useStore((s) => s.prs);
   const exerciseById = useStore((s) => s.exerciseById);
   const deviceForExercise = useStore((s) => s.deviceForExercise);
   const [open, setOpen] = useState<string | null>(null);
@@ -52,8 +54,28 @@ export default function HistoryPage() {
     () => rows.filter((r) => Date.now() - +new Date(r.session.startedAt) <= 7 * DAY_MS),
     [rows],
   );
+  const prevWeekRows = useMemo(
+    () =>
+      rows.filter((r) => {
+        const age = Date.now() - +new Date(r.session.startedAt);
+        return age > 7 * DAY_MS && age <= 14 * DAY_MS;
+      }),
+    [rows],
+  );
   const weekVolume = weekRows.reduce((sum, r) => sum + r.volume, 0);
+  const prevWeekVolume = prevWeekRows.reduce((sum, r) => sum + r.volume, 0);
+  // Same ±5%-of-baseline classification used on Coach/Progress, so "trending
+  // up/down" is one consistent visual language across the app, not a
+  // per-screen reinvention.
+  const weekTrendPct = prevWeekVolume > 0 ? Math.round(((weekVolume - prevWeekVolume) / prevWeekVolume) * 100) : null;
+  const weekTrendUp = weekTrendPct != null && weekTrendPct >= 5;
+  const weekTrendDown = weekTrendPct != null && weekTrendPct <= -5;
   const totalVol = rows.reduce((sum, r) => sum + r.volume, 0);
+  // `prs` only keeps the current best per exercise+kind (not full PR
+  // history), so this flags the session where each still-standing record
+  // was set — not every PR ever hit.
+  const prDates = useMemo(() => new Set(prs.map((p) => p.achievedAt.slice(0, 10))), [prs]);
+  const hasPr = (startedAt: string) => prDates.has(startedAt.slice(0, 10));
 
   return (
     <main className="space-y-6">
@@ -79,11 +101,16 @@ export default function HistoryPage() {
         <div className="rounded-card border border-accent/30 bg-accent/[0.06] shadow-elevated p-6 flex items-center justify-between gap-4">
           <div>
             <p className="section-label text-accent">This week</p>
-            <p className="text-stat text-ink mt-1">
+            <p className="text-stat text-ink mt-1 flex items-baseline gap-2">
               {Math.round(weekVolume).toLocaleString()}
-              <span className="text-body-sm font-normal text-inkSoft ml-1">
+              <span className="text-body-sm font-normal text-inkSoft">
                 {units}·vol
               </span>
+              {weekTrendPct != null && (weekTrendUp || weekTrendDown) && (
+                <span className={weekTrendUp ? "badge-success" : "badge-warning"}>
+                  {weekTrendUp ? "↑" : "↓"} {Math.abs(weekTrendPct)}%
+                </span>
+              )}
             </p>
           </div>
           <p className="text-body-sm text-inkSoft text-right">
@@ -95,19 +122,23 @@ export default function HistoryPage() {
       )}
 
       {hydrated && rows.length > 0 && (
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-card border border-border bg-surface shadow-card p-5 flex flex-col gap-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="rounded-card border border-border bg-surface shadow-card p-5 flex flex-col gap-1 order-2 sm:order-1">
             <span className="text-caption text-muted">Total workouts</span>
             <span className="text-stat text-ink">{rows.length}</span>
           </div>
-          <div className="rounded-card border border-border bg-surface shadow-card p-5 flex flex-col gap-1">
+          <div className="rounded-card border border-border bg-surface shadow-card p-5 flex flex-col gap-1 order-1 sm:order-2 overflow-hidden">
             <span className="text-caption text-muted">Total volume</span>
-            <span className="text-stat text-ink">
+            <span className="text-hero text-ink whitespace-nowrap">
               {Math.round(totalVol).toLocaleString()}
               <span className="text-body-sm font-normal text-muted"> {units}·vol</span>
             </span>
           </div>
         </div>
+      )}
+
+      {hydrated && rows.length > 0 && (
+        <VolumeHeatmap sessions={sessions} sets={sets} units={units} />
       )}
 
       {!hydrated ? (
@@ -151,6 +182,9 @@ export default function HistoryPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-h3 text-ink">
                         {session.title}
+                        {hasPr(session.startedAt) && (
+                          <span className="badge-gold ml-2 align-middle">🏆 PR</span>
+                        )}
                         {session.status === "active" && (
                           <span className="ml-2 text-body-sm text-accent">
                             ● in progress

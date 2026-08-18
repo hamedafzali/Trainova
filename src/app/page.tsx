@@ -9,6 +9,7 @@ import { AiOnboarding } from "@/components/AiOnboarding";
 import { Welcome } from "@/components/Welcome";
 import { OnlineBadge } from "@/components/OnlineBadge";
 import { AdaptiveTodayCard } from "@/components/AdaptiveTodayCard";
+import { CoachTeaserCard } from "@/components/CoachTeaserCard";
 import { useHydrated, useStore } from "@/lib/store";
 
 export default function HomePage() {
@@ -225,6 +226,8 @@ export default function HomePage() {
             </div>
           </div>
 
+          <CoachTeaserCard />
+
           {/* This Week */}
           <div className="card">
             <h3 className="section-label mb-4">This Week</h3>
@@ -238,7 +241,7 @@ export default function HomePage() {
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
                     <div
-                      className={`h-8 w-full rounded-control ${trained ? "bg-accent" : "bg-surface2"}`}
+                      className={`h-8 w-full rounded-control ${trained ? "bg-green" : "bg-surface2"}`}
                     />
                     <span className="text-[10px] text-muted">
                       {d.toLocaleDateString(undefined, { weekday: "narrow" })}

@@ -65,7 +65,7 @@ export default function ProgramEditPage() {
         <h1 className="page-title">
           {program.name}
           {program.source === "trainer" && (
-            <span className="ml-2 rounded-full bg-accent/20 px-3 py-1 text-xs uppercase text-accent align-middle">
+            <span className="badge-accent ml-2 uppercase align-middle">
               Trainer
             </span>
           )}
@@ -85,7 +85,7 @@ export default function ProgramEditPage() {
             <li key={d.id} className="card">
               <div className="flex items-center justify-between">
                 <Link href={`/templates/${d.id}`} className="flex-1">
-                  <p className="font-semibold text-ink">
+                  <p className="font-semibold text-h3 text-ink">
                     <span className="text-muted">Day {i + 1}:</span> {d.name}
                   </p>
                   <p className="text-xs text-muted">{d.exercises.length} exercises · tap to edit</p>

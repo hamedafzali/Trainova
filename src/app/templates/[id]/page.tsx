@@ -32,13 +32,13 @@ export default function TemplateEditPage() {
 
   if (!hydrated)
     return (
-      <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
+      <main className="space-y-6 pb-20">
         <ListSkeleton variant="row" />
       </main>
     );
   if (!template) {
     return (
-      <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <main className="space-y-3">
         <p className="text-muted">Plan not found.</p>
         <Link href="/templates" className="text-accent hover:text-accentHover">
           ← Back to plans
@@ -60,7 +60,7 @@ export default function TemplateEditPage() {
   const num = (v: string) => (v === "" ? null : Number(v));
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-4 pb-20">
+    <main className="space-y-6 pb-20">
       <header className="flex items-center justify-between pt-2 gap-4">
         <div className="min-w-0">
           <Link
@@ -97,7 +97,7 @@ export default function TemplateEditPage() {
           body="Add your first exercise below to build out this plan."
         />
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {template.exercises.map((te) => {
             const ex = exerciseById(te.exerciseId);
             const device = deviceById(te.deviceId ?? ex?.defaultDeviceId);
@@ -113,7 +113,7 @@ export default function TemplateEditPage() {
                     className="h-10 w-10 rounded-control text-sm"
                   />
                   <div className="flex-1">
-                    <p className="font-semibold text-base leading-tight">
+                    <p className="font-semibold text-h3 leading-tight">
                       {ex?.name ?? "Exercise"}
                     </p>
                     {device && (
@@ -142,6 +142,7 @@ export default function TemplateEditPage() {
                         value={st.targetWeight ?? 0}
                         step={step}
                         unit={units}
+                        size="lg"
                         onChange={(v) =>
                           updateTemplateSet(template.id, te.id, i, {
                             targetWeight: v || null,
@@ -188,7 +189,7 @@ export default function TemplateEditPage() {
       )}
 
       <button
-        className="btn-ghost w-full py-4 text-base font-semibold"
+        className="btn-ghost w-full md:max-w-xs py-4 text-base font-semibold"
         onClick={() => setPicking(true)}
       >
         + Add exercise

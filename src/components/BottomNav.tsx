@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Calendar, ClipboardList, History, TrendingUp } from "lucide-react";
 
 const tabs = [
-  { href: "/", label: "Today", icon: "📅" },
-  { href: "/templates", label: "Plans", icon: "📋" },
-  { href: "/history", label: "History", icon: "🕘" },
-  { href: "/progress", label: "Progress", icon: "📈" },
+  { href: "/", label: "Today", icon: Calendar },
+  { href: "/templates", label: "Plans", icon: ClipboardList },
+  { href: "/history", label: "History", icon: History },
+  { href: "/progress", label: "Progress", icon: TrendingUp },
 ];
 
 export function BottomNav() {
@@ -31,9 +32,7 @@ export function BottomNav() {
                   active ? "text-accent" : "text-muted"
                 }`}
               >
-                <span className="text-xl leading-none" aria-hidden>
-                  {t.icon}
-                </span>
+                <t.icon className="h-[22px] w-[22px]" strokeWidth={2} aria-hidden />
                 {t.label}
               </Link>
             </li>

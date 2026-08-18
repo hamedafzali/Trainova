@@ -408,7 +408,7 @@ export function SessionExercise({
               tabIndex={editable && s.completed ? 0 : undefined}
               className={`flex items-center gap-2 rounded-control px-2.5 py-2 text-sm transition-opacity ${
                 s.completed
-                  ? "bg-green/10 opacity-70 animate-completeWipe"
+                  ? "bg-successSoft animate-completeWipe"
                   : "bg-surface2/40 opacity-80"
               } ${editable && s.completed ? "cursor-pointer" : ""}`}
             >

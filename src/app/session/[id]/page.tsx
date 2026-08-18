@@ -56,6 +56,19 @@ export default function SessionPage() {
     return seen;
   }, [sessionSets]);
 
+  const finish = () => {
+    if (!session) return;
+    const { discarded } = finishSession(session.id);
+    trackEvent(discarded ? "workout_discarded" : "workout_finished", {
+      session_id: session.id,
+      completed_sets: sessionSets.filter((set) => set.completed).length,
+    });
+    if (!discarded) haptic("finish");
+    router.push(discarded ? "/" : "/history");
+  };
+
+  useDialogA11y(feedbackOpen, finish, feedbackPanelRef);
+
   if (!hydrated)
     return (
       <main className="mx-auto max-w-2xl space-y-8 p-4">
@@ -90,23 +103,11 @@ export default function SessionPage() {
     toast(`🏆 New ${label} PR!`, { variant: "success" });
   };
 
-  const finish = () => {
-    const { discarded } = finishSession(session.id);
-    trackEvent(discarded ? "workout_discarded" : "workout_finished", {
-      session_id: session.id,
-      completed_sets: sessionSets.filter((set) => set.completed).length,
-    });
-    if (!discarded) haptic("finish");
-    router.push(discarded ? "/" : "/history");
-  };
-
   const requestFinish = () => {
     const hasCompletedSet = sessionSets.some((set) => set.completed);
     if (hasCompletedSet) setFeedbackOpen(true);
     else finish();
   };
-
-  useDialogA11y(feedbackOpen, finish, feedbackPanelRef);
 
   return (
     <main className="mx-auto max-w-2xl space-y-8">

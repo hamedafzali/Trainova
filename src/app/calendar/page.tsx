@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Flame } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { CalendarSkeleton } from "@/components/Skeleton";
@@ -37,9 +38,14 @@ export default function CalendarPage() {
     return out;
   }, [view]);
 
-  // Current streak: consecutive days up to today that were trained.
-  const streak = useMemo(() => {
+  // Current streak: consecutive days up to today that were trained. Also
+  // keeps the exact set of day-keys that make up that streak, so the grid
+  // below can mark them with the same flame hue as the banner above instead
+  // of a generic "trained" color — the streak reads as one continuous idea
+  // across both.
+  const { streak, streakKeys } = useMemo(() => {
     let n = 0;
+    const keys = new Set<string>();
     const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     // If today not trained, start the count from yesterday.
     if (!trainedDays.has(key(d.getFullYear(), d.getMonth(), d.getDate()))) {
@@ -47,9 +53,10 @@ export default function CalendarPage() {
     }
     while (trainedDays.has(key(d.getFullYear(), d.getMonth(), d.getDate()))) {
       n++;
+      keys.add(key(d.getFullYear(), d.getMonth(), d.getDate()));
       d.setDate(d.getDate() - 1);
     }
-    return n;
+    return { streak: n, streakKeys: keys };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trainedDays]);
 
@@ -86,10 +93,38 @@ export default function CalendarPage() {
         <CalendarSkeleton />
       ) : (
         <>
-          {/* Streak leads — the one number this screen exists to reinforce. */}
-          <div className="rounded-card border border-accent/30 bg-accent/[0.06] shadow-elevated p-6 text-center space-y-1">
-            <p className="text-display tabular-nums text-ink">🔥 {streak}</p>
-            <p className="text-body-sm text-inkSoft">day streak</p>
+          {/* Streak leads — the one number this screen exists to reinforce.
+              Gradient only appears while the streak is alive: it's the
+              banner's job to make "still going" feel different from "reset
+              to zero," so a flat neutral card communicates the broken state
+              without needing a second color. The flame is a small, designed
+              mark beside the number — not scaled up to compete with it — so
+              the streak count stays the unambiguously largest thing here. */}
+          <div
+            className={`rounded-card shadow-elevated p-6 text-center space-y-1.5 ${
+              streak > 0
+                ? "border border-flame/30 bg-gradient-to-br from-flame/[0.14] via-gold/[0.08] to-transparent"
+                : "border border-border bg-surface"
+            }`}
+          >
+            <div className="flex items-center justify-center gap-2.5">
+              <Flame
+                aria-hidden
+                size={30}
+                strokeWidth={2.25}
+                className={streak > 0 ? "text-flame" : "text-muted"}
+                fill={streak > 0 ? "currentColor" : "none"}
+                fillOpacity={streak > 0 ? 0.18 : 0}
+              />
+              <p
+                className={`text-hero tabular-nums leading-none ${streak > 0 ? "text-flame" : "text-ink"}`}
+              >
+                {streak}
+              </p>
+            </div>
+            <p className="text-body-sm text-inkSoft">
+              {streak > 0 ? "day streak" : "start a streak today"}
+            </p>
           </div>
 
           <div className="rounded-card border border-border bg-surface shadow-card overflow-hidden">
@@ -139,8 +174,12 @@ export default function CalendarPage() {
                       {d}
                       {trained && (
                         <span
-                          className={`absolute bottom-1.5 h-1 w-1 rounded-full ${
-                            isSel ? "bg-onAccent/70" : "bg-accent"
+                          className={`absolute bottom-1 h-1.5 w-1.5 rounded-full ${
+                            isSel
+                              ? "bg-onAccent"
+                              : streakKeys.has(k)
+                              ? "bg-flame"
+                              : "bg-green"
                           }`}
                         />
                       )}

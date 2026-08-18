@@ -86,7 +86,7 @@ export function Stepper({
     <div className="flex items-center gap-2.5">
       <HoldButton label="−" onStart={() => startHold(-1)} onStop={stop} size={size} />
       <div
-        className={`flex flex-1 cursor-ew-resize select-none items-baseline justify-center gap-1.5 rounded-control bg-surface2 ${lg ? "py-5" : "py-2"}`}
+        className={`flex min-w-0 flex-1 cursor-ew-resize select-none items-baseline justify-center gap-1.5 overflow-hidden rounded-control bg-surface2 ${lg ? "py-5" : "py-2"}`}
         style={{ touchAction: "none" }}
         onPointerDown={onPointerDownValue}
         onPointerMove={onPointerMoveValue}
@@ -94,7 +94,7 @@ export function Stepper({
         onPointerCancel={endDrag}
       >
         <span
-          className={`${lg ? "text-display" : "text-stat"} tabular-nums text-ink transition-transform duration-150 ease-out ${pulse ? "scale-110" : "scale-100"}`}
+          className={`${lg ? "text-[2.75rem] sm:text-hero" : "text-stat"} tabular-nums text-ink transition-transform duration-150 ease-out ${pulse ? "scale-110" : "scale-100"}`}
         >
           {display}
         </span>

@@ -61,9 +61,13 @@ export default function ProfilePage() {
         </Link>
       </header>
 
-      {/* About you — identity + training profile */}
-      <section className="rounded-card border border-border bg-surface shadow-card p-6 space-y-5">
-        <div className="space-y-3">
+      {/* One continuous settings list — every row lives in the same surface,
+          separated by dividers, instead of stacking as separate full-width
+          cards (matches the Plans flattening pattern). Hierarchy comes from
+          the section-label eyebrows and dividers, not from re-boxing each
+          group. */}
+      <div className="rounded-card border border-border bg-surface shadow-card divide-y divide-border overflow-hidden">
+        <div className="space-y-3 p-6">
           <h2 id="profile-name-label" className="section-label">
             Name
           </h2>
@@ -79,7 +83,7 @@ export default function ProfilePage() {
           />
         </div>
 
-        <div className="border-t border-border pt-5 space-y-3">
+        <div className="space-y-3 p-6">
           <h2 className="section-label">Goal</h2>
           <div className="flex flex-wrap gap-3">
             {GOALS.map((g) => (
@@ -101,7 +105,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="border-t border-border pt-5 space-y-3">
+        <div className="space-y-3 p-6">
           <h2 className="section-label">Experience</h2>
           <div className="flex flex-wrap gap-3">
             {LEVELS.map((l) => (
@@ -122,16 +126,13 @@ export default function ProfilePage() {
             ))}
           </div>
         </div>
-      </section>
 
-      {/* Preferences — appearance + units */}
-      <section className="rounded-card border border-border bg-surface shadow-card p-6 space-y-5">
-        <div className="space-y-3">
+        <div className="space-y-3 p-6">
           <h2 className="section-label">Appearance</h2>
           <ThemeToggle />
         </div>
 
-        <div className="border-t border-border pt-5 space-y-3">
+        <div className="space-y-3 p-6">
           <h2 className="section-label">Units</h2>
           <div className="grid grid-cols-2 overflow-hidden rounded-control border border-border">
             {(["kg", "lb"] as Units[]).map((u) => (
@@ -152,12 +153,20 @@ export default function ProfilePage() {
             ))}
           </div>
         </div>
-      </section>
 
-      {/* Account — session status + quiet, low-emphasis account actions */}
-      <section className="rounded-card border border-border bg-surface shadow-card p-6 space-y-5">
-        <div className="space-y-2">
+        {/* Account — session state now reads through the same badge language
+            as everywhere else (accent = signed in, neutral = guest) instead
+            of a plain sentence. */}
+        <div className="space-y-2.5 p-6">
           <h2 className="section-label">Account</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={session?.mode === "account" ? "badge-accent" : "badge-neutral"}>
+              {session?.mode === "account" ? "Signed in" : "Guest"}
+            </span>
+            {profile.role !== "user" && (
+              <span className="badge-accent capitalize">{profile.role}</span>
+            )}
+          </div>
           <p className="text-body-sm text-inkSoft">
             {session?.mode === "account" ? (
               <>
@@ -165,20 +174,18 @@ export default function ProfilePage() {
               </>
             ) : (
               <>
-                <b className="text-ink">Guest</b> — data is stored on this
-                device only. Sign in to sync across devices (available once
-                Supabase is connected). Role:{" "}
-                <b className="text-ink">{profile.role}</b>.
+                Data is stored on this device only. Sign in to sync across
+                devices (available once Supabase is connected).
               </>
             )}
           </p>
         </div>
 
         {isTrainerOrAdmin && (
-          <div className="border-t border-border pt-2 -mx-6">
+          <div className="-my-px">
             <Link
               href="/trainer"
-              className="flex items-center justify-between px-6 py-3 text-base text-ink hover:bg-border/60 transition-colors"
+              className="flex items-center justify-between px-6 py-3.5 text-base text-ink hover:bg-border/60 transition-colors"
             >
               <span>🧑‍🏫 Trainer · clients</span>
               <span className="text-muted">→</span>
@@ -186,7 +193,7 @@ export default function ProfilePage() {
             {isAdmin && (
               <Link
                 href="/admin"
-                className="flex items-center justify-between px-6 py-3 text-base text-ink hover:bg-border/60 transition-colors border-t border-border"
+                className="flex items-center justify-between px-6 py-3.5 text-base text-ink hover:bg-border/60 transition-colors border-t border-border"
               >
                 <span>⚙️ Admin panel</span>
                 <span className="text-muted">→</span>
@@ -195,7 +202,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div className="border-t border-border pt-4 text-center">
+        <div className="p-4 text-center">
           <button
             className="text-sm font-semibold text-inkSoft hover:text-ink transition-colors"
             onClick={exit}
@@ -205,7 +212,7 @@ export default function ProfilePage() {
               : "Switch account / sign in"}
           </button>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Dumbbell } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { isCloudEnabled, signIn, signUp } from "@/lib/auth";
 import { applySnapshot, pullState, pushState } from "@/lib/sync";
@@ -21,6 +22,18 @@ export function Welcome() {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const emailError =
+    emailTouched && email.trim() && !emailValid
+      ? "Enter a valid email address"
+      : null;
+  const passwordError =
+    mode === "up" && passwordTouched && password && password.length < 6
+      ? "Password must be at least 6 characters"
+      : null;
 
   const forgot = async () => {
     setError(null);
@@ -66,16 +79,29 @@ export function Welcome() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col justify-center gap-8 p-6">
-      <div className="text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-card bg-accent text-2xl">
-          🏋️
-        </div>
-        <h1 className="text-h1 text-ink mb-1.5">Trainova</h1>
-        <p className="text-body text-inkSoft">Open. Lift. Log. Done.</p>
+    <main className="flex min-h-screen flex-col">
+      <div className="relative overflow-hidden bg-gradient-to-br from-accentPressed via-accent to-accentHover px-6 pb-20 pt-16 text-center sm:pb-24 sm:pt-20">
+        <Dumbbell
+          aria-hidden
+          strokeWidth={1.25}
+          className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 -rotate-12 text-onAccent/10 sm:h-52 sm:w-52"
+        />
+        <Dumbbell
+          aria-hidden
+          strokeWidth={1.25}
+          className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rotate-[20deg] text-onAccent/10 sm:h-44 sm:w-44"
+        />
+        <p className="section-label mb-3 text-onAccent/70">
+          Strength training, logged
+        </p>
+        <h1 className="text-hero text-onAccent">Trainova</h1>
+        <p className="mt-3 text-body text-onAccent/85">
+          Open. Lift. Log. Done.
+        </p>
       </div>
 
-      <div className="card space-y-4 max-w-md mx-auto w-full">
+      <div className="relative z-10 -mt-10 flex flex-col gap-10 px-6 pb-12 sm:-mt-12">
+      <div className="card space-y-4 max-w-md mx-auto w-full shadow-elevated">
         <div className="flex overflow-hidden rounded-control border border-border text-sm font-semibold">
           {(["in", "up"] as const).map((m) => (
             <button
@@ -104,7 +130,9 @@ export function Welcome() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onBlur={() => setEmailTouched(true)}
         />
+        {emailError && <p className="text-xs text-danger">{emailError}</p>}
         <label htmlFor="welcome-password" className="sr-only">
           Password
         </label>
@@ -116,7 +144,9 @@ export function Welcome() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          onBlur={() => setPasswordTouched(true)}
         />
+        {passwordError && <p className="text-xs text-danger">{passwordError}</p>}
 
         {!cloud && (
           <p className="rounded-control bg-surface2 px-4 py-3 text-sm text-inkSoft border border-border">
@@ -130,7 +160,14 @@ export function Welcome() {
 
         <button
           className="btn-primary w-full py-4"
-          disabled={busy || !cloud || !email || !password}
+          disabled={
+            busy ||
+            !cloud ||
+            !email ||
+            !password ||
+            !emailValid ||
+            (mode === "up" && password.length < 6)
+          }
           onClick={submit}
         >
           {busy ? "…" : mode === "in" ? "Sign in" : "Create account"}
@@ -152,6 +189,7 @@ export function Welcome() {
       >
         Continue as guest
       </button>
+      </div>
     </main>
   );
 }

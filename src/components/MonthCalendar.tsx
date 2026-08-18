@@ -64,7 +64,7 @@ export function MonthCalendar({
         </button>
         <p className="font-semibold">
           {MONTHS[view.m]} {view.y}
-          {streak > 0 && <span className="ml-2 text-sm text-accent">🔥 {streak}</span>}
+          {streak > 0 && <span className="ml-2 text-sm text-flame">🔥 {streak}</span>}
         </p>
         <button onClick={() => shift(1)} className="btn-ghost px-3 py-1.5">
           ›
@@ -89,7 +89,7 @@ export function MonthCalendar({
               key={i}
               onClick={() => onSelect(k)}
               className={`flex aspect-square items-center justify-center rounded-lg text-sm tabular-nums transition ${
-                trained ? "bg-accentFill font-bold text-onAccent" : "text-inkSoft hover:bg-surface2"
+                trained ? "bg-green font-bold text-onStatus" : "text-inkSoft hover:bg-surface2"
               } ${isSel ? "ring-2 ring-accent ring-offset-2 ring-offset-surface" : ""} ${
                 isToday && !trained ? "border border-accent/60" : ""
               }`}

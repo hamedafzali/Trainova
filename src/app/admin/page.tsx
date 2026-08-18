@@ -186,7 +186,7 @@ export default function AdminPage() {
             href="/admin/devices"
             className="flex items-center justify-between rounded-card border border-border bg-surface shadow-card px-5 py-4 hover:bg-border/60 transition-colors"
           >
-            <span className="font-semibold text-ink">🏋️ Manage device library</span>
+            <span className="font-semibold text-h3 text-ink">🏋️ Manage device library</span>
             <span className="text-muted">→</span>
           </Link>
 
@@ -194,7 +194,7 @@ export default function AdminPage() {
             {users.map((u) => (
               <li key={u.id} className="rounded-card border border-border bg-surface shadow-card p-6 space-y-3">
                 <div>
-                  <p className="font-semibold text-ink">{u.email}</p>
+                  <p className="font-semibold text-h3 text-ink">{u.email}</p>
                   <p className="text-xs text-muted mt-0.5">
                     {u.role}
                     {u.role === "admin" ? " ★" : ""} · joined{" "}

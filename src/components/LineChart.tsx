@@ -1,11 +1,25 @@
 // Tiny dependency-free SVG line chart. Offline-safe, scales to container width.
 
+// Optional trend color, defaulting to the blue action accent (this chart's
+// original, still-correct behavior anywhere it isn't showing a directional
+// trend — e.g. WorkoutAnalysis). Progress passes the same up/down/flat
+// language its row sparkline and badge already use, so expanding a row
+// doesn't switch the story to a different color.
+const TREND_CLASSES: Record<"up" | "down" | "flat" | "accent", { stroke: string; guide: string; dotFaint: string; dot: string; halo: string; label: string; labelBg: string }> = {
+  accent: { stroke: "stroke-accent", guide: "stroke-accent/20", dotFaint: "fill-accent/50", dot: "fill-accent", halo: "fill-accent/15", label: "fill-accent", labelBg: "fill-accent/15" },
+  up: { stroke: "stroke-green", guide: "stroke-green/20", dotFaint: "fill-green/50", dot: "fill-green", halo: "fill-green/15", label: "fill-green", labelBg: "fill-green/15" },
+  down: { stroke: "stroke-amber", guide: "stroke-amber/20", dotFaint: "fill-amber/50", dot: "fill-amber", halo: "fill-amber/15", label: "fill-amber", labelBg: "fill-amber/15" },
+  flat: { stroke: "stroke-muted", guide: "stroke-muted/20", dotFaint: "fill-muted/50", dot: "fill-muted", halo: "fill-muted/15", label: "fill-muted", labelBg: "fill-muted/15" },
+};
+
 export function LineChart({
   data,
   unit,
+  trend = "accent",
 }: {
   data: { label: string; value: number }[];
   unit?: string;
+  trend?: "up" | "down" | "flat" | "accent";
 }) {
   if (data.length === 0) {
     return (
@@ -15,6 +29,7 @@ export function LineChart({
     );
   }
 
+  const c = TREND_CLASSES[trend];
   const W = 320;
   const H = 96;
   const pad = 10;
@@ -44,19 +59,19 @@ export function LineChart({
         y1={H - pad}
         x2={lastX}
         y2={lastY}
-        className="stroke-accent/20"
+        className={c.guide}
         strokeWidth="1"
         strokeDasharray="2 3"
       />
-      <polyline fill="none" className="stroke-accent" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={points} />
+      <polyline fill="none" className={c.stroke} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={points} />
       {data.map((d, i) =>
         i === data.length - 1 ? null : (
-          <circle key={i} cx={x(i)} cy={y(d.value)} r="2.5" className="fill-accent/50" />
+          <circle key={i} cx={x(i)} cy={y(d.value)} r="2.5" className={c.dotFaint} />
         ),
       )}
       {/* latest value — the callout this chart exists to deliver */}
-      <circle cx={lastX} cy={lastY} r="4" className="fill-accent" />
-      <circle cx={lastX} cy={lastY} r="7" className="fill-accent/15" />
+      <circle cx={lastX} cy={lastY} r="4" className={c.dot} />
+      <circle cx={lastX} cy={lastY} r="7" className={c.halo} />
 
       {/* max / min scale labels */}
       <text x={pad} y={12} fontSize="10" className="fill-muted">
@@ -70,8 +85,8 @@ export function LineChart({
 
       {/* latest value callout, anchored so it never runs off the right edge */}
       <g transform={`translate(${Math.min(lastX, W - pad - labelW)}, ${Math.max(2, lastY - 20)})`}>
-        <rect width={labelW} height="16" rx="8" className="fill-accent/15" />
-        <text x={labelW / 2} y="11.5" fontSize="10.5" fontWeight="700" textAnchor="middle" className="fill-accent">
+        <rect width={labelW} height="16" rx="8" className={c.labelBg} />
+        <text x={labelW / 2} y="11.5" fontSize="10.5" fontWeight="700" textAnchor="middle" className={c.label}>
           {lastLabel}
         </text>
       </g>

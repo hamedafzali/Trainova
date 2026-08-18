@@ -212,76 +212,80 @@ export default function PlansPage() {
         </div>
       ) : (
         <>
-          {/* Programs (trainer plans) */}
+          {/* Programs (trainer plans). One flat list, not cards-within-cards:
+              a single outer surface holds every program, programs are
+              separated by a divider, and each program's days are indented
+              rows under it — separated by their own thin divider — rather
+              than boxed sub-cards. Hierarchy comes from indentation and
+              typography, not from nesting another bordered/shadowed shape. */}
           {programs.length > 0 && (
             <section className="space-y-4">
               <h2 className="section-label">Programs</h2>
-              {programs.map((p) => {
-                const days = daysForProgram(p.id);
-                return (
-                  <div
-                    key={p.id}
-                    className="rounded-card border border-border bg-surface shadow-card p-6 space-y-4"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <Link href={`/programs/${p.id}`} className="flex-1 min-w-0">
-                        <p className="font-semibold text-xl text-ink flex items-center flex-wrap gap-2">
-                          {p.name}
-                          {p.source === "trainer" && (
-                            <span className="badge-accent">Trainer</span>
-                          )}
-                          {p.id === SEED_PROGRAM_ID && <SeedBadge />}
-                        </p>
-                        <p className="text-sm text-inkSoft mt-1.5">
-                          {days.length} day{days.length === 1 ? "" : "s"} · tap
-                          to edit
-                        </p>
-                      </Link>
-                      <button
-                        className="btn-danger px-4 py-2 text-base shrink-0"
-                        onClick={() =>
-                          setConfirmDeleteProgram({ id: p.id, name: p.name })
-                        }
-                      >
-                        Delete
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {days.map((d) => (
-                        <div
-                          key={d.id}
-                          className="flex items-center justify-between rounded-control bg-surface2 px-6 py-4 hover:bg-border/60 transition-colors"
+              <div className="rounded-card border border-border bg-surface shadow-card divide-y divide-border overflow-hidden">
+                {programs.map((p) => {
+                  const days = daysForProgram(p.id);
+                  return (
+                    <div key={p.id}>
+                      <div className="flex items-start justify-between gap-4 p-5 sm:p-6">
+                        <Link href={`/programs/${p.id}`} className="flex-1 min-w-0">
+                          <p className="font-semibold text-xl text-ink flex items-center flex-wrap gap-2">
+                            {p.name}
+                            {p.source === "trainer" && (
+                              <span className="badge-accent">Trainer</span>
+                            )}
+                            {p.id === SEED_PROGRAM_ID && <SeedBadge />}
+                          </p>
+                          <p className="text-sm text-inkSoft mt-1.5">
+                            {days.length} day{days.length === 1 ? "" : "s"} · tap
+                            to edit
+                          </p>
+                        </Link>
+                        <button
+                          className="btn-danger px-4 py-2 text-base shrink-0"
+                          onClick={() =>
+                            setConfirmDeleteProgram({ id: p.id, name: p.name })
+                          }
                         >
-                          <span className="text-base font-medium text-ink">
-                            {d.name}
-                            <span className="ml-2 text-sm text-muted">
-                              ({d.exercises.length})
-                            </span>
-                          </span>
-                          <button
-                            className="btn-primary px-4 py-2 text-base font-semibold"
-                            onClick={() => start(d.id)}
+                          Delete
+                        </button>
+                      </div>
+                      <div className="divide-y divide-border/60 border-t border-border/60 bg-surface2/40">
+                        {days.map((d) => (
+                          <div
+                            key={d.id}
+                            className="flex items-center justify-between pl-9 pr-5 sm:pr-6 py-3.5 hover:bg-border/40 transition-colors"
                           >
-                            Start
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        className="btn-ghost w-full py-4 text-base font-semibold"
-                        onClick={() => {
-                          const tid = addDayToProgram(
-                            p.id,
-                            `Day ${days.length + 1}`,
-                          );
-                          router.push(`/templates/${tid}`);
-                        }}
-                      >
-                        + Add day
-                      </button>
+                            <span className="text-base font-medium text-ink">
+                              {d.name}
+                              <span className="ml-2 text-sm text-muted">
+                                ({d.exercises.length})
+                              </span>
+                            </span>
+                            <button
+                              className="btn-primary px-4 py-2 text-base font-semibold shrink-0"
+                              onClick={() => start(d.id)}
+                            >
+                              Start
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          className="w-full pl-9 pr-5 sm:pr-6 py-3.5 text-left text-base font-semibold text-accent hover:bg-border/40 transition-colors"
+                          onClick={() => {
+                            const tid = addDayToProgram(
+                              p.id,
+                              `Day ${days.length + 1}`,
+                            );
+                            router.push(`/templates/${tid}`);
+                          }}
+                        >
+                          + Add day
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </section>
           )}
 

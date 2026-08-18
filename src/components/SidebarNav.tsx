@@ -2,17 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isAiEnabled } from "@/lib/supabase/client";
+import {
+  Calendar,
+  ClipboardList,
+  History,
+  TrendingUp,
+  Brain,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 
-const navItems = [
-  { href: "/", label: "Today", icon: "📅" },
-  { href: "/templates", label: "Plans", icon: "📋" },
-  { href: "/history", label: "History", icon: "🕘" },
-  { href: "/progress", label: "Progress", icon: "📈" },
-  { href: "/profile", label: "Profile", icon: "👤" },
+const navItems: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/", label: "Today", icon: Calendar },
+  { href: "/templates", label: "Plans", icon: ClipboardList },
+  { href: "/history", label: "History", icon: History },
+  { href: "/progress", label: "Progress", icon: TrendingUp },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 export function SidebarNav() {
   const path = usePathname();
+  const items = isAiEnabled()
+    ? [...navItems.slice(0, 4), { href: "/coach", label: "Coach", icon: Brain }, navItems[4]]
+    : navItems;
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 md:bg-elevated md:border-r md:border-border md:px-5 md:py-7">
@@ -22,7 +35,7 @@ export function SidebarNav() {
       </div>
 
       <nav className="flex-1 space-y-0.5" aria-label="Primary">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const active =
             item.href === "/" ? path === "/" : path.startsWith(item.href);
           return (
@@ -37,9 +50,7 @@ export function SidebarNav() {
                   : "text-inkSoft hover:bg-surface2 hover:text-ink"
               }`}
             >
-              <span className="text-lg leading-none" aria-hidden>
-                {item.icon}
-              </span>
+              <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} aria-hidden />
               {item.label}
             </Link>
           );

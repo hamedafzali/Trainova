@@ -2,8 +2,26 @@
 
 import { useState, isValidElement, cloneElement, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Sparkles,
+  Brain,
+  TrendingUp,
+  Flame,
+  Dumbbell,
+  HeartPulse,
+  Wind,
+  type LucideIcon,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { getToken } from "@/lib/auth";
+
+const GOAL_ICONS: Record<string, LucideIcon> = {
+  "Build muscle": TrendingUp,
+  "Lose fat": Flame,
+  "Get stronger": Dumbbell,
+  "Stay healthy": HeartPulse,
+  "Improve endurance": Wind,
+};
 
 const GOALS = [
   "Build muscle",
@@ -169,16 +187,13 @@ export function AiOnboarding() {
 
   if (step === 3 && generatedProgram) {
     return (
-      <main className="flex justify-center p-6">
-        <div className="w-full max-w-2xl space-y-6">
-          <header className="pt-6">
-            <h1 className="text-h1 text-ink">
-              Your AI Program
-            </h1>
-            <p className="mt-1 text-muted">{generatedProgram.name}</p>
-          </header>
+      <main className="flex min-h-screen flex-col">
+        <AiHero eyebrow="Generated for you" title="Your AI Program" icon={Sparkles} />
+        <div className="-mt-6 flex-1 px-6 pb-10">
+        <div className="mx-auto w-full max-w-2xl space-y-6">
+          <p className="text-center text-base font-semibold text-ink">{generatedProgram.name}</p>
 
-          <div className="card space-y-4">
+          <div className="card space-y-4 shadow-elevated">
             <div>
               <h3 className="font-semibold text-ink">Program Overview</h3>
               <p className="text-sm text-muted">{generatedProgram.description}</p>
@@ -218,28 +233,27 @@ export function AiOnboarding() {
           </div>
 
           <button
-            className="btn-primary w-full py-4 text-base"
+            className="w-full rounded-control bg-gradient-to-r from-gold to-flame py-4 text-base font-semibold text-onStatus transition-transform active:scale-[0.98]"
             onClick={importProgram}
           >
-            Import Program & Start Training →
+            Import Program &amp; Start Training →
           </button>
+        </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="flex justify-center p-4 pb-20">
-      <div className="w-full max-w-2xl space-y-6">
-        <header className="pt-4">
-          <h1 className="text-h1 text-ink">
-            AI-Powered Onboarding
-          </h1>
-          <p className="mt-2 text-base text-muted">
-            Step {step} of 2: {step === 1 ? "Basic Info" : "Details"}
-          </p>
-        </header>
-
+    <main className="flex min-h-screen flex-col pb-20">
+      <AiHero
+        eyebrow="AI-powered"
+        title={step === 1 ? "Tell us about you" : "A few more details"}
+        icon={Sparkles}
+        step={step}
+        totalSteps={2}
+      />
+      <div className="-mt-6 mx-auto w-full max-w-2xl space-y-6 px-6">
         {error && (
           <div className="rounded-card border border-danger/20 bg-danger/10 text-danger p-4 text-sm">
             {error}
@@ -249,8 +263,8 @@ export function AiOnboarding() {
         {step === 1 ? (
         <div className="space-y-5">
           <Section title="Primary Goal">
-            <Chips
-              options={GOALS.map((g) => ({ key: g, label: g }))}
+            <IconChips
+              options={GOALS.map((g) => ({ key: g, label: g, icon: GOAL_ICONS[g] }))}
               value={formData.goal}
               onPick={(k) => updateField("goal", k)}
             />
@@ -321,12 +335,21 @@ export function AiOnboarding() {
           </Section>
 
           <button
-            className="btn-primary w-full py-4 text-base font-semibold"
+            className="w-full rounded-control bg-gradient-to-r from-gold to-flame py-4 text-base font-semibold text-onStatus transition-transform active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
             onClick={() => setStep(2)}
             disabled={!formData.goal || !formData.experience}
           >
             Continue →
           </button>
+          {(!formData.goal || !formData.experience) && (
+            <p className="text-center text-body-sm text-inkSoft">
+              {!formData.goal && !formData.experience
+                ? "Pick a goal and experience level to continue"
+                : !formData.goal
+                  ? "Pick a goal to continue"
+                  : "Pick an experience level to continue"}
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-5">
@@ -576,11 +599,17 @@ export function AiOnboarding() {
               ← Back
             </button>
             <button
-              className="btn-primary py-4 text-base font-semibold"
+              className="rounded-control bg-gradient-to-r from-gold to-flame py-4 text-base font-semibold text-onStatus transition-transform active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none inline-flex items-center justify-center gap-2"
               onClick={generateProgram}
               disabled={busy}
             >
-              {busy ? "Generating..." : "Generate Program →"}
+              {busy ? (
+                "Generating..."
+              ) : (
+                <>
+                  <Sparkles size={16} aria-hidden /> Generate Program
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -613,6 +642,76 @@ function Section({
       </h2>
       {labeled}
     </section>
+  );
+}
+
+function AiHero({
+  eyebrow,
+  title,
+  icon: Icon,
+  step,
+  totalSteps,
+}: {
+  eyebrow: string;
+  title: string;
+  icon: LucideIcon;
+  step?: number;
+  totalSteps?: number;
+}) {
+  return (
+    <div className="relative overflow-hidden bg-gradient-to-br from-flame via-gold to-flame px-6 pb-10 pt-14 text-center">
+      <Brain
+        aria-hidden
+        strokeWidth={1.25}
+        className="pointer-events-none absolute -right-6 -top-6 h-36 w-36 text-onStatus/10"
+      />
+      <Icon className="mx-auto mb-2 text-onStatus" size={26} strokeWidth={2} aria-hidden />
+      <p className="section-label mb-1.5 text-onStatus/75">{eyebrow}</p>
+      <h1 className="text-h1 text-onStatus">{title}</h1>
+      {step && totalSteps && (
+        <div className="mx-auto mt-4 flex max-w-[120px] gap-1.5">
+          {Array.from({ length: totalSteps }, (_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 flex-1 rounded-full ${i < step ? "bg-onStatus" : "bg-onStatus/25"}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IconChips<T extends string>({
+  options,
+  value,
+  onPick,
+}: {
+  options: { key: T; label: string; icon: LucideIcon }[];
+  value: T | string;
+  onPick: (k: T) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2.5">
+      {options.map((o) => {
+        const active = value === o.key;
+        const Icon = o.icon;
+        return (
+          <button
+            key={o.key}
+            onClick={() => onPick(o.key)}
+            className={`flex items-center gap-2.5 rounded-control border px-3.5 py-3 text-left text-sm font-semibold transition-colors duration-150 ${
+              active
+                ? "border-flame bg-gradient-to-r from-gold to-flame text-onStatus"
+                : "border-border bg-surface2 text-inkSoft hover:bg-border/60"
+            }`}
+          >
+            <Icon size={18} strokeWidth={2} className={active ? "text-onStatus" : "text-flame"} />
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

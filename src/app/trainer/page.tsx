@@ -163,7 +163,7 @@ export default function TrainerPage() {
             <li key={c.id} className="rounded-card border border-border bg-surface shadow-card p-6 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-ink">{c.email}</p>
+                  <p className="font-semibold text-h3 text-ink">{c.email}</p>
                   <p className="text-xs text-muted mt-0.5">{c.workouts} workouts logged</p>
                 </div>
                 <button className="btn-ghost text-xs" onClick={() => viewProgress(c.id)}>
