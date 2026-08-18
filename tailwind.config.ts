@@ -32,9 +32,13 @@ const config: Config = {
         muted: themed("--c-text-muted"),
         ink: themed("--c-text-primary"), // primary text
         inkSoft: themed("--c-text-secondary"), // secondary text
-        green: themed("--c-success"),
-        gold: themed("--c-gold"), // PR / highlight
-        amber: themed("--c-warning"), // fatigue (RPE >= 9)
+        // Informational state channel — distinct from `accent` (blue, reserved
+        // for interactive/primary actions). Each hue has exactly one meaning,
+        // applied identically wherever that state appears:
+        green: themed("--c-success"), // positive momentum — volume trending up, exercise improving
+        gold: themed("--c-gold"), // achievement — PR hit (rarest, most celebratory)
+        amber: themed("--c-warning"), // needs attention — recovery/deload mode, volume trending down, fatigue (RPE >= 9)
+        flame: themed("--c-flame"), // streak momentum — consecutive training days (absence of color = streak broken)
         onAccent: themed("--c-on-accent"), // text on accent fills
         onStatus: themed("--c-on-status"), // text on solid green/amber/danger/gold fills
         clayDeep: themed("--c-accent-pressed"), // pressed accent (alias, kept for callers)
@@ -73,6 +77,10 @@ const config: Config = {
         "body-sm": ["0.8125rem", { lineHeight: "1.4", fontWeight: "400" }], // 13px
         caption: ["0.6875rem", { lineHeight: "1.3", letterSpacing: "0.08em", fontWeight: "600" }], // 11px — uppercase eyebrows/labels
         stat: ["2.125rem", { lineHeight: "1", letterSpacing: "-0.01em", fontWeight: "700" }], // 34px — inline numeric readouts
+        // Reserved for the single number that IS the point of a screen
+        // (working weight, total volume, streak count) — not a general
+        // upsize of text-stat. Use sparingly.
+        hero: ["4.25rem", { lineHeight: "0.95", letterSpacing: "-0.03em", fontWeight: "700" }], // 68px
       },
       borderRadius: {
         // Semantic aliases over the existing scale (control/card match the
@@ -138,7 +146,13 @@ const config: Config = {
         popIn: "popIn 180ms ease-out",
         prRing: "prRing 700ms ease-in-out 2",
         breathe: "breathe 1.6s ease-in-out infinite",
-        enterFade: "enterFade 250ms cubic-bezier(0.22, 1, 0.36, 1) both",
+        // No fill-mode: "both"/"forwards" would leave transform: translateY(0)
+        // applied forever, which creates a containing block and traps any
+        // position:fixed descendant (rest timer, modals) inside this wrapper
+        // instead of the real viewport. Letting the animation end reverts to
+        // the element's un-animated base styles (transform: none, opacity: 1
+        // — identical to the final keyframe), so the visual result is the same.
+        enterFade: "enterFade 250ms cubic-bezier(0.22, 1, 0.36, 1)",
       },
     },
   },
