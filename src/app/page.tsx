@@ -3,59 +3,72 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { MonthCalendar, dayKey } from "@/components/MonthCalendar";
+import { CalendarDays, ChevronRight, Clock, Dumbbell, Flame, Play, Plus, Trophy } from "lucide-react";
 import { Onboarding } from "@/components/Onboarding";
 import { AiOnboarding } from "@/components/AiOnboarding";
 import { Welcome } from "@/components/Welcome";
-import { OnlineBadge } from "@/components/OnlineBadge";
-import { AdaptiveTodayCard } from "@/components/AdaptiveTodayCard";
 import { CoachTeaserCard } from "@/components/CoachTeaserCard";
+import { recommendToday } from "@/domain/adaptive";
+import { localDayKey, weekDays, weekStreak } from "@/domain/streak";
+import { totalVolume } from "@/domain/volume";
 import { useHydrated, useStore } from "@/lib/store";
+import { formatVolume } from "@/lib/units";
+
+function greeting(h: number) {
+  return h < 5 ? "Good evening" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+}
 
 export default function HomePage() {
   const hydrated = useHydrated();
   const router = useRouter();
   const session = useStore((s) => s.session);
-  const onboarded = useStore((s) => s.profile.onboarded);
+  const profile = useStore((s) => s.profile);
+  const units = useStore((s) => s.units);
   const programs = useStore((s) => s.programs);
   const templates = useStore((s) => s.templates);
-  const daysForProgram = useStore((s) => s.daysForProgram);
   const sessions = useStore((s) => s.sessions);
+  const sets = useStore((s) => s.sets);
+  const prs = useStore((s) => s.prs);
+  const feedback = useStore((s) => s.feedback);
+  const exerciseById = useStore((s) => s.exerciseById);
   const getActiveSession = useStore((s) => s.getActiveSession);
   const startSession = useStore((s) => s.startSession);
-  const trainedDays = useStore((s) => s.trainedDays());
   const [useAiOnboarding, setUseAiOnboarding] = useState(false);
 
   const today = new Date();
-  const todayKey = dayKey(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-  const [selected, setSelected] = useState(todayKey);
+  const todayKey = localDayKey(today);
+  const week = weekDays(today);
 
-  const weekTrained = useMemo(() => {
-    let n = 0;
-    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    for (let i = 0; i < 7; i++) {
-      const k = dayKey(d.getFullYear(), d.getMonth(), d.getDate());
-      if (trainedDays.has(k)) n++;
-      d.setDate(d.getDate() - 1);
-    }
-    return n;
+  const stats = useMemo(() => {
+    const trained = new Set<string>();
+    for (const s of sessions) if (s.status !== "archived") trained.add(s.date);
+    const weekSessions = sessions.filter((s) => s.status === "completed" && week.includes(s.date));
+    const ids = new Set(weekSessions.map((s) => s.id));
+    const weekSets = sets.filter((x) => ids.has(x.sessionId) && x.completed);
+    const minutes = weekSessions.reduce(
+      (n, s) => n + (s.completedAt ? Math.max(1, Math.round((+new Date(s.completedAt) - +new Date(s.startedAt)) / 60000)) : 0),
+      0,
+    );
+    return {
+      trained,
+      streak: weekStreak(trained, today),
+      workouts: weekSessions.length,
+      volume: totalVolume(weekSets),
+      minutes,
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trainedDays]);
+  }, [sessions, sets, todayKey]);
 
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
   if (!session) return <Welcome />;
-  if (!onboarded) {
+  if (!profile.onboarded) {
     if (useAiOnboarding) return <AiOnboarding />;
     return <Onboarding onUseAiOnboarding={() => setUseAiOnboarding(true)} />;
   }
 
   const active = getActiveSession();
   const start = (templateId: string | null) => {
-    const { id, blocked } = startSession(templateId, selected);
+    const { id, blocked } = startSession(templateId);
     if (blocked) {
       const a = getActiveSession();
       if (a) router.push(`/session/${a.id}`);
@@ -64,199 +77,233 @@ export default function HomePage() {
     if (id) router.push(`/session/${id}`);
   };
 
-  const daySessions = sessions
-    .filter((s) => s.status !== "archived" && s.date === selected)
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
-  const isToday = selected === todayKey;
-  const isPastOrToday = selected <= todayKey; // can log a workout for today or earlier
+  const rec = recommendToday({ templates, programs, sessions, feedback });
+  const next = rec ? templates.find((t) => t.id === rec.templateId) : undefined;
+  const nextProgram = next ? programs.find((p) => p.dayTemplateIds.includes(next.id)) : undefined;
+  const nextDayIndex = next && nextProgram ? nextProgram.dayTemplateIds.indexOf(next.id) : -1;
+  const nextMinutes = next
+    ? Math.max(5, Math.round(next.exercises.reduce((n, te) => n + te.sets.length * (40 + te.restSeconds), 0) / 60 / 5) * 5)
+    : 0;
+  const trainedToday = stats.trained.has(todayKey);
 
-  const inProgram = new Set(programs.flatMap((p) => p.dayTemplateIds));
-  const standalone = templates.filter((t) => !inProgram.has(t.id));
+  const recent = sessions
+    .filter((s) => s.status === "completed")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+    .slice(0, 3);
+  const prDays = new Set(prs.map((p) => p.achievedAt.slice(0, 10)));
 
   return (
-    <main className="space-y-6">
+    <main className="mx-auto max-w-5xl space-y-6">
       <header>
-        <h1 className="page-title">
-          {isToday
-            ? "Today"
-            : new Date(selected + "T00:00:00").toLocaleDateString(undefined, {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-              })}
-        </h1>
-        <p className="page-subtitle">
-          {active
-            ? "You have a workout in progress."
-            : "Pick up where you left off, or start something new."}
+        <p className="text-sm font-medium text-muted">
+          {today.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
         </p>
+        <h1 className="page-title">
+          {greeting(today.getHours())}
+          {profile.displayName ? `, ${profile.displayName.split(" ")[0]}` : ""}
+        </h1>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {active && (
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          {active ? (
             <Link
               href={`/session/${active.id}`}
-              className="card block border-accent/20 bg-accent/[0.06] p-6 hover:bg-accent/[0.1] transition-colors"
+              className="card block border-accent/30 bg-accent/[0.06] p-5 transition-colors hover:bg-accent/[0.1] sm:p-6"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
-                <p className="section-label text-accent">
-                  Workout in progress
-                </p>
-              </div>
-              <p className="text-2xl font-bold text-ink">{active.title}</p>
-              <p className="text-base text-inkSoft mt-2">Tap to continue →</p>
+              <p className="flex items-center gap-2 text-sm font-semibold text-accent">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden /> Workout in progress
+              </p>
+              <p className="mt-2 text-2xl font-bold text-ink">{active.title}</p>
+              <p className="mt-1 text-sm text-inkSoft">
+                Started {new Date(active.startedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+              </p>
+              <span className="btn-primary mt-4 w-full sm:w-auto sm:px-8">
+                <Play className="h-4 w-4" aria-hidden /> Resume workout
+              </span>
             </Link>
+          ) : next ? (
+            <section
+              className={`card p-5 sm:p-6 ${rec?.mode === "recovery" ? "border-amber/40" : ""}`}
+              aria-labelledby="next-workout"
+            >
+              <p className="section-label">
+                {trainedToday ? "Next workout" : "Today's workout"}
+                {nextProgram && ` · ${nextProgram.name} · Day ${nextDayIndex + 1} of ${nextProgram.dayTemplateIds.length}`}
+              </p>
+              <h2 id="next-workout" className="mt-1 text-2xl font-bold text-ink">
+                {next.name}
+              </h2>
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+                <span className="inline-flex items-center gap-1">
+                  <Dumbbell className="h-3.5 w-3.5" aria-hidden /> {next.exercises.length} exercises
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" aria-hidden /> ~{nextMinutes} min
+                </span>
+              </p>
+              {next.exercises.length > 0 && (
+                <ol className="mt-4 space-y-1.5">
+                  {next.exercises.slice(0, 6).map((te) => (
+                    <li key={te.id} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate text-inkSoft">{exerciseById(te.exerciseId)?.name ?? "Exercise"}</span>
+                      <span className="shrink-0 tabular-nums text-muted">
+                        {te.sets.length} × {te.sets[0]?.targetReps ?? "–"}
+                      </span>
+                    </li>
+                  ))}
+                  {next.exercises.length > 6 && (
+                    <li className="text-xs text-muted">+{next.exercises.length - 6} more</li>
+                  )}
+                </ol>
+              )}
+              {rec?.mode === "recovery" && (
+                <p className="mt-4 rounded-control bg-amber/10 p-3 text-sm text-inkSoft">
+                  <span className="font-semibold text-ink">{rec.headline}. </span>
+                  {rec.reason}
+                </p>
+              )}
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                <button
+                  className="btn-primary flex-1 py-3.5 text-base"
+                  disabled={next.exercises.length === 0}
+                  onClick={() => start(next.id)}
+                >
+                  <Play className="h-4 w-4" aria-hidden /> Start workout
+                </button>
+                <Link href={`/templates/${next.id}`} className="btn-ghost sm:px-6">
+                  Edit plan
+                </Link>
+              </div>
+            </section>
+          ) : (
+            <section className="card space-y-3 p-5 text-center sm:p-8">
+              <p className="text-xl font-bold text-ink">Pick a program to get started</p>
+              <p className="mx-auto max-w-sm text-sm text-inkSoft">
+                Choose a ready-made program from the library or build your own workout.
+              </p>
+              <Link href="/templates" className="btn-primary mx-auto">
+                Browse programs
+              </Link>
+            </section>
           )}
 
-          {!active && <AdaptiveTodayCard onStart={start} />}
+          {!active && (
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => start(null)} className="btn-secondary px-4 py-2.5 text-sm">
+                <Plus className="h-4 w-4" aria-hidden /> Empty workout
+              </button>
+              <Link href="/templates" className="btn-ghost px-4 py-2.5 text-sm">
+                All plans
+              </Link>
+            </div>
+          )}
 
-          <div className="card">
-            <MonthCalendar selected={selected} onSelect={setSelected} />
-          </div>
-
-          {/* Selected-day panel */}
-          <section className="space-y-4">
-            <h2 className="section-label">Workouts</h2>
-
-            {daySessions.length > 0 ? (
-              daySessions.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/session/${s.id}`}
-                  className="card flex items-center justify-between p-6 hover:bg-border/60 transition-colors"
-                >
-                  <span className="font-semibold text-lg text-ink">
-                    {s.title}
-                  </span>
-                  <span className="text-lg text-accent font-semibold">
-                    {s.status === "active" ? "Resume →" : "View / edit →"}
-                  </span>
+          <section className="space-y-3">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-h2 text-ink">Recent workouts</h2>
+              {recent.length > 0 && (
+                <Link href="/history" className="text-sm font-semibold text-accent">
+                  See all
                 </Link>
-              ))
-            ) : isPastOrToday && !active ? (
-              <>
-                {!isToday && (
-                  <p className="text-sm text-muted">
-                    Logging a workout for{" "}
-                    {new Date(selected + "T00:00:00").toLocaleDateString(
-                      undefined,
-                      {
-                        month: "short",
-                        day: "numeric",
-                      },
-                    )}
-                    .
-                  </p>
-                )}
-                {programs.map((p) => {
-                  const days = daysForProgram(p.id);
-                  if (days.length === 0) return null;
+              )}
+            </div>
+            {recent.length === 0 ? (
+              <p className="card p-6 text-center text-sm text-muted">
+                Your finished workouts will show up here.
+              </p>
+            ) : (
+              <ul className="divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">
+                {recent.map((s) => {
+                  const mine = sets.filter((x) => x.sessionId === s.id && x.completed);
+                  const vol = totalVolume(mine);
                   return (
-                    <div key={p.id} className="card space-y-4">
-                      <p className="section-label">{p.name}</p>
-                      {days.map((d) => (
-                        <button
-                          key={d.id}
-                          onClick={() => start(d.id)}
-                          className="flex w-full items-center justify-between rounded-control bg-surface2 px-6 py-4 hover:bg-border/60 transition-colors active:scale-[0.98]"
-                        >
-                          <span className="font-semibold text-lg text-ink">
-                            {d.name}
-                          </span>
-                          <span className="text-lg text-accent font-semibold">
-                            {d.exercises.length} ex · Start →
-                          </span>
-                        </button>
-                      ))}
-                    </div>
+                    <li key={s.id}>
+                      <Link href={`/session/${s.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface2/60 sm:px-5">
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-2 font-semibold text-ink">
+                            <span className="truncate">{s.title}</span>
+                            {prDays.has(s.startedAt.slice(0, 10)) && (
+                              <Trophy className="h-4 w-4 shrink-0 text-gold" aria-label="Personal record" />
+                            )}
+                          </p>
+                          <p className="text-xs text-muted">
+                            {new Date(s.startedAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                            {` · ${mine.length} sets`}
+                            {vol > 0 && ` · ${formatVolume(vol, units)}`}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
+                      </Link>
+                    </li>
                   );
                 })}
-                {standalone.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => start(t.id)}
-                    className="card flex w-full items-center justify-between p-6 hover:bg-border/60 transition-colors active:scale-[0.98]"
-                  >
-                    <span className="font-semibold text-lg text-ink">
-                      {t.name}
-                    </span>
-                    <span className="text-lg text-accent font-semibold">
-                      Start →
-                    </span>
-                  </button>
-                ))}
-                <button
-                  onClick={() => start(null)}
-                  className="w-full py-4 text-center text-base text-muted underline underline-offset-4 hover:text-inkSoft transition-colors"
-                >
-                  or start an empty workout
-                </button>
-              </>
-            ) : (
-              <div className="card text-center py-12 text-base text-muted">
-                {active
-                  ? "Finish your active workout to start another."
-                  : isPastOrToday
-                    ? "No workout on this day."
-                    : "You can't log a workout for a future date."}
-              </div>
+              </ul>
             )}
           </section>
         </div>
 
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="card">
-            <h3 className="section-label mb-4">Quick Actions</h3>
-            <div className="space-y-4">
-              <button
-                onClick={() => start(null)}
-                className="w-full btn-primary py-4 text-base font-semibold"
-              >
-                Start Empty Workout
-              </button>
-              <Link
-                href="/templates"
-                className="w-full btn-ghost py-4 text-base font-semibold block text-center"
-              >
-                Browse Plans →
+        <aside className="space-y-6">
+          <section className="card space-y-4 p-5" aria-labelledby="this-week">
+            <div className="flex items-center justify-between">
+              <h2 id="this-week" className="section-label">
+                This week
+              </h2>
+              <Link href="/calendar" className="inline-flex items-center gap-1 text-xs font-semibold text-accent">
+                <CalendarDays className="h-3.5 w-3.5" aria-hidden /> Calendar
               </Link>
             </div>
-          </div>
-
-          <CoachTeaserCard />
-
-          {/* This Week */}
-          <div className="card">
-            <h3 className="section-label mb-4">This Week</h3>
-            <div className="flex items-end gap-1.5">
-              {Array.from({ length: 7 }).map((_, i) => {
-                const d = new Date(today);
-                d.setDate(d.getDate() - (6 - i));
-                const trained = trainedDays.has(
-                  dayKey(d.getFullYear(), d.getMonth(), d.getDate()),
-                );
+            <div className="grid grid-cols-7 gap-1.5">
+              {week.map((k) => {
+                const d = new Date(k + "T00:00:00");
+                const trained = stats.trained.has(k);
+                const isToday = k === todayKey;
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                    <div
-                      className={`h-8 w-full rounded-control ${trained ? "bg-green" : "bg-surface2"}`}
-                    />
-                    <span className="text-[10px] text-muted">
+                  <div key={k} className="flex flex-col items-center gap-1">
+                    <span className={`text-[10px] font-semibold uppercase ${isToday ? "text-accent" : "text-muted"}`}>
                       {d.toLocaleDateString(undefined, { weekday: "narrow" })}
+                    </span>
+                    <span
+                      className={`grid aspect-square w-full max-w-[2.25rem] place-items-center rounded-full text-xs font-semibold tabular-nums ${
+                        trained
+                          ? "bg-green text-white"
+                          : isToday
+                            ? "border-2 border-accent text-accent"
+                            : k > todayKey
+                              ? "text-muted/60"
+                              : "bg-surface2 text-muted"
+                      }`}
+                    >
+                      {d.getDate()}
                     </span>
                   </div>
                 );
               })}
             </div>
-            <p key={weekTrained} className="enter-fade text-sm text-inkSoft mt-4">
-              {weekTrained === 0
-                ? "No workouts yet this week."
-                : `${weekTrained} day${weekTrained === 1 ? "" : "s"} trained this week.`}
+            <dl className="grid grid-cols-3 gap-2 border-t border-border pt-4 text-center">
+              <div>
+                <dt className="text-[11px] text-muted">Workouts</dt>
+                <dd className="text-lg font-bold tabular-nums text-ink">{stats.workouts}</dd>
+              </div>
+              <div>
+                <dt className="text-[11px] text-muted">Volume</dt>
+                <dd className="truncate text-lg font-bold tabular-nums text-ink">{formatVolume(stats.volume, units)}</dd>
+              </div>
+              <div>
+                <dt className="text-[11px] text-muted">Time</dt>
+                <dd className="text-lg font-bold tabular-nums text-ink">{stats.minutes}m</dd>
+              </div>
+            </dl>
+            <p className="flex items-center gap-2 rounded-control bg-surface2 px-3 py-2 text-sm text-inkSoft">
+              <Flame className={`h-4 w-4 ${stats.streak > 0 ? "text-flame" : "text-muted"}`} aria-hidden />
+              {stats.streak > 0
+                ? `${stats.streak}-week streak — keep it going`
+                : "Train once this week to start a streak"}
             </p>
-          </div>
-        </div>
+          </section>
+
+          <CoachTeaserCard />
+        </aside>
       </div>
     </main>
   );

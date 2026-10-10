@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Flame } from "lucide-react";
+import { ChevronLeft, ChevronRight, Flame, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { startOfWeek, weekDays, weekStreak } from "@/domain/streak";
 import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { CalendarSkeleton } from "@/components/Skeleton";
@@ -20,6 +22,11 @@ export default function CalendarPage() {
   const hydrated = useHydrated();
   const sessions = useStore((s) => s.sessions);
   const trainedDays = useStore((s) => s.trainedDays());
+  const templates = useStore((s) => s.templates);
+  const startSession = useStore((s) => s.startSession);
+  const getActiveSession = useStore((s) => s.getActiveSession);
+  const router = useRouter();
+  const [logPlan, setLogPlan] = useState("");
 
   const today = new Date();
   const [view, setView] = useState({ y: today.getFullYear(), m: today.getMonth() });
@@ -38,25 +45,17 @@ export default function CalendarPage() {
     return out;
   }, [view]);
 
-  // Current streak: consecutive days up to today that were trained. Also
-  // keeps the exact set of day-keys that make up that streak, so the grid
-  // below can mark them with the same flame hue as the banner above instead
-  // of a generic "trained" color — the streak reads as one continuous idea
-  // across both.
+  // Weekly streak (strength training isn't daily); days in the current
+  // run of trained weeks get the flame dot.
   const { streak, streakKeys } = useMemo(() => {
-    let n = 0;
+    const n = weekStreak(trainedDays, today);
     const keys = new Set<string>();
-    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    // If today not trained, start the count from yesterday.
-    if (!trainedDays.has(key(d.getFullYear(), d.getMonth(), d.getDate()))) {
-      d.setDate(d.getDate() - 1);
+    const cursor = startOfWeek(today);
+    for (let w = 0; w <= n; w++) {
+      for (const k of weekDays(cursor)) if (trainedDays.has(k)) keys.add(k);
+      cursor.setDate(cursor.getDate() - 7);
     }
-    while (trainedDays.has(key(d.getFullYear(), d.getMonth(), d.getDate()))) {
-      n++;
-      keys.add(key(d.getFullYear(), d.getMonth(), d.getDate()));
-      d.setDate(d.getDate() - 1);
-    }
-    return { streak: n, streakKeys: keys };
+    return { streak: n, streakKeys: n > 0 ? keys : new Set<string>() };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trainedDays]);
 
@@ -86,7 +85,7 @@ export default function CalendarPage() {
     <main className="mx-auto max-w-2xl space-y-6">
       <header>
         <h1 className="page-title">Calendar</h1>
-        <p className="page-subtitle">Every day you trained.</p>
+        <p className="page-subtitle">Every day you trained. Pick a past day to log a workout you forgot.</p>
       </header>
 
       {!hydrated ? (
@@ -123,15 +122,15 @@ export default function CalendarPage() {
               </p>
             </div>
             <p className="text-body-sm text-inkSoft">
-              {streak > 0 ? "day streak" : "start a streak today"}
+              {streak > 0 ? `week${streak === 1 ? "" : "s"} in a row with a workout` : "train this week to start a streak"}
             </p>
           </div>
 
           <div className="rounded-card border border-border bg-surface shadow-card overflow-hidden">
             <div className="p-4 sm:p-6">
               <div className="mb-4 flex items-center justify-between">
-                <button onClick={() => shift(-1)} className="btn-ghost px-3 py-1.5">
-                  ‹
+                <button onClick={() => shift(-1)} className="btn-ghost px-3 py-1.5" aria-label="Previous month">
+                  <ChevronLeft className="h-4 w-4" aria-hidden />
                 </button>
                 <div className="text-center">
                   <p className="font-semibold text-ink">
@@ -141,8 +140,8 @@ export default function CalendarPage() {
                     {monthCount} session{monthCount === 1 ? "" : "s"} this month
                   </p>
                 </div>
-                <button onClick={() => shift(1)} className="btn-ghost px-3 py-1.5">
-                  ›
+                <button onClick={() => shift(1)} className="btn-ghost px-3 py-1.5" aria-label="Next month">
+                  <ChevronRight className="h-4 w-4" aria-hidden />
                 </button>
               </div>
 
@@ -199,7 +198,36 @@ export default function CalendarPage() {
                 })}
               </h2>
               {selectedSessions.length === 0 ? (
-                <div className="py-8 text-center text-body-sm text-muted">No workout on this day.</div>
+                <div className="space-y-3 py-4 text-center">
+                  <p className="text-body-sm text-muted">No workout on this day.</p>
+                  {selected <= todayKey && !getActiveSession() && (
+                    <div className="mx-auto flex max-w-sm flex-col gap-2 sm:flex-row">
+                      <select
+                        aria-label="Plan to log"
+                        value={logPlan}
+                        onChange={(e) => setLogPlan(e.target.value)}
+                        className="input flex-1 py-2.5 text-sm"
+                      >
+                        <option value="">Empty workout</option>
+                        {templates.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn-secondary px-4 py-2.5 text-sm"
+                        onClick={() => {
+                          const { id } = startSession(logPlan || null, selected);
+                          if (id) router.push(`/session/${id}`);
+                        }}
+                      >
+                        <Plus className="h-4 w-4" aria-hidden /> Log workout
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="-mx-4 sm:-mx-6 divide-y divide-border">
                   {selectedSessions.map((s) => (

@@ -1,5 +1,6 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
@@ -103,8 +104,8 @@ export function AiPlanButton() {
 
   if (!open) {
     return (
-      <button className="btn-primary w-full" onClick={() => setOpen(true)}>
-        ✨ Generate a workout with AI
+      <button className="btn-ghost w-full" onClick={() => setOpen(true)}>
+        <Sparkles className="h-4 w-4" aria-hidden /> Generate a workout with AI
       </button>
     );
   }

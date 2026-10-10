@@ -172,7 +172,12 @@ export interface TrainovaState {
   addBodyweight: (date: string, weightKg: number) => void;
   removeBodyweight: (id: string) => void;
   /** Wipe personal data (sign-out / reset); keeps the shared library. */
-  resetUserData: () => void;
+  /**
+   * Clear personal data. With `forget`, deletions are tombstoned so a synced
+   * account doesn't pull the data back; without it (sign-out wipe) the device
+   * is simply cleared.
+   */
+  resetUserData: (opts?: { forget?: boolean }) => void;
   /** Replace personal data with a previously exported backup. */
   importBackup: (data: Record<string, unknown>) => boolean;
   completeSet: (setId: string) => { newPrs: PersonalRecord["kind"][] };
@@ -209,11 +214,12 @@ const now = () => new Date().toISOString();
 
 const isWarmup = (x: Pick<WorkoutSet, "kind">) => x.kind === "warmup";
 
-/** Append deletion markers for ids (keeps the most recent 2000). */
+/** Append deletion markers for ids (keeps the most recent 10k). */
 function tomb(list: Tombstone[], ids: Iterable<string>): Tombstone[] {
   const at = now();
-  const fresh = [...ids].map((id) => ({ id, at }));
-  return [...list.filter((t) => !fresh.some((f) => f.id === t.id)), ...fresh].slice(-2000);
+  const fresh = [...new Set(ids)].map((id) => ({ id, at }));
+  const ids2 = new Set(fresh.map((f) => f.id));
+  return [...list.filter((t) => !ids2.has(t.id)), ...fresh].slice(-10000);
 }
 
 /** Sensible starting rep target for a newly added exercise. */
@@ -857,8 +863,19 @@ export const useStore = create<TrainovaState>()(
           tombstones: tomb(s.tombstones, [id]),
         })),
 
-      resetUserData: () =>
+      resetUserData: (opts) =>
         set((s) => ({
+          tombstones: opts?.forget
+            ? tomb(s.tombstones, [
+                ...s.programs.map((x) => x.id),
+                ...s.templates.map((x) => x.id),
+                ...s.sessions.map((x) => x.id),
+                ...s.sets.map((x) => x.id),
+                ...s.bodyLog.map((x) => x.id),
+                ...s.exercises.filter((e) => e.owner != null).map((x) => x.id),
+                ...s.devices.filter((d) => d.owner != null).map((x) => x.id),
+              ])
+            : [],
           profile: { displayName: null, role: "user", goal: null, experience: null, onboarded: false },
           audit: [],
           devices: s.devices.filter((d) => d.owner == null),
@@ -870,7 +887,6 @@ export const useStore = create<TrainovaState>()(
           feedback: [],
           prs: [],
           bodyLog: [],
-          tombstones: [],
         })),
 
       importBackup: (data) => {

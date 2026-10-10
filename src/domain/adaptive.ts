@@ -25,7 +25,9 @@ export function recommendToday(input: {
     .filter((session) => session.status === "completed")
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   const latest = completed[0];
-  let template = templates[0];
+  // With no history, start at the first day of the first program.
+  const firstDay = programs[0]?.dayTemplateIds[0];
+  let template = templates.find((item) => item.id === firstDay) ?? templates[0];
 
   if (latest?.templateId) {
     const program = programs.find((item) => item.dayTemplateIds.includes(latest.templateId!));
@@ -55,7 +57,7 @@ export function recommendToday(input: {
       headline: "Keep today controlled",
       reason: latestFeedback?.pain
         ? "You reported discomfort last session. Stop if symptoms worsen and choose pain-free variations."
-        : "Your last check-in suggested higher fatigue. Keep 2–3 reps in reserve and skip optional rounds.",
+        : "Your last check-in suggested higher fatigue. Keep 2–3 reps in reserve and skip optional sets.",
     };
   }
 

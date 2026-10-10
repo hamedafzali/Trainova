@@ -3,15 +3,47 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { Stepper } from "@/components/Stepper";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ListSkeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
-import { plateIncrement } from "@/domain/progression";
+import { exerciseTypeOf, usesWeight } from "@/domain/exerciseType";
 import { useHydrated, useStore } from "@/lib/store";
 import { SEED_PLAN_ID } from "@/lib/seed";
+import { displayWeight, formatWeight, fromDisplay, weightStep } from "@/lib/units";
+import type { ExerciseType } from "@/domain/taxonomy";
+import type { TemplateExercise, TemplateSet, Units } from "@/domain/types";
+
+/** Rough minutes for a plan: ~40 s per working set plus its rest. */
+function estimateMinutes(exercises: TemplateExercise[]): number {
+  let sec = 0;
+  for (const te of exercises) sec += te.sets.length * (40 + te.restSeconds);
+  return Math.max(5, Math.round(sec / 60 / 5) * 5);
+}
+
+function targetLabel(type: ExerciseType): { unit: string; label: string; step: number; max: number } {
+  if (type === "duration") return { unit: "s", label: "Hold", step: 5, max: 600 };
+  if (type === "cardio") return { unit: "min", label: "Minutes", step: 1, max: 180 };
+  return { unit: "reps", label: "Reps", step: 1, max: 100 };
+}
+
+export function summarize(sets: TemplateSet[], type: ExerciseType, units: Units): string {
+  if (sets.length === 0) return "No sets";
+  const t = targetLabel(type);
+  const reps = [...new Set(sets.map((s) => s.targetReps))];
+  const repsText = reps.length === 1 ? `${reps[0]}${t.unit === "reps" ? "" : ` ${t.unit}`}` : reps.join("/");
+  let text = `${sets.length} × ${repsText}`;
+  if (usesWeight(type)) {
+    const ws = [...new Set(sets.map((s) => s.targetWeight ?? 0))].filter((w) => w > 0);
+    if (ws.length === 1) text += ` @ ${formatWeight(ws[0], units)}`;
+    else if (ws.length > 1)
+      text += ` @ ${formatWeight(Math.min(...ws), units, false)}–${formatWeight(Math.max(...ws), units)}`;
+  }
+  return text;
+}
 
 export default function TemplateEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,28 +54,41 @@ export default function TemplateEditPage() {
   const exerciseById = useStore((s) => s.exerciseById);
   const deviceById = useStore((s) => s.deviceById);
   const units = useStore((s) => s.units);
+  const updateTemplate = useStore((s) => s.updateTemplate);
+  const deleteTemplate = useStore((s) => s.deleteTemplate);
   const addTemplateExercise = useStore((s) => s.addTemplateExercise);
   const removeTemplateExercise = useStore((s) => s.removeTemplateExercise);
+  const moveTemplateExercise = useStore((s) => s.moveTemplateExercise);
+  const updateTemplateExercise = useStore((s) => s.updateTemplateExercise);
   const setTemplateSetCount = useStore((s) => s.setTemplateSetCount);
   const updateTemplateSet = useStore((s) => s.updateTemplateSet);
   const startSession = useStore((s) => s.startSession);
   const getActiveSession = useStore((s) => s.getActiveSession);
+
   const [picking, setPicking] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   if (!hydrated)
     return (
-      <main className="space-y-6 pb-20">
+      <main className="mx-auto max-w-3xl space-y-6">
         <ListSkeleton variant="row" />
       </main>
     );
   if (!template) {
     return (
-      <main className="space-y-3">
-        <p className="text-muted">Plan not found.</p>
-        <Link href="/templates" className="text-accent hover:text-accentHover">
-          ← Back to plans
-        </Link>
-      </main>
+      <EmptyState
+        icon="🗂️"
+        title="Plan not found"
+        body="It may have been deleted."
+        action={
+          <Link href="/templates" className="btn-primary mt-2">
+            Back to plans
+          </Link>
+        }
+      />
     );
   }
 
@@ -57,143 +102,241 @@ export default function TemplateEditPage() {
     if (sid) router.push(`/session/${sid}`);
   };
 
-  const num = (v: string) => (v === "" ? null : Number(v));
+  const totalSets = template.exercises.reduce((n, te) => n + te.sets.length, 0);
+  const removingEx = template.exercises.find((te) => te.id === removing);
 
   return (
-    <main className="space-y-6 pb-20">
-      <header className="flex items-center justify-between pt-2 gap-4">
-        <div className="min-w-0">
-          <Link
-            href="/templates"
-            className="text-sm text-muted hover:text-inkSoft transition-colors"
-          >
-            ← Plans
-          </Link>
-          <h1 className="page-title flex items-center flex-wrap gap-2">
-            {template.name}
-            {template.id === SEED_PLAN_ID && (
-              <span className="badge-accent">
-                <span aria-hidden>✦</span> Sample
-              </span>
-            )}
-          </h1>
+    <main className="mx-auto max-w-3xl space-y-6 pb-24">
+      <Link href="/templates" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Plans
+      </Link>
+
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          {editingName ? (
+            <input
+              aria-label="Plan name"
+              className="input text-xl font-bold"
+              defaultValue={template.name}
+              autoFocus
+              maxLength={60}
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                if (v && v !== template.name) updateTemplate(template.id, { name: v });
+                setEditingName(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") setEditingName(false);
+              }}
+            />
+          ) : (
+            <h1 className="page-title flex flex-wrap items-center gap-2">
+              <span className="min-w-0 break-words">{template.name}</span>
+              <button
+                type="button"
+                aria-label="Rename plan"
+                onClick={() => setEditingName(true)}
+                className="grid h-8 w-8 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink"
+              >
+                <Pencil className="h-4 w-4" aria-hidden />
+              </button>
+              {template.id === SEED_PLAN_ID && <span className="badge-accent text-xs">Sample</span>}
+            </h1>
+          )}
           <p className="page-subtitle">
-            {template.exercises.length} exercise
-            {template.exercises.length === 1 ? "" : "s"}
+            {template.exercises.length} exercise{template.exercises.length === 1 ? "" : "s"} · {totalSets} sets
+            {template.exercises.length > 0 && ` · ~${estimateMinutes(template.exercises)} min`}
           </p>
         </div>
-        <button
-          className="btn-primary py-3 px-6 text-base font-semibold shrink-0"
-          onClick={start}
-        >
-          Start
+        <button className="btn-primary shrink-0 px-6" onClick={start} disabled={template.exercises.length === 0}>
+          <Play className="h-4 w-4" aria-hidden /> Start workout
         </button>
       </header>
+
+      <textarea
+        aria-label="Plan notes"
+        className="input min-h-[3rem] resize-y text-sm"
+        placeholder="Notes for this plan (warm-up, focus, equipment to grab)…"
+        defaultValue={template.notes ?? ""}
+        maxLength={500}
+        onBlur={(e) => {
+          const v = e.target.value.trim() || null;
+          if (v !== template.notes) updateTemplate(template.id, { notes: v });
+        }}
+      />
 
       {template.exercises.length === 0 ? (
         <EmptyState
           icon="💪"
           title="No exercises yet"
-          body="Add your first exercise below to build out this plan."
+          body="Add the exercises you want to do in this workout. You can set sets, reps, weights and rest for each."
+          action={
+            <button className="btn-primary mt-2" onClick={() => setPicking(true)}>
+              <Plus className="h-4 w-4" aria-hidden /> Add exercise
+            </button>
+          }
         />
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {template.exercises.map((te) => {
+        <ol className="space-y-3">
+          {template.exercises.map((te, idx) => {
             const ex = exerciseById(te.exerciseId);
             const device = deviceById(te.deviceId ?? ex?.defaultDeviceId);
-            const step = plateIncrement(units);
+            const type = exerciseTypeOf(ex, device);
+            const t = targetLabel(type);
+            const open = openId === te.id;
             return (
-              <li
-                key={te.id}
-                className="rounded-card border border-border bg-surface shadow-card p-6 space-y-3"
-              >
-                <div className="flex items-center gap-3">
-                  <DeviceAvatar
-                    device={device}
-                    className="h-10 w-10 rounded-control text-sm"
-                  />
-                  <div className="flex-1">
-                    <p className="font-semibold text-h3 leading-tight">
-                      {ex?.name ?? "Exercise"}
+              <li key={te.id} className="card overflow-hidden">
+                <div className="flex items-center gap-3 p-3 sm:p-4">
+                  <span className="w-5 shrink-0 text-center text-sm font-semibold tabular-nums text-muted">{idx + 1}</span>
+                  <DeviceAvatar device={device} className="h-10 w-10 rounded-control text-sm" />
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 text-left"
+                    aria-expanded={open}
+                    onClick={() => setOpenId(open ? null : te.id)}
+                  >
+                    <p className="truncate font-semibold text-ink">{ex?.name ?? "Exercise"}</p>
+                    <p className="truncate text-sm text-muted">
+                      {summarize(te.sets, type, units)} · rest {te.restSeconds}s
                     </p>
-                    {device && (
-                      <p className="text-sm text-muted">
-                        {device.name}
-                        {device.machineNumber
-                          ? ` · No.${device.machineNumber}`
-                          : ""}
-                      </p>
-                    )}
+                  </button>
+                  <div className="flex shrink-0 items-center">
+                    <IconBtn label="Move up" disabled={idx === 0} onClick={() => moveTemplateExercise(template.id, te.id, -1)}>
+                      <ArrowUp className="h-4 w-4" aria-hidden />
+                    </IconBtn>
+                    <IconBtn
+                      label="Move down"
+                      disabled={idx === template.exercises.length - 1}
+                      onClick={() => moveTemplateExercise(template.id, te.id, 1)}
+                    >
+                      <ArrowDown className="h-4 w-4" aria-hidden />
+                    </IconBtn>
+                    <IconBtn label={open ? "Collapse" : "Edit"} onClick={() => setOpenId(open ? null : te.id)}>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+                    </IconBtn>
                   </div>
-                  <button
-                    className="btn-danger px-3 py-2 text-sm"
-                    onClick={() => removeTemplateExercise(template.id, te.id)}
-                  >
-                    ✕
-                  </button>
                 </div>
 
-                {/* Per-round target weight (each round can differ — a ramp) */}
-                <div className="space-y-2">
-                  {te.sets.map((st, i) => (
-                    <div key={i} className="space-y-1">
-                      <p className="text-sm text-muted">Round {i + 1}</p>
-                      <Stepper
-                        value={st.targetWeight ?? 0}
-                        step={step}
-                        unit={units}
-                        size="lg"
-                        onChange={(v) =>
-                          updateTemplateSet(template.id, te.id, i, {
-                            targetWeight: v || null,
-                          })
-                        }
-                      />
+                {open && (
+                  <div className="space-y-4 border-t border-border bg-surface2/40 p-3 sm:p-4">
+                    <div className="space-y-2">
+                      {te.sets.map((st, i) => (
+                        <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                          <span className="w-12 shrink-0 text-sm font-medium text-muted">Set {i + 1}</span>
+                          <div className="min-w-[9rem] flex-1">
+                            <Stepper
+                              label={`Set ${i + 1} ${t.label.toLowerCase()}`}
+                              value={st.targetReps}
+                              step={t.step}
+                              min={1}
+                              max={t.max}
+                              unit={t.unit}
+                              onChange={(v) => updateTemplateSet(template.id, te.id, i, { targetReps: v })}
+                            />
+                          </div>
+                          {usesWeight(type) && (
+                            <div className="min-w-[9rem] flex-1">
+                              <Stepper
+                                label={`Set ${i + 1} weight`}
+                                value={displayWeight(st.targetWeight ?? 0, units)}
+                                step={weightStep(units)}
+                                max={units === "kg" ? 500 : 1100}
+                                unit={units}
+                                onChange={(v) =>
+                                  updateTemplateSet(template.id, te.id, i, { targetWeight: v ? fromDisplay(v, units) : null })
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          className="btn-ghost flex-1 py-2 text-sm"
+                          disabled={te.sets.length <= 1}
+                          onClick={() => setTemplateSetCount(template.id, te.id, te.sets.length - 1)}
+                        >
+                          Remove set
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-ghost flex-1 py-2 text-sm"
+                          disabled={te.sets.length >= 12}
+                          onClick={() => setTemplateSetCount(template.id, te.id, te.sets.length + 1)}
+                        >
+                          <Plus className="h-4 w-4" aria-hidden /> Add set
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
 
-                <div className="flex items-center justify-center gap-3 text-base">
-                  <button
-                    className="btn-ghost px-4 py-2 text-sm font-semibold"
-                    onClick={() =>
-                      setTemplateSetCount(
-                        template.id,
-                        te.id,
-                        te.sets.length - 1,
-                      )
-                    }
-                  >
-                    − round
-                  </button>
-                  <span className="text-muted font-medium">
-                    {te.sets.length} rounds
-                  </span>
-                  <button
-                    className="btn-ghost px-4 py-2 text-sm font-semibold"
-                    onClick={() =>
-                      setTemplateSetCount(
-                        template.id,
-                        te.id,
-                        te.sets.length + 1,
-                      )
-                    }
-                  >
-                    + round
-                  </button>
-                </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted">Rest between sets</p>
+                        <Stepper
+                          label="Rest"
+                          value={te.restSeconds}
+                          step={15}
+                          min={0}
+                          max={600}
+                          unit="s"
+                          onChange={(v) => updateTemplateExercise(template.id, te.id, { restSeconds: v })}
+                        />
+                      </div>
+                      <label className="space-y-1.5">
+                        <span className="block text-xs font-medium text-muted">Cue / note</span>
+                        <input
+                          className="input py-2.5 text-sm"
+                          placeholder="e.g. Seat on 4, slow negatives"
+                          defaultValue={te.cue ?? ""}
+                          maxLength={120}
+                          onBlur={(e) => {
+                            const v = e.target.value.trim() || null;
+                            if (v !== (te.cue ?? null)) updateTemplateExercise(template.id, te.id, { cue: v });
+                          }}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Link href={`/exercises/${te.exerciseId}`} className="text-sm font-medium text-accent">
+                        Exercise details
+                      </Link>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-control px-3 py-2 text-sm font-medium text-danger hover:bg-danger/10"
+                        onClick={() => setRemoving(te.id)}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden /> Remove
+                      </button>
+                    </div>
+                  </div>
+                )}
               </li>
             );
           })}
-        </ul>
+        </ol>
       )}
 
-      <button
-        className="btn-ghost w-full md:max-w-xs py-4 text-base font-semibold"
-        onClick={() => setPicking(true)}
-      >
-        + Add exercise
-      </button>
+      {template.exercises.length > 0 && (
+        <button
+          className="flex w-full items-center justify-center gap-1.5 rounded-card border border-dashed border-border py-4 text-sm font-semibold text-accent hover:bg-accent/[0.05]"
+          onClick={() => setPicking(true)}
+        >
+          <Plus className="h-4 w-4" aria-hidden /> Add exercise
+        </button>
+      )}
+
+      <div className="border-t border-border pt-6">
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-danger hover:underline"
+          onClick={() => setDeleting(true)}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden /> Delete plan
+        </button>
+      </div>
 
       {picking && (
         <ExercisePicker
@@ -201,9 +344,60 @@ export default function TemplateEditPage() {
           onPick={(exerciseId) => {
             addTemplateExercise(template.id, exerciseId);
             setPicking(false);
+            const added = useStore.getState().templates.find((t) => t.id === template.id)?.exercises.at(-1);
+            if (added) setOpenId(added.id);
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!removingEx}
+        title="Remove exercise?"
+        body={`${exerciseById(removingEx?.exerciseId ?? "")?.name ?? "This exercise"} will be removed from the plan. Logged history is kept.`}
+        confirmLabel="Remove"
+        danger
+        onConfirm={() => {
+          if (removingEx) removeTemplateExercise(template.id, removingEx.id);
+          setRemoving(null);
+        }}
+        onCancel={() => setRemoving(null)}
+      />
+      <ConfirmDialog
+        open={deleting}
+        title="Delete this plan?"
+        body="Your past workouts stay in History. This can't be undone."
+        confirmLabel="Delete plan"
+        danger
+        onConfirm={() => {
+          deleteTemplate(template.id);
+          router.push("/templates");
+        }}
+        onCancel={() => setDeleting(false)}
+      />
     </main>
+  );
+}
+
+function IconBtn({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="grid h-9 w-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface2 hover:text-ink disabled:opacity-30"
+    >
+      {children}
+    </button>
   );
 }

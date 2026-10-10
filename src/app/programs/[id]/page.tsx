@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowLeft, ChevronRight, Pencil, Play, Plus, Trash2, X } from "lucide-react";
 import { useHydrated, useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ListSkeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { recommendToday } from "@/domain/adaptive";
 
 export default function ProgramEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,15 +16,21 @@ export default function ProgramEditPage() {
   const hydrated = useHydrated();
 
   const program = useStore((s) => s.programs.find((p) => p.id === id));
+  const templates = useStore((s) => s.templates);
+  const programs = useStore((s) => s.programs);
+  const sessions = useStore((s) => s.sessions);
+  const feedback = useStore((s) => s.feedback);
+  const exerciseById = useStore((s) => s.exerciseById);
   const daysForProgram = useStore((s) => s.daysForProgram);
   const addDayToProgram = useStore((s) => s.addDayToProgram);
   const removeDayFromProgram = useStore((s) => s.removeDayFromProgram);
+  const renameProgram = useStore((s) => s.renameProgram);
+  const deleteProgram = useStore((s) => s.deleteProgram);
   const startSession = useStore((s) => s.startSession);
   const getActiveSession = useStore((s) => s.getActiveSession);
-  const [confirmRemoveDay, setConfirmRemoveDay] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [removeDay, setRemoveDay] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const start = (templateId: string) => {
     const { id: sid, blocked } = startSession(templateId);
@@ -36,103 +44,168 @@ export default function ProgramEditPage() {
 
   if (!hydrated)
     return (
-      <main className="mx-auto max-w-2xl space-y-4 p-4">
+      <main className="mx-auto max-w-3xl space-y-4">
         <ListSkeleton variant="row" />
       </main>
     );
   if (!program) {
     return (
-      <main className="mx-auto max-w-2xl space-y-3 p-4">
-        <p className="text-muted">Program not found.</p>
-        <Link href="/templates" className="text-accent hover:text-accentHover">
-          ← Back to plans
-        </Link>
-      </main>
+      <EmptyState
+        icon="🗂️"
+        title="Program not found"
+        body="It may have been deleted."
+        action={
+          <Link href="/templates" className="btn-primary mt-2">
+            Back to plans
+          </Link>
+        }
+      />
     );
   }
 
   const days = daysForProgram(program.id);
+  const nextId = recommendToday({ templates, programs, sessions, feedback })?.templateId;
 
   return (
-    <main className="mx-auto max-w-2xl space-y-4 p-4">
-      <header className="pt-2">
-        <Link
-          href="/templates"
-          className="text-sm text-muted hover:text-inkSoft transition-colors"
-        >
-          ← Plans
-        </Link>
-        <h1 className="page-title">
-          {program.name}
-          {program.source === "trainer" && (
-            <span className="badge-accent ml-2 uppercase align-middle">
-              Trainer
-            </span>
-          )}
-        </h1>
-        {program.notes && <p className="page-subtitle">{program.notes}</p>}
+    <main className="mx-auto max-w-3xl space-y-6 pb-16">
+      <Link href="/templates" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Plans
+      </Link>
+
+      <header>
+        {editingName ? (
+          <input
+            aria-label="Program name"
+            className="input text-xl font-bold"
+            defaultValue={program.name}
+            autoFocus
+            maxLength={60}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (v && v !== program.name) renameProgram(program.id, v);
+              setEditingName(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+              if (e.key === "Escape") setEditingName(false);
+            }}
+          />
+        ) : (
+          <h1 className="page-title flex flex-wrap items-center gap-2">
+            <span className="min-w-0 break-words">{program.name}</span>
+            <button
+              type="button"
+              aria-label="Rename program"
+              onClick={() => setEditingName(true)}
+              className="grid h-8 w-8 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink"
+            >
+              <Pencil className="h-4 w-4" aria-hidden />
+            </button>
+            {program.source === "trainer" && <span className="badge-accent text-xs">Trainer</span>}
+          </h1>
+        )}
+        <p className="page-subtitle">
+          {program.notes ?? `${days.length} training day${days.length === 1 ? "" : "s"}, done in rotation — after the last day, start again from Day 1.`}
+        </p>
       </header>
 
       {days.length === 0 ? (
-        <EmptyState
-          icon="📅"
-          title="No days yet"
-          body="Add the first one to start building this program."
-        />
+        <EmptyState icon="📅" title="No days yet" body="Add the first training day to start building this program." />
       ) : (
-        <ul className="space-y-2">
-          {days.map((d, i) => (
-            <li key={d.id} className="card">
-              <div className="flex items-center justify-between">
-                <Link href={`/templates/${d.id}`} className="flex-1">
-                  <p className="font-semibold text-h3 text-ink">
-                    <span className="text-muted">Day {i + 1}:</span> {d.name}
-                  </p>
-                  <p className="text-xs text-muted">{d.exercises.length} exercises · tap to edit</p>
-                </Link>
-                <button className="btn-primary px-3 py-1.5" onClick={() => start(d.id)}>
-                  Start
-                </button>
-                <button
-                  className="btn-danger"
-                  onClick={() =>
-                    setConfirmRemoveDay({ id: d.id, name: d.name })
-                  }
-                >
-                  ✕
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <ol className="space-y-3">
+          {days.map((d, i) => {
+            const isNext = d.id === nextId;
+            const names = d.exercises.map((te) => exerciseById(te.exerciseId)?.name).filter(Boolean) as string[];
+            return (
+              <li key={d.id} className={`card overflow-hidden ${isNext ? "border-accent/40" : ""}`}>
+                <div className="flex items-center gap-3 p-4">
+                  <span
+                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold ${
+                      isNext ? "bg-accentFill text-onAccent" : "bg-surface2 text-inkSoft"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                  <Link href={`/templates/${d.id}`} className="min-w-0 flex-1">
+                    <p className="flex items-center gap-2 font-semibold text-ink">
+                      <span className="truncate">{d.name}</span>
+                      {isNext && <span className="badge-accent shrink-0 text-[10px]">Up next</span>}
+                    </p>
+                    <p className="truncate text-xs text-muted">
+                      {names.length ? names.join(" · ") : "No exercises yet — tap to add"}
+                    </p>
+                  </Link>
+                  <Link href={`/templates/${d.id}`} aria-label={`Edit ${d.name}`} className="hidden text-muted hover:text-ink sm:block">
+                    <ChevronRight className="h-5 w-5" aria-hidden />
+                  </Link>
+                </div>
+                <div className="flex border-t border-border">
+                  <button
+                    type="button"
+                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-accent hover:bg-accent/[0.05] disabled:text-muted"
+                    disabled={d.exercises.length === 0}
+                    onClick={() => start(d.id)}
+                  >
+                    <Play className="h-4 w-4" aria-hidden /> Start
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center justify-center gap-1.5 border-l border-border px-5 py-2.5 text-sm text-muted hover:bg-danger/10 hover:text-danger"
+                    onClick={() => setRemoveDay({ id: d.id, name: d.name })}
+                    aria-label={`Remove ${d.name}`}
+                  >
+                    <X className="h-4 w-4" aria-hidden />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       )}
 
       <button
-        className="btn-ghost w-full"
+        className="flex w-full items-center justify-center gap-1.5 rounded-card border border-dashed border-border py-4 text-sm font-semibold text-accent hover:bg-accent/[0.05]"
         onClick={() => {
           const tid = addDayToProgram(program.id, `Day ${days.length + 1}`);
           router.push(`/templates/${tid}`);
         }}
       >
-        + Add day
+        <Plus className="h-4 w-4" aria-hidden /> Add day
       </button>
 
+      <div className="border-t border-border pt-6">
+        <button
+          type="button"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-danger hover:underline"
+          onClick={() => setDeleting(true)}
+        >
+          <Trash2 className="h-4 w-4" aria-hidden /> Delete program
+        </button>
+      </div>
+
       <ConfirmDialog
-        open={!!confirmRemoveDay}
-        title="Remove day"
-        body={
-          confirmRemoveDay
-            ? `Remove "${confirmRemoveDay.name}" from this program?`
-            : undefined
-        }
+        open={!!removeDay}
+        title="Remove day?"
+        body={removeDay ? `“${removeDay.name}” will be removed from this program. Past workouts stay in History.` : undefined}
         confirmLabel="Remove"
         danger
         onConfirm={() => {
-          if (confirmRemoveDay)
-            removeDayFromProgram(program.id, confirmRemoveDay.id);
-          setConfirmRemoveDay(null);
+          if (removeDay) removeDayFromProgram(program.id, removeDay.id);
+          setRemoveDay(null);
         }}
-        onCancel={() => setConfirmRemoveDay(null)}
+        onCancel={() => setRemoveDay(null)}
+      />
+      <ConfirmDialog
+        open={deleting}
+        title="Delete program?"
+        body="All of its days are deleted too. Past workouts stay in History."
+        confirmLabel="Delete program"
+        danger
+        onConfirm={() => {
+          deleteProgram(program.id);
+          router.push("/templates");
+        }}
+        onCancel={() => setDeleting(false)}
       />
     </main>
   );
