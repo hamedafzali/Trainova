@@ -129,7 +129,7 @@ export async function askTrainer(ctx: TrainerContext, history: TrainerTurn[]): P
   ];
   const out = await completeJson(messages, { temperature: 0.4, maxTokens: 1200 });
 
-  let reply = typeof out.reply === "string" ? sanitizeContent(out.reply.trim()) : "";
+  let reply = sanitizeContent(replyText(out.reply).trim());
   let actions = validateTrainerActions(out.actions, ctx);
   if (!reply) reply = actions.length ? "Here's what I'd change:" : "Sorry — I didn't catch that. Could you rephrase?";
   if (harmfulAdviceReason(reply)) {
@@ -155,4 +155,15 @@ export async function reviewTraining(ctx: TrainerContext): Promise<TrainerReview
   // Logged pain in recent sessions: advice only, no automatic plan edits.
   if (ctx.recent.some((r) => r.pain && hasRedFlagSymptoms(r.pain))) review.actions = [];
   return review;
+}
+
+/** Smaller models sometimes nest the reply ({"reply": {"tip": "…"}}); keep the text either way. */
+function replyText(v: unknown, depth = 0): string {
+  if (typeof v === "string") return v;
+  if (depth > 2 || v === null || typeof v !== "object") return "";
+  const parts = Array.isArray(v) ? v : Object.values(v);
+  return parts
+    .map((p) => replyText(p, depth + 1))
+    .filter(Boolean)
+    .join("\n");
 }

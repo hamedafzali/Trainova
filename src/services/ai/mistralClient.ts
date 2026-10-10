@@ -8,7 +8,9 @@
 //
 // Lower tiers also allow about one request per second, and the coach page
 // fires several at once (status review, insights line, chat). Requests are
-// queued and spaced, and a 429 is retried with backoff before giving up.
+// queued and spaced, and a 429 is retried once. A model that stays rate
+// limited (its quota is used up) is skipped for a while and the next one is
+// used, so the coach keeps working on a smaller model.
 
 import { Mistral } from "@mistralai/mistralai";
 
@@ -24,16 +26,28 @@ export function getMistralClient(): Mistral {
 }
 
 /** Best first; all support JSON mode. */
-const PREFERRED_MODELS = ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest"];
+const PREFERRED_MODELS = [
+  "mistral-large-latest",
+  "mistral-medium-latest",
+  "mistral-small-latest",
+  "open-mistral-nemo",
+  "ministral-8b-latest",
+];
 
 let workingModel: string | null = null;
 const deniedModels = new Set<string>();
+/** Model → time until which it is skipped because it kept returning 429. */
+const coolingUntil = new Map<string, number>();
 
 export function candidateModels(): string[] {
   const pinned = process.env.MISTRAL_MODEL?.trim();
   const list = pinned ? [pinned, ...PREFERRED_MODELS] : PREFERRED_MODELS;
   const ordered = workingModel ? [workingModel, ...list] : list;
-  return [...new Set(ordered)].filter((m) => !deniedModels.has(m));
+  const usable = [...new Set(ordered)].filter((m) => !deniedModels.has(m));
+  const now = Date.now();
+  const ready = usable.filter((m) => (coolingUntil.get(m) ?? 0) <= now);
+  // Everything cooling down: try anyway rather than fail without asking.
+  return ready.length > 0 ? ready : usable;
 }
 
 /** 403 (tier) / 404 (unknown model): this model is unusable with this key, try the next. */
@@ -70,7 +84,7 @@ export function isRateLimited(e: unknown): boolean {
   return /Status 429\b|rate_limited/i.test(msg);
 }
 
-const MAX_RATE_RETRIES = 3;
+const MAX_RATE_RETRIES = 1;
 
 type CompleteRequest = Omit<Parameters<Mistral["chat"]["complete"]>[0], "model">;
 type CompleteOptions = Parameters<Mistral["chat"]["complete"]>[1];
@@ -87,9 +101,15 @@ export async function chatComplete(req: CompleteRequest, opts?: CompleteOptions)
       workingModel = model;
       return res;
     } catch (e) {
-      if (!isModelDenied(e)) throw e;
-      console.warn(`[ai] Mistral model ${model} not available for this key, trying the next one`);
-      deniedModels.add(model);
+      if (isModelDenied(e)) {
+        console.warn(`[ai] Mistral model ${model} not available for this key, trying the next one`);
+        deniedModels.add(model);
+      } else if (isRateLimited(e)) {
+        console.warn(`[ai] Mistral model ${model} is rate limited, trying the next one`);
+        coolingUntil.set(model, Date.now() + envMs("MISTRAL_RATE_COOLDOWN_MS", 10 * 60_000));
+      } else {
+        throw e;
+      }
       if (workingModel === model) workingModel = null;
       lastError = e;
     }

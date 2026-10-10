@@ -12,6 +12,7 @@ async function load() {
   return import("./mistralClient");
 }
 
+const limited = Object.assign(new Error("Status 429 rate_limited"), { statusCode: 429 });
 const denied = Object.assign(new Error('API error occurred: Status 403\\nBody: {"type":"tier_not_allowed"}'), { statusCode: 403 });
 
 describe("chatComplete", () => {
@@ -23,12 +24,42 @@ describe("chatComplete", () => {
     process.env.MISTRAL_RETRY_BASE_MS = "0";
   });
 
-  it("retries rate-limited calls on the same model", async () => {
+  it("retries a rate-limited call once on the same model", async () => {
     const m = await load();
-    const limited = Object.assign(new Error("Status 429 rate_limited"), { statusCode: 429 });
-    complete.mockRejectedValueOnce(limited).mockRejectedValueOnce(limited).mockResolvedValueOnce({ choices: [] });
+    complete.mockRejectedValueOnce(limited).mockResolvedValueOnce({ choices: [] });
     await m.chatComplete({ messages: [] });
-    expect(complete.mock.calls.map((c) => c[0].model)).toEqual(Array(3).fill("mistral-large-latest"));
+    expect(complete.mock.calls.map((c) => c[0].model)).toEqual(Array(2).fill("mistral-large-latest"));
+  });
+
+  it("moves on from a model whose quota is used up and skips it while it cools down", async () => {
+    const m = await load();
+    complete.mockImplementation(async (req: { model: string }) => {
+      if (req.model === "mistral-large-latest") throw denied;
+      if (req.model !== "open-mistral-nemo") throw limited;
+      return { choices: [] };
+    });
+    await m.chatComplete({ messages: [] });
+    expect(complete.mock.calls.map((c) => c[0].model)).toEqual([
+      "mistral-large-latest",
+      "mistral-medium-latest",
+      "mistral-medium-latest",
+      "mistral-small-latest",
+      "mistral-small-latest",
+      "open-mistral-nemo",
+    ]);
+    complete.mockClear();
+    await m.chatComplete({ messages: [] });
+    expect(complete.mock.calls.map((c) => c[0].model)).toEqual(["open-mistral-nemo"]);
+  });
+
+  it("still tries cooling models when nothing else is left", async () => {
+    const m = await load();
+    complete.mockRejectedValue(limited);
+    await expect(m.chatComplete({ messages: [] })).rejects.toThrow("429");
+    complete.mockReset();
+    complete.mockResolvedValue({ choices: [] });
+    await m.chatComplete({ messages: [] });
+    expect(complete).toHaveBeenCalledTimes(1);
   });
 
   it("spaces requests out", async () => {
