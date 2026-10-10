@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 min-w-0 md:ml-64 min-h-screen">
         <div
           key={pathname}
-          className="enter-fade max-w-6xl mx-auto px-4 md:px-8 lg:px-10 py-6 md:py-10 pb-24 md:pb-10"
+          className="enter-fade max-w-6xl mx-auto px-4 md:px-8 lg:px-10 py-6 md:py-10 pb-32 md:pb-10"
         >
           {children}
         </div>

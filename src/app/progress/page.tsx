@@ -243,7 +243,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-card border border-border bg-surface p-3 sm:p-4">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-bold tabular-nums text-ink">{value}</p>
+      <p className="font-display mt-1 text-2xl font-extrabold tabular-nums text-ink">{value}</p>
     </div>
   );
 }

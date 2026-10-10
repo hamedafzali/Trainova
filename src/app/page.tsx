@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { CalendarDays, ChevronRight, Clock, Dumbbell, Flame, Play, Plus, Trophy } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock, Dumbbell, Flame, Layers, Play, Plus, Trophy } from "lucide-react";
 import { Onboarding } from "@/components/Onboarding";
 import { Welcome } from "@/components/Welcome";
 import { CoachTeaserCard } from "@/components/CoachTeaserCard";
@@ -15,6 +15,7 @@ import { localDayKey, weekDays, weekStreak } from "@/domain/streak";
 import { totalVolume } from "@/domain/volume";
 import { useHydrated, useStore } from "@/lib/store";
 import { formatVolume } from "@/lib/units";
+import { label } from "@/domain/taxonomy";
 
 function greeting(h: number) {
   return h < 5 ? "Good evening" : h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
@@ -100,97 +101,130 @@ export default function HomePage() {
     .slice(0, 3);
   const prDays = new Set(prs.map((p) => p.achievedAt.slice(0, 10)));
 
+  const nextSets = next ? next.exercises.reduce((n, te) => n + te.sets.length, 0) : 0;
+  const activeSets = active ? sets.filter((x) => x.sessionId === active.id) : [];
+  const activeDone = activeSets.filter((x) => x.completed).length;
+  // Weekly target: the program's days per week, else three sessions.
+  const weekGoal = nextProgram?.dayTemplateIds.length || 3;
+
+
   return (
     <main className="mx-auto max-w-5xl space-y-6">
-      <header>
-        <p className="text-sm font-medium text-muted">
-          {today.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
-        </p>
-        <h1 className="page-title">
-          {greeting(today.getHours())}
-          {profile.displayName ? `, ${profile.displayName.split(" ")[0]}` : ""}
-        </h1>
+      <header className="flex items-end justify-between gap-4">
+        <div>
+          <p className="section-label">
+            {today.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}
+          </p>
+          <h1 className="page-title mt-1.5">
+            {greeting(today.getHours())}
+            {profile.displayName ? `, ${profile.displayName.split(" ")[0]}` : ""}
+          </h1>
+        </div>
+        {stats.streak > 0 && (
+          <span className="badge-flame shrink-0 py-1.5" title="Weeks in a row with a workout">
+            <Flame className="h-3.5 w-3.5" aria-hidden />
+            <span className="font-display">{stats.streak}</span> wk streak
+          </span>
+        )}
       </header>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {active ? (
-            <Link
-              href={`/session/${active.id}`}
-              className="card block border-accent/30 bg-accent/[0.06] p-5 transition-colors hover:bg-accent/[0.1] sm:p-6"
-            >
-              <p className="flex items-center gap-2 text-sm font-semibold text-accent">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-accent" aria-hidden /> Workout in progress
+            <Link href={`/session/${active.id}`} className="night-card group block p-6 sm:p-7">
+              <HeroMark />
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-volt">
+                <span className="h-2 w-2 rounded-full bg-volt motion-safe:animate-pulse" aria-hidden /> Workout in progress
               </p>
-              <p className="mt-2 text-2xl font-bold text-ink">{active.title}</p>
-              <p className="mt-1 text-sm text-inkSoft">
+              <p className="font-display mt-3 text-[1.9rem] font-extrabold leading-[1.05] tracking-[-0.02em] sm:text-[2.4rem]">
+                {active.title}
+              </p>
+              <p className="mt-2 text-sm text-white/65">
                 Started {new Date(active.startedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
+                {activeSets.length > 0 && ` · ${activeDone} of ${activeSets.length} sets`}
               </p>
-              <span className="btn-primary mt-4 w-full sm:w-auto sm:px-8">
-                <Play className="h-4 w-4" aria-hidden /> Resume workout
+              {activeSets.length > 0 && (
+                <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10" aria-hidden>
+                  <div className="h-full rounded-full bg-volt" style={{ width: `${(activeDone / activeSets.length) * 100}%` }} />
+                </div>
+              )}
+              <span className="btn-volt mt-6 w-full py-3.5 text-base sm:w-auto sm:px-10">
+                <Play className="h-4 w-4 fill-current" aria-hidden /> Resume workout
               </span>
             </Link>
           ) : next ? (
-            <section
-              className={`card p-5 sm:p-6 ${rec?.mode === "recovery" ? "border-amber/40" : ""}`}
-              aria-labelledby="next-workout"
-            >
-              <p className="section-label">
+            <section className="night-card p-6 sm:p-7" aria-labelledby="next-workout">
+              <HeroMark />
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">
                 {trainedToday ? "Next workout" : "Today's workout"}
-                {nextProgram && ` · ${nextProgram.name} · Day ${nextDayIndex + 1} of ${nextProgram.dayTemplateIds.length}`}
+                {nextProgram && ` · Day ${nextDayIndex + 1} of ${nextProgram.dayTemplateIds.length}`}
               </p>
-              <h2 id="next-workout" className="mt-1 text-2xl font-bold text-ink">
+              <h2
+                id="next-workout"
+                className="font-display mt-2 text-[1.9rem] font-extrabold leading-[1.05] tracking-[-0.02em] sm:text-[2.4rem]"
+              >
                 {next.name}
               </h2>
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-                <span className="inline-flex items-center gap-1">
-                  <Dumbbell className="h-3.5 w-3.5" aria-hidden /> {next.exercises.length} exercises
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" aria-hidden /> ~{nextMinutes} min
-                </span>
+              <p className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                <HeroStat icon={Dumbbell}>{next.exercises.length} exercises</HeroStat>
+                <HeroStat icon={Layers}>{nextSets} sets</HeroStat>
+                <HeroStat icon={Clock}>~{nextMinutes} min</HeroStat>
               </p>
+              {targets.size > 0 && (
+                <p className="mt-3 text-sm text-white/65">
+                  Targets{" "}
+                  <span className="font-semibold text-white">
+                    {[...targets].slice(0, 4).map(label).join(" · ")}
+                  </span>
+                </p>
+              )}
               {next.exercises.length > 0 && (
-                <ol className="mt-4 space-y-1.5">
-                  {next.exercises.slice(0, 6).map((te) => (
-                    <li key={te.id} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="truncate text-inkSoft">{exerciseById(te.exerciseId)?.name ?? "Exercise"}</span>
-                      <span className="shrink-0 tabular-nums text-muted">
+                <ol className="mt-5 divide-y divide-white/[0.08] border-y border-white/[0.08]">
+                  {next.exercises.slice(0, 5).map((te, i) => (
+                    <li key={te.id} className="flex items-center gap-3 py-2.5 text-sm">
+                      <span className="font-display w-6 shrink-0 text-xs font-bold text-white/40">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-white/90">
+                        {exerciseById(te.exerciseId)?.name ?? "Exercise"}
+                      </span>
+                      <span className="font-display shrink-0 text-xs font-semibold text-white/60">
                         {te.sets.length} × {te.sets[0]?.targetReps ?? "–"}
                       </span>
                     </li>
                   ))}
-                  {next.exercises.length > 6 && (
-                    <li className="text-xs text-muted">+{next.exercises.length - 6} more</li>
+                  {next.exercises.length > 5 && (
+                    <li className="py-2.5 text-xs text-white/50">+{next.exercises.length - 5} more</li>
                   )}
                 </ol>
               )}
               {rec?.mode === "recovery" && (
-                <p className="mt-4 rounded-control bg-amber/10 p-3 text-sm text-inkSoft">
-                  <span className="font-semibold text-ink">{rec.headline}. </span>
+                <p className="mt-4 rounded-control border-l-2 border-volt bg-white/[0.06] p-3 text-sm text-white/75">
+                  <span className="font-semibold text-white">{rec.headline}. </span>
                   {rec.reason}
                 </p>
               )}
-              <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row">
                 <button
-                  className="btn-primary flex-1 py-3.5 text-base"
+                  className="btn-volt flex-1 py-3.5 text-base"
                   disabled={next.exercises.length === 0}
                   onClick={() => start(next.id)}
                 >
-                  <Play className="h-4 w-4" aria-hidden /> Start workout
+                  <Play className="h-4 w-4 fill-current" aria-hidden /> Start workout
                 </button>
-                <Link href={`/templates/${next.id}`} className="btn-ghost sm:px-6">
+                <Link href={`/templates/${next.id}`} className="btn bg-white/10 text-white hover:bg-white/15 sm:px-6">
                   Edit plan
                 </Link>
               </div>
             </section>
           ) : (
-            <section className="card space-y-3 p-5 text-center sm:p-8">
-              <p className="text-xl font-bold text-ink">Pick a program to get started</p>
-              <p className="mx-auto max-w-sm text-sm text-inkSoft">
+            <section className="night-card space-y-3 p-6 text-center sm:p-8">
+              <HeroMark />
+              <p className="font-display text-2xl font-extrabold">Pick a program to get started</p>
+              <p className="mx-auto max-w-sm text-sm text-white/70">
                 Choose a ready-made program from the library or build your own workout.
               </p>
-              <Link href="/templates" className="btn-primary mx-auto">
+              <Link href="/templates" className="btn-volt mx-auto">
                 Browse programs
               </Link>
             </section>
@@ -211,9 +245,9 @@ export default function HomePage() {
 
           <section className="space-y-3">
             <div className="flex items-baseline justify-between">
-              <h2 className="text-h2 text-ink">Recent workouts</h2>
+              <h2 className="font-display text-h2 font-extrabold text-ink">Recent workouts</h2>
               {recent.length > 0 && (
-                <Link href="/history" className="text-sm font-semibold text-accent">
+                <Link href="/history" className="-my-3 inline-flex min-h-11 items-center text-sm font-semibold text-accent">
                   See all
                 </Link>
               )}
@@ -223,13 +257,25 @@ export default function HomePage() {
                 Your finished workouts will show up here.
               </p>
             ) : (
-              <ul className="divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">
+              <ul className="space-y-2">
                 {recent.map((s) => {
                   const mine = sets.filter((x) => x.sessionId === s.id && x.completed);
                   const vol = totalVolume(mine);
+                  const d = new Date(s.startedAt);
                   return (
                     <li key={s.id}>
-                      <Link href={`/session/${s.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface2/60 sm:px-5">
+                      <Link
+                        href={`/session/${s.id}`}
+                        className="card flex items-center gap-4 p-3 pr-4 transition-colors hover:border-accent/30"
+                      >
+                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-control bg-accent/[0.08] text-accent" aria-hidden>
+                          <span className="text-center leading-none">
+                            <span className="block text-[10px] font-semibold uppercase tracking-wide">
+                              {d.toLocaleDateString(undefined, { month: "short" })}
+                            </span>
+                            <span className="font-display block text-lg font-extrabold">{d.getDate()}</span>
+                          </span>
+                        </span>
                         <div className="min-w-0 flex-1">
                           <p className="flex items-center gap-2 font-semibold text-ink">
                             <span className="truncate">{s.title}</span>
@@ -238,7 +284,7 @@ export default function HomePage() {
                             )}
                           </p>
                           <p className="text-xs text-muted">
-                            {new Date(s.startedAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
+                            {d.toLocaleDateString(undefined, { weekday: "long" })}
                             {` · ${mine.length} sets`}
                             {vol > 0 && ` · ${formatVolume(vol, units)}`}
                           </p>
@@ -254,7 +300,7 @@ export default function HomePage() {
         </div>
 
         <aside className="space-y-6">
-          <section className="card space-y-4 p-5" aria-labelledby="this-week">
+          <section className="card space-y-5 p-5" aria-labelledby="this-week">
             <div className="flex items-center justify-between">
               <h2 id="this-week" className="section-label">
                 This week
@@ -262,6 +308,19 @@ export default function HomePage() {
               <Link href="/calendar" className="-my-3 -mr-2 inline-flex min-h-11 items-center gap-1 px-2 text-xs font-semibold text-accent">
                 <CalendarDays className="h-3.5 w-3.5" aria-hidden /> Calendar
               </Link>
+            </div>
+            <div className="flex items-center gap-5">
+              <GoalRing done={stats.workouts} goal={weekGoal} />
+              <dl className="grid flex-1 gap-3">
+                <div>
+                  <dt className="text-[11px] text-muted">Volume</dt>
+                  <dd className="font-display truncate text-xl font-extrabold text-ink">{formatVolume(stats.volume, units)}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] text-muted">Time trained</dt>
+                  <dd className="font-display text-xl font-extrabold text-ink">{stats.minutes} min</dd>
+                </div>
+              </dl>
             </div>
             <div className="grid grid-cols-7 gap-1.5">
               {week.map((k) => {
@@ -290,20 +349,6 @@ export default function HomePage() {
                 );
               })}
             </div>
-            <dl className="grid grid-cols-3 gap-2 border-t border-border pt-4 text-center">
-              <div>
-                <dt className="text-[11px] text-muted">Workouts</dt>
-                <dd className="text-lg font-bold tabular-nums text-ink">{stats.workouts}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] text-muted">Volume</dt>
-                <dd className="truncate text-lg font-bold tabular-nums text-ink">{formatVolume(stats.volume, units)}</dd>
-              </div>
-              <div>
-                <dt className="text-[11px] text-muted">Time</dt>
-                <dd className="text-lg font-bold tabular-nums text-ink">{stats.minutes}m</dd>
-              </div>
-            </dl>
             <p className="flex items-center gap-2 rounded-control bg-surface2 px-3 py-2 text-sm text-inkSoft">
               <Flame className={`h-4 w-4 ${stats.streak > 0 ? "text-flame" : "text-muted"}`} aria-hidden />
               {stats.streak > 0
@@ -316,5 +361,68 @@ export default function HomePage() {
         </aside>
       </div>
     </main>
+  );
+}
+
+/** Oversized, faint Trainova mark bleeding off the hero card's corner. */
+function HeroMark() {
+  return (
+    <svg
+      viewBox="0 0 512 512"
+      className="pointer-events-none absolute -bottom-16 -right-14 -z-10 h-64 w-64 rotate-[-12deg] text-white opacity-[0.05]"
+      fill="currentColor"
+      aria-hidden
+    >
+      <rect x="78" y="112" width="44" height="124" rx="14" />
+      <rect x="130" y="134" width="30" height="80" rx="10" />
+      <rect x="352" y="134" width="30" height="80" rx="10" />
+      <rect x="390" y="112" width="44" height="124" rx="14" />
+      <rect x="150" y="154" width="212" height="40" rx="10" />
+      <rect x="224" y="174" width="64" height="230" rx="32" />
+    </svg>
+  );
+}
+
+function HeroStat({ icon: Icon, children }: { icon: typeof Clock; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/85 ring-1 ring-inset ring-white/10">
+      <Icon className="h-3.5 w-3.5" aria-hidden />
+      {children}
+    </span>
+  );
+}
+
+/** Weekly goal ring: workouts done vs the week's target, overflowing in gold. */
+function GoalRing({ done, goal }: { done: number; goal: number }) {
+  const r = 40;
+  const c = 2 * Math.PI * r;
+  const pct = Math.min(1, done / goal);
+  const met = done >= goal;
+  return (
+    <div className="relative h-28 w-28 shrink-0" role="img" aria-label={`${done} of ${goal} workouts this week`}>
+      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90" aria-hidden>
+        <circle cx="50" cy="50" r={r} fill="none" strokeWidth="10" className="stroke-surface2" />
+        <circle
+          cx="50"
+          cy="50"
+          r={r}
+          fill="none"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - pct)}
+          className={`${met ? "stroke-gold" : "stroke-accent"} transition-[stroke-dashoffset] duration-700 ease-standard`}
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-center" aria-hidden>
+        <div>
+          <p className="font-display text-[1.6rem] font-extrabold leading-none text-ink">
+            {done}
+            <span className="text-base text-muted">/{goal}</span>
+          </p>
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted">{met ? "Goal hit" : "Workouts"}</p>
+        </div>
+      </div>
+    </div>
   );
 }

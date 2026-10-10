@@ -81,6 +81,8 @@ export function CoachAssistant() {
   const scrolledIn = useShowOnScrollUp();
   // Re-derive the page focus as the workout is logged.
   const sets = useStore((s) => s.sets);
+  // Nothing to coach on the sign-in screen.
+  const signedOut = useStore((s) => s.session === null);
   const focus = useMemo(() => (open ? pageFocus(pathname) : null), [open, pathname, sets]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the panel mounted through its exit animation. It renders in the same
@@ -107,7 +109,7 @@ export function CoachAssistant() {
   if (ai.available !== true) return null;
 
   const inSession = pathname.startsWith("/session/");
-  const showFab = !otherModal && !inSession;
+  const showFab = !otherModal && !inSession && !signedOut;
 
   return (
     <>

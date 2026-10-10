@@ -260,7 +260,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-card border border-border bg-surface p-3 sm:p-4">
       <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 truncate text-lg font-bold tabular-nums text-ink sm:text-2xl">{value}</p>
+      <p className="font-display mt-1 truncate text-lg font-extrabold tabular-nums text-ink sm:text-2xl">{value}</p>
     </div>
   );
 }

@@ -116,7 +116,7 @@ export default function CalendarPage() {
                 fillOpacity={streak > 0 ? 0.18 : 0}
               />
               <p
-                className={`text-hero tabular-nums leading-none ${streak > 0 ? "text-flame" : "text-ink"}`}
+                className={`font-display text-hero tabular-nums leading-none ${streak > 0 ? "text-flame" : "text-ink"}`}
               >
                 {streak}
               </p>

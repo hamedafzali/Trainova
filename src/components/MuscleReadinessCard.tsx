@@ -64,7 +64,7 @@ export function MuscleReadinessCard({ targets, workoutName }: { targets: Set<Mus
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="section-label">Recovery</p>
-          <h2 id="readiness" className="mt-1 text-h3 font-bold text-ink">
+          <h2 id="readiness" className="font-display mt-1 text-h3 font-extrabold text-ink">
             Muscle readiness
           </h2>
         </div>

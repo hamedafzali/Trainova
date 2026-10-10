@@ -118,7 +118,7 @@ export function Stepper({
 
   const lg = size === "lg";
   const sm = size === "sm";
-  const numberClass = `${lg ? "text-[2.75rem] leading-none sm:text-hero" : sm ? "text-lg font-semibold" : "text-stat"} tabular-nums text-ink`;
+  const numberClass = `${lg ? "text-[2.75rem] leading-none sm:text-hero" : sm ? "text-lg font-semibold" : "text-stat"} font-display tabular-nums text-ink`;
   const pad = lg ? "py-5" : sm ? "py-1.5" : "py-2";
 
   return (

@@ -45,16 +45,23 @@ const config: Config = {
         warningSoft: themed("--c-warning-soft"), // opaque badge fill for text-amber — same reasoning
         goldSoft: themed("--c-gold-soft"), // opaque badge fill for text-gold — same reasoning
         clayDeep: themed("--c-accent-pressed"), // pressed accent (alias, kept for callers)
+        // Signature hero palette — fixed in both themes. "night" is the deep
+        // navy of hero cards; "volt" is the one high-energy highlight, used
+        // only on night surfaces (dark text on volt, volt on night: both >10:1).
+        night: themed("--c-night"),
+        nightSoft: themed("--c-night-soft"),
+        volt: themed("--c-volt"),
       },
       fontFamily: {
-        // The native system stack renders actual SF Pro on Apple devices —
-        // the same face Fitness+ uses — with zero network requests or FOUT.
+        // Inter for UI text (self-hosted via @fontsource, no network at runtime);
+        // Archivo, set wide (see .font-display in globals.css), for the
+        // athletic display voice: page titles, hero numbers, stats.
         sans: [
+          '"Inter Variable"',
           "-apple-system",
           "BlinkMacSystemFont",
           '"Segoe UI"',
           "Roboto",
-          '"Helvetica Neue"',
           "Arial",
           "sans-serif",
         ],
@@ -89,7 +96,7 @@ const config: Config = {
         // Semantic aliases over the existing scale (control/card match the
         // xl/2xl already in use — named so intent is explicit going forward).
         control: "12px", // buttons, inputs
-        card: "16px",
+        card: "20px",
         sheet: "24px", // modals, bottom sheets
       },
       boxShadow: {

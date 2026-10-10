@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BarChart3, Dumbbell, Eye, EyeOff, ListChecks, WifiOff } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 import { useStore } from "@/lib/store";
 import { isCloudEnabled, signIn, signUp } from "@/lib/auth";
 import { mergeRemote, pullState, pushState } from "@/lib/sync";
@@ -86,27 +87,36 @@ export function Welcome() {
 
   return (
     <main className="min-h-screen md:grid md:grid-cols-2">
-      <section className="relative overflow-hidden bg-gradient-to-br from-accentPressed via-accent to-accentHover px-6 pb-20 pt-14 text-onAccent md:flex md:flex-col md:justify-center md:px-14 md:py-16">
-        <Dumbbell
+      <section className="night-card rounded-none px-6 pb-20 pt-12 md:flex md:flex-col md:justify-center md:px-14 md:py-16">
+        <svg
+          viewBox="0 0 512 512"
+          fill="currentColor"
           aria-hidden
-          strokeWidth={1.25}
-          className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 -rotate-12 text-onAccent/10 md:h-72 md:w-72"
-        />
+          className="pointer-events-none absolute -bottom-24 -right-20 -z-10 h-80 w-80 -rotate-12 text-white opacity-[0.05] md:h-[30rem] md:w-[30rem]"
+        >
+          <rect x="78" y="112" width="44" height="124" rx="14" />
+          <rect x="130" y="134" width="30" height="80" rx="10" />
+          <rect x="352" y="134" width="30" height="80" rx="10" />
+          <rect x="390" y="112" width="44" height="124" rx="14" />
+          <rect x="150" y="154" width="212" height="40" rx="10" />
+          <rect x="224" y="174" width="64" height="230" rx="32" />
+        </svg>
         <div className="relative mx-auto max-w-md text-center md:mx-0 md:text-left">
-          <p className="section-label mb-3 text-onAccent/70">Strength training, logged</p>
-          <h1 className="text-hero">Trainova</h1>
-          <p className="mt-3 text-body text-onAccent/85">
+          <LogoMark className="mx-auto mb-6 h-14 w-14 shadow-[0_10px_30px_-8px_rgb(var(--c-accent)/0.7)] md:mx-0" />
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-volt">Strength training, logged</p>
+          <h1 className="font-display text-[3rem] font-extrabold leading-none tracking-[-0.03em] md:text-[4rem]">Trainova</h1>
+          <p className="mt-4 text-body text-white/75">
             Follow a plan, log every set in seconds and watch your strength climb.
           </p>
           <ul className="mt-10 hidden space-y-5 md:block">
             {FEATURES.map((f) => (
               <li key={f.title} className="flex gap-4">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-onAccent/15">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-white/10 text-volt ring-1 ring-inset ring-white/10">
                   <f.icon className="h-5 w-5" aria-hidden />
                 </span>
                 <span>
                   <span className="block font-semibold">{f.title}</span>
-                  <span className="block text-sm text-onAccent/80">{f.body}</span>
+                  <span className="block text-sm text-white/65">{f.body}</span>
                 </span>
               </li>
             ))}

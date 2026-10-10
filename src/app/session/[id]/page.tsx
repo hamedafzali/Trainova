@@ -49,7 +49,7 @@ function Elapsed({ since }: { since: string }) {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  return <span className="tabular-nums">{clock(now - new Date(since).getTime())}</span>;
+  return <span className="font-display tabular-nums">{clock(now - new Date(since).getTime())}</span>;
 }
 
 export default function SessionPage() {
@@ -552,7 +552,7 @@ export default function SessionPage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-card border border-border bg-surface px-2 py-3">
-      <p className="text-lg font-bold tabular-nums text-ink">{value}</p>
+      <p className="font-display text-lg font-extrabold tabular-nums text-ink">{value}</p>
       <p className="text-[11px] uppercase tracking-wide text-muted">{label}</p>
     </div>
   );

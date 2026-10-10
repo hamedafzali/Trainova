@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/archivo/wdth.css";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { CoachAssistant } from "@/components/coach/CoachAssistant";
@@ -46,7 +48,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
       </head>
-      <body className="min-h-screen bg-bg">
+      <body className="min-h-screen">
         <ServiceWorker />
         <SyncManager />
         <AppShell>{children}</AppShell>

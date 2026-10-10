@@ -59,8 +59,14 @@
   --c-warning-soft: 250 247 243; /* #FAF7F3 — text-amber clears 4.79:1 here */
   --c-gold-soft: 250 246 238; /* #FAF6EE — text-gold clears 4.61:1 here */
 
-  --shadow-card: 0 1px 2px 0 rgb(15 15 20 / 0.04), 0 1px 1px 0 rgb(15 15 20 / 0.03);
+  --shadow-card: 0 1px 2px 0 rgb(15 15 20 / 0.04), 0 4px 16px -8px rgb(15 15 20 / 0.08);
   --shadow-elevated: 0 12px 32px -8px rgb(15 15 20 / 0.18), 0 4px 12px -4px rgb(15 15 20 / 0.08);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.9);
+
+  /* Signature hero palette — identical in both themes (see tailwind.config.ts). */
+  --c-night: 11 15 31; /* #0B0F1F */
+  --c-night-soft: 22 29 56; /* #161D38 */
+  --c-volt: 205 245 66; /* #CDF542 */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -99,6 +105,7 @@
 
     --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.3);
+    --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
   }
 }
 
@@ -137,28 +144,68 @@
 
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.3);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
 }
 
-html,
-body {
+/* Canvas colour lives on <html> only, so body::before (the aurora) can sit
+   between it and the page content. */
+html {
   background: rgb(var(--c-bg-base));
+}
+body {
   color: rgb(var(--c-text-primary));
   -webkit-tap-highlight-color: transparent;
   font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
+    "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "cv11", "ss01"; /* Inter: single-storey a, open digits */
+}
+
+/* Atmosphere: a soft accent aurora fixed behind every page. A fixed layer
+   rather than background-attachment: fixed, which iOS Safari ignores. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 28rem at 92% -8%, rgb(var(--c-accent) / 0.11), transparent 65%),
+    radial-gradient(40rem 22rem at -10% 4%, rgb(var(--c-accent) / 0.05), transparent 70%);
 }
 
 @layer components {
   .card {
     @apply rounded-card border border-border bg-surface p-6;
+    box-shadow: var(--shadow-card), var(--card-highlight);
+  }
+
+  /* Signature hero surface: deep navy with an accent glow, same in both
+     themes. Text on it uses white/white-alpha and volt, never theme tokens. */
+  .night-card {
+    @apply relative isolate overflow-hidden rounded-card bg-night text-white;
+    background-image:
+      radial-gradient(28rem 16rem at 100% 0%, rgb(var(--c-accent) / 0.55), transparent 70%),
+      radial-gradient(20rem 14rem at 0% 100%, rgb(var(--c-volt) / 0.10), transparent 70%),
+      linear-gradient(160deg, rgb(var(--c-night-soft)), rgb(var(--c-night)) 60%);
+    box-shadow: 0 24px 48px -24px rgb(var(--c-night) / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+  .btn-volt {
+    @apply btn bg-volt text-night hover:brightness-105 shadow-[0_10px_30px_-10px_rgb(var(--c-volt)/0.7)];
+  }
+
+  /* Display voice: Archivo set wide. Titles, hero numbers, stat readouts. */
+  .font-display {
+    font-family: "Archivo Variable", "Inter Variable", -apple-system, Arial, sans-serif;
+    font-stretch: 118%;
+    font-variant-numeric: tabular-nums;
   }
 
   .btn {
     @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-control px-6 py-3 text-sm font-semibold transition-colors duration-150 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
   }
   .btn-primary {
-    @apply btn bg-accentFill text-onAccent hover:bg-accentFillHover;
+    @apply btn bg-accentFill text-onAccent hover:bg-accentFillHover shadow-[0_8px_20px_-10px_rgb(var(--c-accent)/0.8),inset_0_1px_0_rgb(255_255_255/0.18)];
   }
   .btn-secondary {
     @apply btn border border-accent/30 bg-accent/[0.06] text-accent hover:bg-accent/[0.14];
@@ -209,13 +256,13 @@ body {
 
   /* Shared page-header rhythm — one title scale, one subtitle scale, everywhere. */
   .page-title {
-    @apply text-2xl md:text-h1 font-bold tracking-tight text-ink;
+    @apply font-display text-[1.75rem] leading-[1.1] md:text-[2.25rem] font-extrabold tracking-[-0.02em] text-ink;
   }
   .page-subtitle {
     @apply text-body-sm text-muted mt-1;
   }
   .section-label {
-    @apply text-caption uppercase text-muted;
+    @apply text-caption uppercase tracking-[0.12em] text-muted;
   }
 }
 
