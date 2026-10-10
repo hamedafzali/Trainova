@@ -1,4 +1,4 @@
-import { chatComplete } from "./mistralClient";
+import { chatComplete, isRateLimited } from "./mistralClient";
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -53,6 +53,9 @@ export async function completeJson(
     text = contentText(res.choices?.[0]?.message?.content);
   } catch (e) {
     console.error("LLM call failed:", e instanceof Error ? e.message : e);
+    if (isRateLimited(e)) {
+      throw new LlmError("The coach is busy right now. Try again in a few seconds.", "AI_UNAVAILABLE");
+    }
     throw new LlmError("The coach is unavailable right now. Try again in a moment.", "AI_UNAVAILABLE");
   }
   const parsed = parseJsonObject(text);

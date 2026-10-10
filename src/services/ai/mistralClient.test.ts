@@ -19,6 +19,28 @@ describe("chatComplete", () => {
     complete.mockReset();
     process.env.MISTRAL_API_KEY = "test-key-test-key-test-key";
     delete process.env.MISTRAL_MODEL;
+    process.env.MISTRAL_MIN_INTERVAL_MS = "0";
+    process.env.MISTRAL_RETRY_BASE_MS = "0";
+  });
+
+  it("retries rate-limited calls on the same model", async () => {
+    const m = await load();
+    const limited = Object.assign(new Error("Status 429 rate_limited"), { statusCode: 429 });
+    complete.mockRejectedValueOnce(limited).mockRejectedValueOnce(limited).mockResolvedValueOnce({ choices: [] });
+    await m.chatComplete({ messages: [] });
+    expect(complete.mock.calls.map((c) => c[0].model)).toEqual(Array(3).fill("mistral-large-latest"));
+  });
+
+  it("spaces requests out", async () => {
+    process.env.MISTRAL_MIN_INTERVAL_MS = "60";
+    const m = await load();
+    const starts: number[] = [];
+    complete.mockImplementation(async () => {
+      starts.push(Date.now());
+      return { choices: [] };
+    });
+    await Promise.all([m.chatComplete({ messages: [] }), m.chatComplete({ messages: [] })]);
+    expect(starts[1] - starts[0]).toBeGreaterThanOrEqual(55);
   });
 
   it("falls back past models the key's tier can't use and remembers the one that works", async () => {

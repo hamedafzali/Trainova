@@ -5,6 +5,10 @@
 // one model, calls go through `chatComplete`, which tries the preferred models
 // in order, skips ones the key can't use, and remembers the first that works.
 // Set MISTRAL_MODEL to pin a model.
+//
+// Lower tiers also allow about one request per second, and the coach page
+// fires several at once (status review, insights line, chat). Requests are
+// queued and spaced, and a 429 is retried with backoff before giving up.
 
 import { Mistral } from "@mistralai/mistralai";
 
@@ -40,6 +44,34 @@ export function isModelDenied(e: unknown): boolean {
   return /Status (403|404)\b|tier_not_allowed|invalid_model/i.test(msg);
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const envMs = (name: string, fallback: number) => {
+  const v = Number(process.env[name]);
+  return Number.isFinite(v) && v >= 0 ? v : fallback;
+};
+
+let queue: Promise<void> = Promise.resolve();
+let lastStart = 0;
+
+/** Resolves when this process may start its next Mistral request. */
+function nextSlot(): Promise<void> {
+  const slot = queue.then(async () => {
+    const wait = lastStart + envMs("MISTRAL_MIN_INTERVAL_MS", 1100) - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastStart = Date.now();
+  });
+  queue = slot.catch(() => {});
+  return slot;
+}
+
+export function isRateLimited(e: unknown): boolean {
+  if ((e as { statusCode?: number })?.statusCode === 429) return true;
+  const msg = e instanceof Error ? e.message : String(e);
+  return /Status 429\b|rate_limited/i.test(msg);
+}
+
+const MAX_RATE_RETRIES = 3;
+
 type CompleteRequest = Omit<Parameters<Mistral["chat"]["complete"]>[0], "model">;
 type CompleteOptions = Parameters<Mistral["chat"]["complete"]>[1];
 
@@ -50,7 +82,7 @@ export async function chatComplete(req: CompleteRequest, opts?: CompleteOptions)
   let lastError: unknown;
   for (const model of models) {
     try {
-      const res = await getMistralClient().chat.complete({ ...req, model }, opts);
+      const res = await completeWithRetry({ ...req, model }, opts);
       if (workingModel !== model) console.info(`[ai] using Mistral model ${model}`);
       workingModel = model;
       return res;
@@ -63,4 +95,16 @@ export async function chatComplete(req: CompleteRequest, opts?: CompleteOptions)
     }
   }
   throw lastError;
+}
+
+async function completeWithRetry(req: Parameters<Mistral["chat"]["complete"]>[0], opts?: CompleteOptions) {
+  for (let attempt = 0; ; attempt++) {
+    await nextSlot();
+    try {
+      return await getMistralClient().chat.complete(req, opts);
+    } catch (e) {
+      if (!isRateLimited(e) || attempt >= MAX_RATE_RETRIES) throw e;
+      await sleep(envMs("MISTRAL_RETRY_BASE_MS", 1500) * 2 ** attempt);
+    }
+  }
 }

@@ -5,7 +5,7 @@ import { recommendToday } from "@/domain/adaptive";
 import { buildTrainerContext, type TrainerContext } from "@/domain/trainer";
 
 /** Snapshot of the local store for the AI trainer. */
-export function currentTrainerContext(): TrainerContext {
+export function currentTrainerContext(viewing: string | null = null): TrainerContext {
   const st = useStore.getState();
   const rec = recommendToday({ templates: st.templates, programs: st.programs, sessions: st.sessions, feedback: st.feedback });
   return buildTrainerContext({
@@ -20,5 +20,6 @@ export function currentTrainerContext(): TrainerContext {
     feedback: st.feedback,
     exercises: st.exercises,
     nextTemplateId: rec?.templateId ?? null,
+    viewing,
   });
 }

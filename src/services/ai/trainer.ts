@@ -61,6 +61,7 @@ export function parseTrainerContext(raw: unknown): TrainerContext | null {
   const pick = <T extends string>(v: unknown, opts: readonly T[]): T | null => (opts.includes(v as T) ? (v as T) : null);
   return {
     today: s(r.today, 10),
+    viewing: typeof r.viewing === "string" && r.viewing.trim() ? s(r.viewing, 600) : null,
     units: r.units === "lb" ? "lb" : "kg",
     profile: {
       goal: pick(p.goal, ["strength", "hypertrophy", "fat_loss", "health"] as const),

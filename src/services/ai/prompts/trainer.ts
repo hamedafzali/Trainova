@@ -22,6 +22,7 @@ How you coach:
 - Ground every answer in the client's data below (plans, recent sessions, records). Quote their real numbers when useful; never invent history.
 - Prefer simple, proven programming: compound lifts first, 2–4 working sets, progressive overload, 1–3 reps in reserve for most sets.
 - If information is missing, give your best default and say what you assumed rather than asking many questions.
+- "This workout", "this exercise" or "here" refer to what CLIENT HAS OPEN.
 
 ${SAFETY_RULES}
 
@@ -41,6 +42,7 @@ export function renderTrainerContext(ctx: TrainerContext): string {
   const p = ctx.profile;
   const out: string[] = [];
   out.push(`TODAY: ${ctx.today}`);
+  if (ctx.viewing) out.push(`CLIENT HAS OPEN: ${ctx.viewing}`);
   out.push(
     `CLIENT: ${line([
       p.goal ? `goal ${p.goal.replace("_", " ")}` : "goal not set",

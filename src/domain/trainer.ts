@@ -72,6 +72,8 @@ export interface TrainerConsistency {
 
 export interface TrainerContext {
   today: string;
+  /** What the client has open in the app ("this workout" refers to it). */
+  viewing: string | null;
   units: Units;
   profile: Pick<UserProfile, "goal" | "experience" | "sex" | "ageYears" | "weightKg">;
   nextWorkout: string | null; // workout ref
@@ -125,6 +127,7 @@ export function buildTrainerContext(input: {
   feedback: SessionFeedback[];
   exercises: Exercise[];
   nextTemplateId: string | null;
+  viewing?: string | null;
 }): TrainerContext {
   const { units, exercises } = input;
   const byId = new Map(exercises.map((e) => [e.id, e]));
@@ -198,6 +201,7 @@ export function buildTrainerContext(input: {
 
   return {
     today: input.now.toISOString().slice(0, 10),
+    viewing: input.viewing?.slice(0, 600) ?? null,
     units,
     profile: {
       goal: input.profile.goal,

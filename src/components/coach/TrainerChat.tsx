@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState, type ReactNode, type Ref } from "react";
-import { AlertTriangle, ArrowUp, LogIn, RotateCcw, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowUp, LogIn, RotateCcw, Sparkles, Trash2, X } from "lucide-react";
 import { postAi, useAiStatus } from "@/lib/ai";
 import { useCoachChat, type ChatMessage } from "@/lib/coachChat";
 import { currentTrainerContext } from "@/lib/trainerContext";
+import type { PageFocus } from "@/lib/pageFocus";
 import type { TrainerAction } from "@/domain/trainer";
 import { ActionCard } from "./ActionCard";
 
@@ -104,27 +105,44 @@ function Bubble({ m, onRetry }: { m: ChatMessage; onRetry?: () => void }) {
 function Shell({
   children,
   onClear,
+  onClose,
   sectionRef,
+  panel,
+  subtitle,
 }: {
   children: ReactNode;
   onClear?: () => void;
+  onClose?: () => void;
   sectionRef?: Ref<HTMLElement>;
+  panel?: boolean;
+  subtitle?: string;
 }) {
   return (
-    <section ref={sectionRef} className="card flex scroll-mt-4 flex-col gap-4 p-4 sm:p-5" aria-labelledby="coach-chat">
+    <section
+      ref={sectionRef}
+      className={panel ? "flex h-full min-h-0 flex-col gap-3 p-4" : "card flex scroll-mt-4 flex-col gap-4 p-4 sm:p-5"}
+      aria-labelledby="coach-chat"
+    >
       <div className="flex items-center gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accentFill text-onAccent" aria-hidden>
           <Sparkles className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0 flex-1">
           <h2 id="coach-chat" className="font-semibold text-ink">
-            Ask your coach
+            {panel ? "Coach" : "Ask your coach"}
           </h2>
-          <p className="text-xs text-muted">Knows your plans and recent workouts · can edit your plan when you approve</p>
+          <p className="truncate text-xs text-muted">
+            {subtitle ?? "Knows your plans and recent workouts · can edit your plan when you approve"}
+          </p>
         </div>
         {onClear && (
           <button type="button" onClick={onClear} className="btn-ghost px-2.5 py-1.5 text-xs" aria-label="Clear conversation">
             <Trash2 className="h-4 w-4" aria-hidden />
+          </button>
+        )}
+        {onClose && (
+          <button type="button" onClick={onClose} className="btn-ghost px-2.5 py-1.5 text-xs" aria-label="Close coach">
+            <X className="h-4 w-4" aria-hidden />
           </button>
         )}
       </div>
@@ -133,7 +151,18 @@ function Shell({
   );
 }
 
-export function TrainerChat() {
+export function TrainerChat({
+  variant = "page",
+  focus = null,
+  onClose,
+}: {
+  variant?: "page" | "panel";
+  /** What the client has open (assistant panel); sent with each question. */
+  focus?: PageFocus | null;
+  onClose?: () => void;
+} = {}) {
+  const panel = variant === "panel";
+  const shell = { panel, onClose, subtitle: panel ? (focus?.label ? `Looking at: ${focus.label}` : "Knows your plans and workouts") : undefined };
   const ai = useAiStatus();
   const messages = useCoachChat((s) => s.messages);
   const add = useCoachChat((s) => s.add);
@@ -164,7 +193,7 @@ export function TrainerChat() {
     setDraft("");
     setPending(true);
     try {
-      const context = currentTrainerContext();
+      const context = currentTrainerContext(focus?.viewing ?? null);
       const history = useCoachChat
         .getState()
         .messages.filter((m) => !m.error)
@@ -182,13 +211,13 @@ export function TrainerChat() {
   // Prompts from the coach tools above the chat.
   const ready = ai.available === true && ai.signedIn;
   useEffect(() => {
-    if (!queued || !ready || pending) return;
+    if (panel || !queued || !ready || pending) return;
     const text = useCoachChat.getState().takeQueued();
     if (!text) return;
     sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     void ask(text);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queued, ready, pending]);
+  }, [queued, ready, pending, panel]);
 
   const retry = (errorId: string) => {
     remove(errorId);
@@ -198,14 +227,14 @@ export function TrainerChat() {
 
   if (ai.available === null) {
     return (
-      <Shell>
+      <Shell {...shell}>
         <div className="h-40 animate-pulse rounded-control bg-surface2" />
       </Shell>
     );
   }
   if (!ai.available) {
     return (
-      <Shell>
+      <Shell {...shell}>
         <p className="text-sm text-inkSoft">
           The AI coach isn&apos;t switched on for this server. Your insights below are still calculated from your
           training — ask whoever runs this Trainova to add a Mistral API key to enable chat.
@@ -215,7 +244,7 @@ export function TrainerChat() {
   }
   if (!ai.signedIn) {
     return (
-      <Shell>
+      <Shell {...shell}>
         <p className="text-sm text-inkSoft">
           Sign in to chat with your coach. It can build workouts, suggest swaps when something hurts, and explain
           stalls using your own logs.
@@ -230,16 +259,21 @@ export function TrainerChat() {
   const lastError = messages.length > 0 && messages[messages.length - 1].error ? messages[messages.length - 1].id : null;
 
   return (
-    <Shell sectionRef={sectionRef} onClear={messages.length ? clear : undefined}>
-      <div ref={listRef} className="max-h-[60vh] min-h-[8rem] space-y-4 overflow-y-auto pr-1" aria-live="polite">
+    <Shell {...shell} sectionRef={sectionRef} onClear={messages.length ? clear : undefined}>
+      <div
+        ref={listRef}
+        className={`space-y-4 overflow-y-auto pr-1 ${panel ? "min-h-0 flex-1" : "max-h-[60vh] min-h-[8rem]"}`}
+        aria-live="polite"
+      >
         {messages.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-inkSoft">
-              Pick a coach tool above or ask anything. I answer from your plans and logged workouts, and offer changes
-              you can apply with one tap.
+              {panel
+                ? "Ask anything — I can see your plans, your logged workouts and what you have open."
+                : "Pick a coach tool above or ask anything. I answer from your plans and logged workouts, and offer changes you can apply with one tap."}
             </p>
             <div className="flex flex-wrap gap-2">
-              {SUGGESTIONS.map((s) => (
+              {(focus?.suggestions ?? SUGGESTIONS).map((s) => (
                 <button
                   key={s}
                   type="button"

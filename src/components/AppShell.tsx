@@ -6,6 +6,7 @@ import { useHydrated, useStore } from "@/lib/store";
 import { SidebarNav } from "./SidebarNav";
 import { BottomNav } from "./BottomNav";
 import { ToastHost } from "./Toast";
+import { CoachAssistant } from "./coach/CoachAssistant";
 
 /**
  * Gates the whole app shell (nav chrome + routed pages) behind an entered
@@ -58,6 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
       <BottomNav />
+      <CoachAssistant />
       <ToastHost />
     </div>
   );
