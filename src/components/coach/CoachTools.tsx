@@ -60,16 +60,17 @@ export function CoachTools({ disabled }: { disabled?: boolean }) {
       <h2 id="coach-tools" className="section-label">
         Ask your coach to…
       </h2>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+      {/* 7 tools: the last one widens to close its row at every column count. */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-3 xl:[&>*:last-child]:col-span-2">
         {TOOLS.map(({ label, hint, icon: Icon, prompt }) => (
           <button
             key={label}
             type="button"
             disabled={disabled}
             onClick={() => queue(prompt)}
-            className="flex items-start gap-2.5 rounded-card border border-border bg-surface p-3 text-left transition-colors hover:bg-surface2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex items-start gap-2.5 rounded-card border border-border bg-surface p-3 text-left transition-all duration-200 ease-standard hover:-translate-y-0.5 hover:border-accent/40 hover:bg-surface2 hover:shadow-card active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
           >
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent transition-transform duration-200 group-hover:scale-110" aria-hidden />
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-ink">{label}</span>
               <span className="block text-xs text-muted">{hint}</span>

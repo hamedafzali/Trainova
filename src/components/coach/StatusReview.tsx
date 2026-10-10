@@ -8,6 +8,7 @@ import { stableHash } from "@/lib/hash";
 import { currentTrainerContext } from "@/lib/trainerContext";
 import { localDayKey } from "@/domain/streak";
 import type { ReviewStatus, TrainerConsistency, TrainerContext, TrainerReview } from "@/domain/trainer";
+import type { TrainingSummary } from "@/domain/coach";
 import { Skeleton } from "@/components/Skeleton";
 import { ActionCard } from "./ActionCard";
 
@@ -43,24 +44,38 @@ function writeCache(c: Cached): void {
   }
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, tone }: { label: string; value: string; tone?: "good" | "warn" }) {
+  const color = tone === "good" ? "text-green" : tone === "warn" ? "text-amber" : "text-ink";
   return (
     <div className="min-w-0 rounded-control bg-surface2 px-3 py-2">
       <p className="truncate text-xs text-muted">{label}</p>
-      <p className="text-sm font-semibold tabular-nums text-ink">{value}</p>
+      <p className={`truncate text-sm font-semibold tabular-nums ${color}`}>{value}</p>
     </div>
   );
 }
 
-function ConsistencyStrip({ c }: { c: TrainerConsistency }) {
+/** Every at-a-glance number on the coach page, in one place (plan consistency + volume + records). */
+function StatusStrip({ c, summary }: { c: TrainerConsistency; summary?: TrainingSummary }) {
   const last =
     c.daysSinceLast === null ? "—" : c.daysSinceLast === 0 ? "Today" : c.daysSinceLast === 1 ? "Yesterday" : `${c.daysSinceLast} days ago`;
+  const trend = summary?.volumeTrendPct ?? null;
+  const prs = summary?.recentPRs.length ?? 0;
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <Stat label="This week" value={c.programDays ? `${c.sessionsThisWeek} of ${c.programDays}` : `${c.sessionsThisWeek}`} />
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <Stat
+        label="This week"
+        value={c.programDays ? `${c.sessionsThisWeek} of ${c.programDays}` : `${c.sessionsThisWeek}`}
+        tone={c.programDays && c.sessionsThisWeek >= c.programDays ? "good" : undefined}
+      />
+      <Stat label="Weekly streak" value={c.weekStreak > 0 ? `🔥 ${c.weekStreak} wk` : "—"} />
+      <Stat label="Last workout" value={last} tone={c.daysSinceLast !== null && c.daysSinceLast > 7 ? "warn" : undefined} />
       <Stat label="Weeks trained" value={`${c.weeksTrainedLast4} of last 4`} />
-      <Stat label="Streak" value={`${c.weekStreak} wk`} />
-      <Stat label="Last workout" value={last} />
+      <Stat
+        label="Volume vs last month"
+        value={trend === null ? "—" : `${trend > 0 ? "+" : ""}${trend}%`}
+        tone={trend === null ? undefined : trend >= 5 ? "good" : trend <= -5 ? "warn" : undefined}
+      />
+      <Stat label="Recent records" value={prs > 0 ? `🏆 ${prs}` : "—"} tone={prs > 0 ? "good" : undefined} />
     </div>
   );
 }
@@ -84,7 +99,7 @@ function Points({ title, items, icon }: { title: string; items: string[]; icon: 
 }
 
 /** "Your status": local consistency numbers plus an AI review of training against the active plan. */
-export function StatusReview() {
+export function StatusReview({ summary }: { summary?: TrainingSummary } = {}) {
   const ai = useAiStatus();
   const ready = ai.available === true && ai.signedIn;
   // Re-derive when training data changes.
@@ -156,7 +171,7 @@ export function StatusReview() {
         )}
       </div>
 
-      <ConsistencyStrip c={consistency} />
+      <StatusStrip c={consistency} summary={summary} />
 
       {!ready ? null : loading && !review ? (
         <div className="space-y-2" aria-label="Reviewing your training">
@@ -172,7 +187,7 @@ export function StatusReview() {
           </button>
         </div>
       ) : review ? (
-        <div className={`space-y-4 ${loading ? "opacity-60" : ""}`}>
+        <div key={review.headline} className={`enter-fade space-y-4 transition-opacity duration-200 ${loading ? "opacity-60" : ""}`}>
           <div className="space-y-1">
             <p className="text-base font-semibold text-ink">{review.headline}</p>
             <p className="text-sm leading-relaxed text-inkSoft">{review.summary}</p>

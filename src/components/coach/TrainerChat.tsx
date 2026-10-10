@@ -64,7 +64,7 @@ function Bubble({ m, onRetry }: { m: ChatMessage; onRetry?: () => void }) {
   const markApplied = useCoachChat((s) => s.markApplied);
   if (m.role === "user") {
     return (
-      <div className="flex justify-end">
+      <div className="enter-fade flex justify-end">
         <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-accentFill px-4 py-2.5 text-sm text-onAccent">
           {m.content}
         </p>
@@ -72,7 +72,7 @@ function Bubble({ m, onRetry }: { m: ChatMessage; onRetry?: () => void }) {
     );
   }
   return (
-    <div className="max-w-[92%] space-y-2">
+    <div className="enter-fade max-w-[92%] space-y-2">
       {m.notice && (
         <p className="flex gap-2 rounded-control border border-danger/30 bg-danger/[0.08] p-3 text-sm text-ink">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden />

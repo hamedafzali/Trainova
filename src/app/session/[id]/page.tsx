@@ -19,6 +19,7 @@ import { SessionExercise } from "@/components/SessionExercise";
 import { RestTimerBar } from "@/components/RestTimerBar";
 import { SessionFeedbackForm } from "@/components/SessionFeedbackForm";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CoachHeaderButton } from "@/components/coach/CoachAssistant";
 import { CardSkeleton, ListSkeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { haptic } from "@/lib/haptics";
@@ -228,6 +229,7 @@ export default function SessionPage() {
                   })}
             </p>
           </div>
+          <CoachHeaderButton />
           {isActive && (
             <button type="button" className="btn-primary px-4 py-2.5" onClick={requestFinish}>
               Finish

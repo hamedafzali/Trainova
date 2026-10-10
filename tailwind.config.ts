@@ -143,6 +143,24 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(6px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        // Coach assistant: the panel slides in from its edge, the backdrop fades,
+        // and the floating button arrives with a soft glow so it's noticed once.
+        sheetUp: {
+          "0%": { transform: "translateY(100%)" },
+          "100%": { transform: "translateY(0)" },
+        },
+        drawerIn: {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        coachGlow: {
+          "0%": { boxShadow: "0 0 0 0 rgb(var(--c-accent) / 0.45)" },
+          "100%": { boxShadow: "0 0 0 14px rgb(var(--c-accent) / 0)" },
+        },
       },
       animation: {
         completeWipe: "completeWipe 600ms ease-out",
@@ -156,6 +174,10 @@ const config: Config = {
         // the element's un-animated base styles (transform: none, opacity: 1
         // — identical to the final keyframe), so the visual result is the same.
         enterFade: "enterFade 250ms cubic-bezier(0.22, 1, 0.36, 1)",
+        sheetUp: "sheetUp 280ms cubic-bezier(0.22, 1, 0.36, 1)",
+        drawerIn: "drawerIn 280ms cubic-bezier(0.22, 1, 0.36, 1)",
+        fadeIn: "fadeIn 200ms ease-out",
+        coachGlow: "coachGlow 1.4s ease-out 2",
       },
     },
   },
