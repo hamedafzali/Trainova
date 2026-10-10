@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoMark } from "./Logo";
 import { isActive, sidebarItems } from "./nav";
 
 export function SidebarNav() {
@@ -10,9 +11,12 @@ export function SidebarNav() {
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 md:bg-elevated md:border-r md:border-border md:px-5 md:py-7">
-      <div className="mb-8 px-3">
-        <h1 className="text-h3 text-ink">Trainova</h1>
-        <p className="section-label mt-0.5">Strength Training Tracker</p>
+      <div className="mb-8 flex items-center gap-3 px-3">
+        <LogoMark className="h-9 w-9 shrink-0" />
+        <div className="min-w-0">
+          <h1 className="text-h3 text-ink">Trainova</h1>
+          <p className="text-xs text-muted">Strength training tracker</p>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-0.5" aria-label="Primary">

@@ -11,6 +11,19 @@ export const metadata: Metadata = {
   description: "Fast, offline-friendly strength training tracker.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Trainova" },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "Trainova",
+    description: "Log a set in two taps. A strength tracker with a coach built in.",
+    images: [{ url: "/brand/og.png", width: 1200, height: 630 }],
+  },
+  twitter: { card: "summary_large_image", images: ["/brand/og.png"] },
 };
 
 export const viewport: Viewport = {
