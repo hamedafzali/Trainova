@@ -66,3 +66,13 @@ describe("tombstones", () => {
     expect(merged.bodyLog).toHaveLength(2);
   });
 });
+
+describe("profile merge", () => {
+  it("keeps the account's onboarded profile over a fresh device", () => {
+    const merged = mergeSnapshots(
+      { profile: { onboarded: false, goal: null } },
+      { profile: { onboarded: true, goal: "strength" } }
+    ) as { profile: { goal: string } };
+    expect(merged.profile.goal).toBe("strength");
+  });
+});

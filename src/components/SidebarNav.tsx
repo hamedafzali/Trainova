@@ -3,29 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isAiEnabled } from "@/lib/supabase/client";
-import {
-  Calendar,
-  ClipboardList,
-  History,
-  TrendingUp,
-  Brain,
-  User,
-  type LucideIcon,
-} from "lucide-react";
-
-const navItems: { href: string; label: string; icon: LucideIcon }[] = [
-  { href: "/", label: "Today", icon: Calendar },
-  { href: "/templates", label: "Plans", icon: ClipboardList },
-  { href: "/history", label: "History", icon: History },
-  { href: "/progress", label: "Progress", icon: TrendingUp },
-  { href: "/profile", label: "Profile", icon: User },
-];
+import { isActive, sidebarItems } from "./nav";
 
 export function SidebarNav() {
   const path = usePathname();
-  const items = isAiEnabled()
-    ? [...navItems.slice(0, 4), { href: "/coach", label: "Coach", icon: Brain }, navItems[4]]
-    : navItems;
+  const items = sidebarItems(isAiEnabled());
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 md:bg-elevated md:border-r md:border-border md:px-5 md:py-7">
@@ -36,8 +18,7 @@ export function SidebarNav() {
 
       <nav className="flex-1 space-y-0.5" aria-label="Primary">
         {items.map((item) => {
-          const active =
-            item.href === "/" ? path === "/" : path.startsWith(item.href);
+          const active = isActive(item, path);
           return (
             <Link
               key={item.href}
@@ -58,7 +39,7 @@ export function SidebarNav() {
       </nav>
 
       <div className="mt-auto pt-5 border-t border-border px-3">
-        <p className="text-[11px] text-muted">© 2024 Trainova</p>
+        <p className="text-[11px] text-muted">© {new Date().getFullYear()} Trainova</p>
       </div>
     </aside>
   );

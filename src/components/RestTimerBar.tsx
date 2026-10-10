@@ -8,7 +8,7 @@ function mmss(totalSec: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** Sticky rest countdown shown above the bottom nav while a timer is running. */
+/** Rest countdown pinned to the bottom of the workout screen while a timer runs. */
 export function RestTimerBar() {
   const { endsAt, duration, add, stop } = useRestTimer();
   const [now, setNow] = useState(Date.now());
@@ -54,53 +54,57 @@ export function RestTimerBar() {
     : Math.min(100, ((duration - remainingSec) / duration) * 100);
 
   return (
-    <div className="fixed inset-x-0 bottom-[60px] z-30 mx-auto max-w-md px-3">
+    <div
+      role="timer"
+      aria-live="off"
+      className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pl-64 md:max-w-none md:flex md:justify-center"
+    >
       <div
-        className={`overflow-hidden rounded-card border shadow-elevated transition-colors ${
-          over
-            ? "border-green bg-green text-onStatus"
-            : "border-border bg-surface text-ink"
+        className={`w-full overflow-hidden rounded-card border shadow-elevated transition-colors md:max-w-md ${
+          over ? "border-green bg-green text-onStatus" : "border-border bg-surface text-ink"
         }`}
       >
         {!over && (
-          <div
-            className="h-1 bg-accentDim transition-all duration-200 animate-breathe"
-            style={{ width: `${pct}%` }}
-          />
+          <div className="h-1 bg-accent transition-[width] duration-200" style={{ width: `${pct}%` }} />
         )}
-        <div className="flex items-center gap-4 px-5 py-4">
-          <span
-            className={`text-base font-semibold ${over ? "" : "text-inkSoft"}`}
-          >
-            {over ? "💪 Rest over" : "Resting"}
-          </span>
-          <span
-            className={`flex-1 text-center text-display tabular-nums transition-transform duration-200 ease-out ${
-              over ? (justFlipped ? "scale-110" : "scale-100") : "text-inkSoft"
-            }`}
-          >
-            {over ? "Go!" : mmss(remainingSec)}
-          </span>
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <div className="min-w-0 flex-1 pl-1">
+            <p className={`text-[11px] font-semibold uppercase tracking-wide ${over ? "" : "text-muted"}`}>
+              {over ? "Rest over" : "Rest"}
+            </p>
+            <p
+              className={`text-2xl font-bold leading-tight tabular-nums transition-transform duration-200 ease-out ${
+                justFlipped ? "scale-110" : "scale-100"
+              }`}
+            >
+              {over ? "Next set" : mmss(remainingSec)}
+            </p>
+          </div>
           {!over && (
             <>
               <button
+                type="button"
                 onClick={() => add(-15)}
-                className="rounded-control bg-surface2 px-5 py-3 text-base font-bold text-ink transition-transform active:scale-95"
+                aria-label="15 seconds less"
+                className="rounded-control bg-surface2 px-3 py-2.5 text-sm font-bold text-ink transition-transform active:scale-95"
               >
                 −15
               </button>
               <button
+                type="button"
                 onClick={() => add(15)}
-                className="rounded-control bg-surface2 px-5 py-3 text-base font-bold text-ink transition-transform active:scale-95"
+                aria-label="15 seconds more"
+                className="rounded-control bg-surface2 px-3 py-2.5 text-sm font-bold text-ink transition-transform active:scale-95"
               >
                 +15
               </button>
             </>
           )}
           <button
+            type="button"
             onClick={stop}
-            className={`rounded-control px-4 py-2 text-sm font-bold transition-transform active:scale-95 ${
-              over ? "bg-onAccent/10" : "bg-accentDim text-onAccent"
+            className={`rounded-control px-4 py-2.5 text-sm font-bold transition-transform active:scale-95 ${
+              over ? "bg-onStatus/15" : "bg-accentFill text-onAccent"
             }`}
           >
             {over ? "Dismiss" : "Skip"}

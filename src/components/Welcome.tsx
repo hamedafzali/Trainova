@@ -1,15 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Dumbbell } from "lucide-react";
+import { BarChart3, Dumbbell, Eye, EyeOff, ListChecks, WifiOff } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { isCloudEnabled, signIn, signUp } from "@/lib/auth";
-import { applySnapshot, pullState, pushState } from "@/lib/sync";
+import { mergeRemote, pullState, pushState } from "@/lib/sync";
+
+const FEATURES = [
+  { icon: ListChecks, title: "Ready-made programs", body: "Start from a proven plan or build your own." },
+  { icon: Dumbbell, title: "100+ exercises", body: "Machines, free weights and cardio, with how-to steps." },
+  { icon: BarChart3, title: "Automatic progression", body: "Know exactly what to lift next time." },
+  { icon: WifiOff, title: "Works offline", body: "Log in the gym basement; it syncs later." },
+];
 
 /**
- * First screen: sign in / create an account (Supabase Auth when configured), or
- * continue as guest (local-only). Guest is always available so there's zero
- * friction to start training.
+ * First screen: sign in / create an account, or continue as a guest
+ * (local-only). Guest is always available so there's zero friction to start.
  */
 export function Welcome() {
   const enterGuest = useStore((s) => s.enterGuest);
@@ -19,6 +25,7 @@ export function Welcome() {
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,19 +34,19 @@ export function Welcome() {
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const emailError =
-    emailTouched && email.trim() && !emailValid
-      ? "Enter a valid email address"
-      : null;
+    emailTouched && email.trim() && !emailValid ? "Enter a valid email address" : null;
   const passwordError =
     mode === "up" && passwordTouched && password && password.length < 6
-      ? "Password must be at least 6 characters"
+      ? "Use at least 6 characters"
       : null;
+  const canSubmit =
+    cloud && !busy && emailValid && password.length > 0 && !(mode === "up" && password.length < 6);
 
   const forgot = async () => {
     setError(null);
     setNote(null);
-    if (!email.trim()) {
-      setError("Enter your email first.");
+    if (!emailValid) {
+      setError("Enter your email above first.");
       return;
     }
     try {
@@ -49,147 +56,181 @@ export function Welcome() {
         body: JSON.stringify({ email: email.trim() }),
       });
       const j = await r.json().catch(() => ({}));
-      if (r.ok)
-        setNote("If that email is registered, a reset link is on its way.");
+      if (r.ok) setNote("If that email is registered, a reset link is on its way.");
       else setError(j.error || "Couldn’t start a reset.");
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");
     }
   };
 
-  const submit = async () => {
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit) return;
     setError(null);
     setBusy(true);
     try {
       const who =
-        mode === "up"
-          ? await signUp(email.trim(), password)
-          : await signIn(email.trim(), password);
-      // Sync: if the account already has data, load it; otherwise migrate this
-      // device's local data up to the new account.
+        mode === "up" ? await signUp(email.trim(), password) : await signIn(email.trim(), password);
+      // Merge the account copy with anything logged on this device, then
+      // publish the result so both sides agree.
       const remote = await pullState();
-      if (remote) applySnapshot(remote);
-      else await pushState();
+      if (remote) mergeRemote(remote);
+      await pushState();
       enterAccount(who.email, who.role);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <main className="flex min-h-screen flex-col">
-      <div className="relative overflow-hidden bg-gradient-to-br from-accentPressed via-accent to-accentHover px-6 pb-20 pt-16 text-center sm:pb-24 sm:pt-20">
+    <main className="min-h-screen md:grid md:grid-cols-2">
+      <section className="relative overflow-hidden bg-gradient-to-br from-accentPressed via-accent to-accentHover px-6 pb-20 pt-14 text-onAccent md:flex md:flex-col md:justify-center md:px-14 md:py-16">
         <Dumbbell
           aria-hidden
           strokeWidth={1.25}
-          className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 -rotate-12 text-onAccent/10 sm:h-52 sm:w-52"
+          className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 -rotate-12 text-onAccent/10 md:h-72 md:w-72"
         />
-        <Dumbbell
-          aria-hidden
-          strokeWidth={1.25}
-          className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rotate-[20deg] text-onAccent/10 sm:h-44 sm:w-44"
-        />
-        <p className="section-label mb-3 text-onAccent/70">
-          Strength training, logged
-        </p>
-        <h1 className="text-hero text-onAccent">Trainova</h1>
-        <p className="mt-3 text-body text-onAccent/85">
-          Open. Lift. Log. Done.
-        </p>
-      </div>
-
-      <div className="relative z-10 -mt-10 flex flex-col gap-10 px-6 pb-12 sm:-mt-12">
-      <div className="card space-y-4 max-w-md mx-auto w-full shadow-elevated">
-        <div className="flex overflow-hidden rounded-control border border-border text-sm font-semibold">
-          {(["in", "up"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`flex-1 py-3 transition-colors ${
-                mode === m
-                  ? "bg-accentFill text-onAccent"
-                  : "bg-surface2 text-inkSoft hover:bg-border/60"
-              }`}
-            >
-              {m === "in" ? "Sign in" : "Create account"}
-            </button>
-          ))}
-        </div>
-
-        <label htmlFor="welcome-email" className="sr-only">
-          Email
-        </label>
-        <input
-          id="welcome-email"
-          className="input"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onBlur={() => setEmailTouched(true)}
-        />
-        {emailError && <p className="text-xs text-danger">{emailError}</p>}
-        <label htmlFor="welcome-password" className="sr-only">
-          Password
-        </label>
-        <input
-          id="welcome-password"
-          className="input"
-          type="password"
-          autoComplete={mode === "up" ? "new-password" : "current-password"}
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onBlur={() => setPasswordTouched(true)}
-        />
-        {passwordError && <p className="text-xs text-danger">{passwordError}</p>}
-
-        {!cloud && (
-          <p className="rounded-control bg-surface2 px-4 py-3 text-sm text-inkSoft border border-border">
-            Cloud accounts aren't configured on this server yet. You can
-            continue as a guest now — sign-in starts working once Supabase is
-            connected.
+        <div className="relative mx-auto max-w-md text-center md:mx-0 md:text-left">
+          <p className="section-label mb-3 text-onAccent/70">Strength training, logged</p>
+          <h1 className="text-hero">Trainova</h1>
+          <p className="mt-3 text-body text-onAccent/85">
+            Follow a plan, log every set in seconds and watch your strength climb.
           </p>
-        )}
-        {error && <p className="text-sm text-danger text-center">{error}</p>}
-        {note && <p className="text-sm text-accent text-center">{note}</p>}
+          <ul className="mt-10 hidden space-y-5 md:block">
+            {FEATURES.map((f) => (
+              <li key={f.title} className="flex gap-4">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-onAccent/15">
+                  <f.icon className="h-5 w-5" aria-hidden />
+                </span>
+                <span>
+                  <span className="block font-semibold">{f.title}</span>
+                  <span className="block text-sm text-onAccent/80">{f.body}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-        <button
-          className="btn-primary w-full py-4"
-          disabled={
-            busy ||
-            !cloud ||
-            !email ||
-            !password ||
-            !emailValid ||
-            (mode === "up" && password.length < 6)
-          }
-          onClick={submit}
+      <section className="relative z-10 -mt-10 flex flex-col gap-6 px-4 pb-12 md:mt-0 md:justify-center md:px-12">
+        <form
+          onSubmit={submit}
+          noValidate
+          className="card mx-auto w-full max-w-md space-y-4 shadow-elevated md:shadow-none md:border-0 md:bg-transparent"
         >
-          {busy ? "…" : mode === "in" ? "Sign in" : "Create account"}
-        </button>
+          <div role="tablist" className="flex overflow-hidden rounded-control border border-border text-sm font-semibold">
+            {(["in", "up"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => {
+                  setMode(m);
+                  setError(null);
+                }}
+                className={`flex-1 py-3 transition-colors ${
+                  mode === m ? "bg-accentFill text-onAccent" : "bg-surface2 text-inkSoft hover:bg-border/60"
+                }`}
+              >
+                {m === "in" ? "Sign in" : "Create account"}
+              </button>
+            ))}
+          </div>
 
-        {cloud && mode === "in" && (
-          <button
-            onClick={forgot}
-            className="w-full text-center text-sm text-inkSoft underline hover:text-ink transition-colors"
-          >
-            Forgot password?
+          <div className="space-y-1.5">
+            <label htmlFor="welcome-email" className="text-sm font-medium text-inkSoft">
+              Email
+            </label>
+            <input
+              id="welcome-email"
+              className="input"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              aria-invalid={Boolean(emailError)}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setEmailTouched(true)}
+            />
+            {emailError && <p className="text-xs text-danger">{emailError}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="welcome-password" className="text-sm font-medium text-inkSoft">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="welcome-password"
+                className="input pr-12"
+                type={showPassword ? "text" : "password"}
+                autoComplete={mode === "up" ? "new-password" : "current-password"}
+                placeholder={mode === "up" ? "At least 6 characters" : "Your password"}
+                value={password}
+                aria-invalid={Boolean(passwordError)}
+                onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setPasswordTouched(true)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute inset-y-0 right-0 grid w-12 place-items-center text-muted hover:text-ink"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+            {passwordError && <p className="text-xs text-danger">{passwordError}</p>}
+          </div>
+
+          {!cloud && (
+            <p className="rounded-control border border-border bg-surface2 px-4 py-3 text-sm text-inkSoft">
+              Accounts aren&apos;t enabled on this server. Continue as a guest — your data stays on
+              this device.
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="text-center text-sm text-danger">
+              {error}
+            </p>
+          )}
+          {note && (
+            <p role="status" className="text-center text-sm text-accent">
+              {note}
+            </p>
+          )}
+
+          <button type="submit" className="btn-primary w-full py-4" disabled={!canSubmit}>
+            {busy ? "Please wait…" : mode === "in" ? "Sign in" : "Create account"}
           </button>
-        )}
-      </div>
 
-      <button
-        onClick={enterGuest}
-        className="text-center text-base font-semibold text-inkSoft underline underline-offset-4 hover:text-ink transition-colors"
-      >
-        Continue as guest
-      </button>
-      </div>
+          {cloud && mode === "in" && (
+            <button
+              type="button"
+              onClick={forgot}
+              className="w-full text-center text-sm text-inkSoft underline hover:text-ink"
+            >
+              Forgot password?
+            </button>
+          )}
+
+          <div className="flex items-center gap-3 pt-2 text-xs text-muted">
+            <span className="h-px flex-1 bg-border" />
+            or
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <button type="button" onClick={enterGuest} className="btn-secondary w-full py-3.5">
+            Continue as guest
+          </button>
+          <p className="text-center text-xs text-muted">
+            Guest data stays on this device. Create an account any time to back it up.
+          </p>
+        </form>
+      </section>
     </main>
   );
 }

@@ -199,7 +199,9 @@ export interface TrainovaState {
     volume: number;
     durationMin: number;
     distance: number;
-    durationSec: number;
+    durationSec: number; // longest hold
+    maxReps: number;
+    totalReps: number;
   }[];
 }
 
@@ -727,10 +729,14 @@ export const useStore = create<TrainovaState>()(
         const completedAt = backdated
           ? new Date(new Date(session.startedAt).getTime() + 30 * 60000).toISOString()
           : now();
+        // Planned-but-never-logged sets don't belong in history.
+        const unlogged = st.sets.filter((x) => x.sessionId === id && !x.completed).map((x) => x.id);
         set((s) => ({
           sessions: s.sessions.map((ss) =>
             ss.id === id ? { ...ss, status: "completed", completedAt, updatedAt: now() } : ss
           ),
+          sets: unlogged.length ? s.sets.filter((x) => !unlogged.includes(x.id)) : s.sets,
+          tombstones: unlogged.length ? tomb(s.tombstones, unlogged) : s.tombstones,
         }));
         return { discarded: false };
       },
@@ -1052,7 +1058,10 @@ export const useStore = create<TrainovaState>()(
         const seen: string[] = [];
         for (const x of st.sets) {
           const hasData =
-            x.actualWeight != null || x.durationMin != null || x.durationSec != null;
+            x.actualWeight != null ||
+            x.actualReps != null ||
+            x.durationMin != null ||
+            x.durationSec != null;
           if (x.completed && hasData && !seen.includes(x.exerciseId)) seen.push(x.exerciseId);
         }
         return seen;
@@ -1073,6 +1082,8 @@ export const useStore = create<TrainovaState>()(
           let durationMin = 0;
           let distance = 0;
           let durationSec = 0;
+          let maxReps = 0;
+          let totalReps = 0;
           const working = sets.filter((x) => !isWarmup(x));
           for (const x of working) {
             if (x.actualWeight != null && x.actualReps) {
@@ -1080,7 +1091,9 @@ export const useStore = create<TrainovaState>()(
             }
             durationMin += x.durationMin ?? 0;
             distance += x.distance ?? 0;
-            durationSec += x.durationSec ?? 0;
+            durationSec = Math.max(durationSec, x.durationSec ?? 0);
+            maxReps = Math.max(maxReps, x.actualReps ?? 0);
+            totalReps += x.actualReps ?? 0;
           }
           out.push({
             date: s.date,
@@ -1090,6 +1103,8 @@ export const useStore = create<TrainovaState>()(
             durationMin: Math.round(durationMin * 10) / 10,
             distance: Math.round(distance * 100) / 100,
             durationSec,
+            maxReps,
+            totalReps,
           });
         }
         return out;

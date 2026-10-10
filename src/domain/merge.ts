@@ -24,6 +24,12 @@ function mergeArr(
 const arr = (v: unknown): Rec[] => (Array.isArray(v) ? (v as Rec[]) : []);
 const t = (v: unknown): string => (typeof v === "string" ? v : "");
 
+function pickProfile(local: unknown, remote: unknown): unknown {
+  const onboarded = (p: unknown) => Boolean(p && (p as Rec).onboarded);
+  if (onboarded(remote) && !onboarded(local)) return remote;
+  return local ?? remote;
+}
+
 const ID_KEYS = [
   "devices",
   "exercises",
@@ -55,8 +61,9 @@ export function mergeSnapshots(local: Snapshot, remote: Snapshot | null): Snapsh
   return applyTombstones({
     ...remote,
     ...local,
-    units: local.units ?? remote.units,
-    profile: local.profile ?? remote.profile,
+    units: (local.profile as Rec | undefined)?.onboarded ? local.units ?? remote.units : remote.units ?? local.units,
+    // A fresh device has an un-onboarded profile; never let it overwrite the account's.
+    profile: pickProfile(local.profile, remote.profile),
     devices: mergeArr(arr(local.devices), arr(remote.devices), (x) => String(x.id), preferLocal),
     exercises: mergeArr(arr(local.exercises), arr(remote.exercises), (x) => String(x.id), preferLocal),
     programs: mergeArr(arr(local.programs), arr(remote.programs), (x) => String(x.id), preferLocal),

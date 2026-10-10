@@ -3,15 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Keyboard-free numeric control. Three ways to change the value:
+ * Numeric control built for gym hands. Ways to change the value:
  *  - tap − / +            (one step)
  *  - press & hold − / +   (accelerating auto-repeat for big jumps)
- *  - drag the value field horizontally (continuous ±)
- * Long-press the value opens the OS numeric pad as an opt-in escape hatch.
+ *  - drag the value horizontally (continuous ±)
+ *  - tap the value to type an exact number
+ *  - keyboard: focus the value, ↑/↓ (Shift = ×5), Enter to type
  *
  * `size="lg"` is the hero treatment for the one number that matters most on
- * screen (the active round's weight) — everything else stays default-sized
- * so the hierarchy reads at a glance.
+ * screen (the active set's weight) — everything else stays default-sized so
+ * the hierarchy reads at a glance.
  */
 export function Stepper({
   value,
@@ -20,7 +21,9 @@ export function Stepper({
   min = 0,
   max = 9999,
   unit,
+  label,
   size = "default",
+  decimals,
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -28,17 +31,30 @@ export function Stepper({
   min?: number;
   max?: number;
   unit?: string;
+  /** Accessible name, e.g. "Weight". */
+  label?: string;
   size?: "default" | "lg";
+  /** Precision for typed values; defaults to the step's precision. */
+  decimals?: number;
 }) {
   const valRef = useRef(value);
   valRef.current = value;
   const timer = useRef<number | null>(null);
-  const drag = useRef<{ x: number; base: number } | null>(null);
+  const drag = useRef<{ x: number; base: number; moved: boolean } | null>(null);
   const [pulse, setPulse] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
   const prevValue = useRef(value);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v / step) * step));
-  const bump = (dir: number) => onChange(clamp(valRef.current + dir * step));
+  const places = decimals ?? (String(step).split(".")[1]?.length ?? 0);
+  const roundTo = (v: number) => {
+    const f = 10 ** Math.max(places, 2);
+    return Math.round(v * f) / f;
+  };
+  const clampStep = (v: number) => Math.min(max, Math.max(min, roundTo(Math.round(v / step) * step)));
+  const clampFree = (v: number) => Math.min(max, Math.max(min, roundTo(v)));
+  const bump = (dir: number, mult = 1) => onChange(clampStep(valRef.current + dir * step * mult));
 
   const stop = () => {
     if (timer.current) {
@@ -46,6 +62,8 @@ export function Stepper({
       timer.current = null;
     }
   };
+  useEffect(() => stop, []);
+
   const startHold = (dir: number) => {
     bump(dir);
     let delay = 360;
@@ -58,17 +76,35 @@ export function Stepper({
   };
 
   const onPointerDownValue = (e: React.PointerEvent) => {
-    drag.current = { x: e.clientX, base: valRef.current };
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    drag.current = { x: e.clientX, base: valRef.current, moved: false };
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
   };
   const onPointerMoveValue = (e: React.PointerEvent) => {
     if (!drag.current) return;
-    const steps = Math.round((e.clientX - drag.current.x) / 20);
-    if (steps !== 0) onChange(clamp(drag.current.base + steps * step));
+    const dx = e.clientX - drag.current.x;
+    if (Math.abs(dx) > 6) drag.current.moved = true;
+    const steps = Math.round(dx / 20);
+    if (steps !== 0) onChange(clampStep(drag.current.base + steps * step));
   };
   const endDrag = () => {
+    const wasTap = drag.current && !drag.current.moved;
     drag.current = null;
+    if (wasTap) startEdit();
   };
+
+  const startEdit = () => {
+    setDraft(String(display));
+    setEditing(true);
+  };
+  const commit = () => {
+    const n = parseFloat(draft.replace(",", "."));
+    if (Number.isFinite(n)) onChange(clampFree(n));
+    setEditing(false);
+  };
+
+  useEffect(() => {
+    if (editing) inputRef.current?.select();
+  }, [editing]);
 
   const display = Number.isInteger(value) ? value : Math.round(value * 100) / 100;
 
@@ -81,55 +117,111 @@ export function Stepper({
   }, [value]);
 
   const lg = size === "lg";
+  const numberClass = `${lg ? "text-[2.75rem] leading-none sm:text-hero" : "text-stat"} tabular-nums text-ink`;
 
   return (
     <div className="flex items-center gap-2.5">
-      <HoldButton label="−" onStart={() => startHold(-1)} onStop={stop} size={size} />
-      <div
-        className={`flex min-w-0 flex-1 cursor-ew-resize select-none items-baseline justify-center gap-1.5 overflow-hidden rounded-control bg-surface2 ${lg ? "py-5" : "py-2"}`}
-        style={{ touchAction: "none" }}
-        onPointerDown={onPointerDownValue}
-        onPointerMove={onPointerMoveValue}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-      >
-        <span
-          className={`${lg ? "text-[2.75rem] sm:text-hero" : "text-stat"} tabular-nums text-ink transition-transform duration-150 ease-out ${pulse ? "scale-110" : "scale-100"}`}
+      <HoldButton dir={-1} label={label} onStart={() => startHold(-1)} onStop={stop} onKey={() => bump(-1)} size={size} />
+      {editing ? (
+        <div className={`flex min-w-0 flex-1 items-baseline justify-center gap-1.5 rounded-control bg-surface2 ring-2 ring-accent/50 ${lg ? "py-5" : "py-2"}`}>
+          <input
+            ref={inputRef}
+            aria-label={label}
+            inputMode={places > 0 || step % 1 !== 0 ? "decimal" : "numeric"}
+            enterKeyHint="done"
+            className={`${numberClass} w-full min-w-0 bg-transparent text-center outline-none`}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.replace(/[^\d.,]/g, ""))}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") setEditing(false);
+            }}
+          />
+          {unit && <span className={`${lg ? "text-sm" : "text-xs"} pr-3 text-muted`}>{unit}</span>}
+        </div>
+      ) : (
+        <div
+          role="spinbutton"
+          tabIndex={0}
+          aria-label={label}
+          aria-valuenow={value}
+          aria-valuemin={min}
+          aria-valuemax={max}
+          aria-valuetext={unit ? `${display} ${unit}` : String(display)}
+          title="Tap to type · drag to adjust"
+          className={`flex min-w-0 flex-1 cursor-ew-resize select-none items-baseline justify-center gap-1.5 overflow-hidden rounded-control bg-surface2 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${lg ? "py-5" : "py-2"}`}
+          style={{ touchAction: "none" }}
+          onPointerDown={onPointerDownValue}
+          onPointerMove={onPointerMoveValue}
+          onPointerUp={endDrag}
+          onPointerCancel={() => (drag.current = null)}
+          onKeyDown={(e) => {
+            const mult = e.shiftKey ? 5 : 1;
+            if (e.key === "ArrowUp" || e.key === "ArrowRight") {
+              e.preventDefault();
+              bump(1, mult);
+            } else if (e.key === "ArrowDown" || e.key === "ArrowLeft") {
+              e.preventDefault();
+              bump(-1, mult);
+            } else if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              startEdit();
+            } else if (/^\d$/.test(e.key)) {
+              setDraft(e.key);
+              setEditing(true);
+            }
+          }}
         >
-          {display}
-        </span>
-        {unit && <span className={`${lg ? "text-sm" : "text-xs"} text-muted`}>{unit}</span>}
-      </div>
-      <HoldButton label="+" onStart={() => startHold(1)} onStop={stop} size={size} />
+          <span
+            className={`${numberClass} transition-transform duration-150 ease-out ${pulse ? "scale-110" : "scale-100"}`}
+          >
+            {display}
+          </span>
+          {unit && <span className={`${lg ? "text-sm" : "text-xs"} text-muted`}>{unit}</span>}
+        </div>
+      )}
+      <HoldButton dir={1} label={label} onStart={() => startHold(1)} onStop={stop} onKey={() => bump(1)} size={size} />
     </div>
   );
 }
 
 function HoldButton({
+  dir,
   label,
   onStart,
   onStop,
+  onKey,
   size = "default",
 }: {
-  label: string;
+  dir: 1 | -1;
+  label?: string;
   onStart: () => void;
   onStop: () => void;
+  onKey: () => void;
   size?: "default" | "lg";
 }) {
   const lg = size === "lg";
+  const what = label ? ` ${label.toLowerCase()}` : "";
   return (
     <button
-      aria-label={label === "+" ? "increase" : "decrease"}
-      className={`flex ${lg ? "h-14 w-14 text-3xl" : "h-12 w-12 text-2xl"} shrink-0 items-center justify-center rounded-control bg-surface2 font-bold text-ink transition-transform duration-100 active:scale-90 active:bg-border`}
+      type="button"
+      aria-label={dir > 0 ? `Increase${what}` : `Decrease${what}`}
+      className={`flex ${lg ? "h-14 w-14 text-3xl" : "h-12 w-12 text-2xl"} shrink-0 items-center justify-center rounded-control bg-surface2 font-bold text-ink transition-transform duration-100 active:scale-90 active:bg-border focus-visible:ring-2 focus-visible:ring-accent/50`}
       onPointerDown={(e) => {
+        if (e.button !== 0) return;
         e.preventDefault();
         onStart();
       }}
       onPointerUp={onStop}
       onPointerLeave={onStop}
       onPointerCancel={onStop}
+      // Pointer presses are handled above; `detail === 0` means keyboard activation.
+      onClick={(e) => {
+        if (e.detail === 0) onKey();
+      }}
     >
-      {label}
+      {dir > 0 ? "+" : "−"}
     </button>
   );
 }

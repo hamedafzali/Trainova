@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { totalVolume } from "@/domain/volume";
-import type { WorkoutSession, WorkoutSet } from "@/domain/types";
+import { formatVolume } from "@/lib/units";
+import type { Units, WorkoutSession, WorkoutSet } from "@/domain/types";
 
 const DOW = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -37,7 +38,7 @@ export function VolumeHeatmap({
 }: {
   sessions: WorkoutSession[];
   sets: WorkoutSet[];
-  units: string;
+  units: Units;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const today = new Date();
@@ -117,7 +118,7 @@ export function VolumeHeatmap({
         <div>
           <p className="section-label text-muted">{monthName} volume</p>
           <p className="text-body-sm text-inkSoft mt-0.5">
-            {Math.round(monthTotal).toLocaleString()} {units}·vol across {daysWithData} day
+            {formatVolume(monthTotal, units)} lifted across {daysWithData} day
             {daysWithData === 1 ? "" : "s"}
           </p>
         </div>
@@ -149,7 +150,7 @@ export function VolumeHeatmap({
                 key={i}
                 disabled={isFuture}
                 onClick={() => setSelected(isSel ? null : k)}
-                aria-label={`${new Date(y, m, d).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}${vol > 0 ? `, ${Math.round(vol).toLocaleString()} ${units} volume` : ", rest day"}`}
+                aria-label={`${new Date(y, m, d).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}${vol > 0 ? `, ${formatVolume(vol, units)} volume` : ", rest day"}`}
                 aria-pressed={isSel}
                 className={`relative flex aspect-square items-center justify-center rounded-[6px] text-[11px] tabular-nums transition-colors ${
                   isFuture
@@ -175,7 +176,7 @@ export function VolumeHeatmap({
       <p className="text-body-sm text-center text-muted min-h-[1.25em]" aria-live="polite">
         {selected
           ? selectedVol && selectedVol > 0
-            ? `${selectedLabel} · ${Math.round(selectedVol).toLocaleString()} ${units}·vol`
+            ? `${selectedLabel} · ${formatVolume(selectedVol, units)} lifted`
             : `${selectedLabel} · rest day`
           : "Tap a day for its volume"}
       </p>

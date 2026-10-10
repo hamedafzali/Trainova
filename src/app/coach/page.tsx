@@ -10,6 +10,7 @@ import { CoachInsightCard } from "@/components/CoachInsightCard";
 import { CoachNutritionCard } from "@/components/CoachNutritionCard";
 import { CoachSummaryHero } from "@/components/CoachSummaryHero";
 import { EmptyState } from "@/components/EmptyState";
+import { WorkoutAnalysis } from "@/components/WorkoutAnalysis";
 import { Skeleton } from "@/components/Skeleton";
 
 export default function CoachPage() {
@@ -76,6 +77,12 @@ export default function CoachPage() {
               ))}
             </div>
           ) : null}
+        </section>
+      )}
+
+      {!noTrainingData && (
+        <section>
+          <WorkoutAnalysis />
         </section>
       )}
 

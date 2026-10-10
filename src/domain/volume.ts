@@ -5,7 +5,7 @@
 
 import type { WorkoutSet } from "./types";
 
-type VolumeInput = Pick<WorkoutSet, "actualWeight" | "actualReps">;
+type VolumeInput = Pick<WorkoutSet, "actualWeight" | "actualReps"> & Partial<Pick<WorkoutSet, "kind">>;
 type WeightInput = Pick<WorkoutSet, "actualWeight">;
 
 /**
@@ -15,8 +15,10 @@ type WeightInput = Pick<WorkoutSet, "actualWeight">;
  * cannot know how much work was done from weight alone. A set with weight
  * logged but no reps logged contributes 0, and logs a dev warning so the
  * missing data is visible instead of silently producing a wrong number.
+ * Warm-up sets never count.
  */
 export function calcSetVolume(set: VolumeInput): number {
+  if (set.kind === "warmup") return 0; // warm-ups aren't training volume
   if (set.actualWeight == null || set.actualWeight <= 0) return 0;
   if (set.actualReps == null) {
     if (process.env.NODE_ENV !== "production") {

@@ -106,7 +106,7 @@ export function createWorkoutAnalysisPrompt(input: WorkoutAnalysisInput): string
 
 **Workout Overview (${input.timeframe}):**
 - Total Workouts: ${input.workoutData.totalWorkouts}
-- Overall Volume: ${input.workoutData.overallStats.totalVolume}
+- Overall Volume: ${Math.round(input.workoutData.overallStats.totalVolume)} kg
 - Average Session RPE: ${input.workoutData.overallStats.averageSessionRPE}/10
 - Adherence Rate: ${input.workoutData.overallStats.adherenceRate}%
 - Training Frequency: ${input.workoutData.overallStats.frequency} workouts/week
@@ -116,11 +116,11 @@ export function createWorkoutAnalysisPrompt(input: WorkoutAnalysisInput): string
 ${topExercises.map((ex, idx) => `
 ${idx + 1}. ${ex.exerciseName} (${ex.muscleGroup})
    - Total Sets: ${ex.totalSets}
-   - Total Volume: ${ex.totalVolume}
+   - Total Volume: ${Math.round(ex.totalVolume)} kg
    - Average RPE: ${ex.averageRPE}/10
    - Progression: ${ex.progressionTrend}
-   - Current Weight: ${ex.lastWeight}
-   - Best Weight: ${ex.bestWeight}
+   - Current Weight: ${ex.lastWeight} kg
+   - Best Weight: ${ex.bestWeight} kg
    - Consistency: ${ex.consistency}%
 `).join('\n')}
 

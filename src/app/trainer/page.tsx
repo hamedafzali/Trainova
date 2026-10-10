@@ -137,7 +137,7 @@ export default function TrainerPage() {
 
       <div className="rounded-card border border-border bg-surface shadow-card p-4 space-y-2">
         <label htmlFor="trainer-add-client-email" className="sr-only">
-          Client's account email
+          Client&apos;s account email
         </label>
         <div className="flex gap-2">
           <input

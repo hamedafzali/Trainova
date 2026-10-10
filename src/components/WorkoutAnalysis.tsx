@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { LineChart } from "@/components/LineChart";
 import { useStore } from "@/lib/store";
+import { toDisplay } from "@/lib/units";
 import type { WorkoutAnalysisResponse } from "@/services/ai/prompts/workoutAnalysis";
 
 export function WorkoutAnalysis() {
@@ -28,7 +29,7 @@ export function WorkoutAnalysis() {
       const completedSessions = sessions.filter(
         (s) => s.status === "completed",
       );
-      const completedSets = sets.filter((s) => s.completed);
+      const completedSets = sets.filter((s) => s.completed && s.kind !== "warmup");
 
       // Group sets by exercise
       const exerciseStats = new Map<
@@ -315,7 +316,7 @@ export function WorkoutAnalysis() {
               <LineChart
                 data={exercises[0].weights.map((w: number, i: number) => ({
                   label: `Set ${i + 1}`,
-                  value: w,
+                  value: Math.round(toDisplay(w, units) * 10) / 10,
                 }))}
                 unit={units}
               />
