@@ -1,19 +1,11 @@
 // Runs once at server boot (both `next dev` and `next start`/standalone),
-// before any request is served. Used to fail fast on missing/weak config
-// instead of only discovering it when a request path hits it.
+// before any request is served. Reports missing/weak config up front.
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { requireJwtSecret } = await import("@/server/auth");
-    try {
-      requireJwtSecret();
-    } catch (err) {
-      // Next.js logs a thrown instrumentation error but otherwise keeps the
-      // process alive, serving 500s forever instead of refusing to boot.
-      // Exit outright so a bad/missing secret is an unmissable crash, not a
-      // quiet runtime failure (restart: unless-stopped will crash-loop it
-      // with this message in the logs until the secret is fixed).
-      console.error((err as Error).message);
-      process.exit(1);
-    }
+    const { jwtSecretConfigured, JWT_SECRET_ERROR } = await import("@/server/auth");
+    // A weak secret disables accounts (sign-in/up return 503, tokens never
+    // verify) but must not take the whole local-first app down: exiting here
+    // crash-looped the container on every deploy with a placeholder secret.
+    if (!jwtSecretConfigured()) console.error(`[config] ${JWT_SECRET_ERROR}`);
   }
 }

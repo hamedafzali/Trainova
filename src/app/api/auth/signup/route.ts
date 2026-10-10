@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/server/db";
-import { hashPassword, signToken } from "@/server/auth";
+import { hashPassword, signToken, jwtSecretConfigured } from "@/server/auth";
 import { isBootstrapAdmin } from "@/server/admin";
 import { checkRateLimit } from "@/server/rateLimit";
 
@@ -14,7 +14,9 @@ const MAX_TRIES = 10;
 
 export async function POST(req: Request) {
   const pool = getPool();
-  if (!pool) return NextResponse.json({ error: "Accounts are not configured." }, { status: 503 });
+  if (!pool || !jwtSecretConfigured()) {
+    return NextResponse.json({ error: "Accounts are not configured on this server." }, { status: 503 });
+  }
 
   const ip = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for") ?? "local";
   const key = `ratelimit:signup:${ip}`;

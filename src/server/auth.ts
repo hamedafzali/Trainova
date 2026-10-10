@@ -3,16 +3,22 @@ import { SignJWT, jwtVerify } from "jose";
 
 const MIN_JWT_SECRET_LENGTH = 32;
 
-/** Validates JWT_SECRET is set and long enough. Called eagerly at startup
- *  (see instrumentation.ts) so a missing/weak secret fails the boot instead
- *  of surfacing later as a forgeable-token vulnerability at request time. */
+export const JWT_SECRET_ERROR =
+  `JWT_SECRET is missing or shorter than ${MIN_JWT_SECRET_LENGTH} characters. ` +
+  "Accounts and sync are switched off until a long random secret is set (e.g. `openssl rand -base64 48`).";
+
+/** True when JWT_SECRET is long enough to sign tokens with. */
+export function jwtSecretConfigured(): boolean {
+  const value = process.env.JWT_SECRET;
+  return !!value && value.trim().length >= MIN_JWT_SECRET_LENGTH;
+}
+
+/** Returns JWT_SECRET, throwing when it is missing or weak, so a token is never
+ *  signed or accepted with a guessable key (verifyToken then returns null). */
 export function requireJwtSecret(): string {
   const value = process.env.JWT_SECRET;
-  if (!value || value.trim().length < MIN_JWT_SECRET_LENGTH) {
-    throw new Error(
-      `JWT_SECRET is missing or shorter than ${MIN_JWT_SECRET_LENGTH} characters. ` +
-        "Set a long random secret before starting the app (e.g. `openssl rand -base64 48`)."
-    );
+  if (!value || !jwtSecretConfigured()) {
+    throw new Error(JWT_SECRET_ERROR);
   }
   return value;
 }
