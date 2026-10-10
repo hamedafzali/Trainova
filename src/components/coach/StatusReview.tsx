@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CircleCheck, RefreshCw, Target } from "lucide-react";
+import { CircleCheck, Flame, RefreshCw, Target, Trophy, type LucideIcon } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { postAi, useAiStatus } from "@/lib/ai";
 import { stableHash } from "@/lib/hash";
@@ -44,12 +44,26 @@ function writeCache(c: Cached): void {
   }
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "good" | "warn" }) {
-  const color = tone === "good" ? "text-green" : tone === "warn" ? "text-amber" : "text-ink";
+function Stat({
+  label,
+  value,
+  tone,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  tone?: "good" | "warn" | "flame";
+  icon?: LucideIcon;
+}) {
+  const color =
+    tone === "good" ? "text-green" : tone === "warn" ? "text-amber" : tone === "flame" ? "text-flame" : "text-ink";
   return (
     <div className="min-w-0 rounded-control bg-surface2 px-3 py-2">
       <p className="truncate text-xs text-muted">{label}</p>
-      <p className={`truncate text-sm font-semibold tabular-nums ${color}`}>{value}</p>
+      <p className={`flex items-center gap-1 truncate text-sm font-semibold tabular-nums ${color}`}>
+        {Icon && <Icon className="h-4 w-4 shrink-0" aria-hidden />}
+        {value}
+      </p>
     </div>
   );
 }
@@ -67,7 +81,12 @@ function StatusStrip({ c, summary }: { c: TrainerConsistency; summary?: Training
         value={c.programDays ? `${c.sessionsThisWeek} of ${c.programDays}` : `${c.sessionsThisWeek}`}
         tone={c.programDays && c.sessionsThisWeek >= c.programDays ? "good" : undefined}
       />
-      <Stat label="Weekly streak" value={c.weekStreak > 0 ? `🔥 ${c.weekStreak} wk` : "—"} />
+      <Stat
+        label="Weekly streak"
+        value={c.weekStreak > 0 ? `${c.weekStreak} wk` : "—"}
+        icon={c.weekStreak > 0 ? Flame : undefined}
+        tone={c.weekStreak > 0 ? "flame" : undefined}
+      />
       <Stat label="Last workout" value={last} tone={c.daysSinceLast !== null && c.daysSinceLast > 7 ? "warn" : undefined} />
       <Stat label="Weeks trained" value={`${c.weeksTrainedLast4} of last 4`} />
       <Stat
@@ -75,7 +94,7 @@ function StatusStrip({ c, summary }: { c: TrainerConsistency; summary?: Training
         value={trend === null ? "—" : `${trend > 0 ? "+" : ""}${trend}%`}
         tone={trend === null ? undefined : trend >= 5 ? "good" : trend <= -5 ? "warn" : undefined}
       />
-      <Stat label="Recent records" value={prs > 0 ? `🏆 ${prs}` : "—"} tone={prs > 0 ? "good" : undefined} />
+      <Stat label="Recent records" value={prs > 0 ? `${prs}` : "—"} icon={prs > 0 ? Trophy : undefined} tone={prs > 0 ? "good" : undefined} />
     </div>
   );
 }
@@ -163,7 +182,7 @@ export function StatusReview({ summary }: { summary?: TrainingSummary } = {}) {
             type="button"
             onClick={() => void run()}
             disabled={loading}
-            className="btn-ghost ml-auto px-2.5 py-1.5 text-xs"
+            className="btn-ghost ml-auto h-11 w-11 shrink-0 p-0"
             aria-label="Refresh review"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden />

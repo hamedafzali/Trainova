@@ -50,7 +50,7 @@ export function ActionCard({
       ) : (
         <button
           type="button"
-          className="btn-primary shrink-0 px-3 py-1.5 text-sm"
+          className="btn-primary min-h-11 shrink-0 px-4 text-sm"
           onClick={() => {
             const r = applyTrainerAction(action);
             if (r.ok) {

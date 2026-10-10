@@ -120,7 +120,7 @@ function Shell({
   return (
     <section
       ref={sectionRef}
-      className={panel ? "flex h-full min-h-0 flex-col gap-3 p-4" : "card flex scroll-mt-4 flex-col gap-4 p-4 sm:p-5"}
+      className={panel ? "flex h-full min-h-0 flex-col gap-3 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" : "card flex scroll-mt-4 flex-col gap-4 p-4 sm:p-5"}
       aria-labelledby="coach-chat"
     >
       <div className="flex items-center gap-3">
@@ -136,12 +136,12 @@ function Shell({
           </p>
         </div>
         {onClear && (
-          <button type="button" onClick={onClear} className="btn-ghost px-2.5 py-1.5 text-xs" aria-label="Clear conversation">
+          <button type="button" onClick={onClear} className="btn-ghost h-11 w-11 shrink-0 p-0" aria-label="Clear conversation">
             <Trash2 className="h-4 w-4" aria-hidden />
           </button>
         )}
         {onClose && (
-          <button type="button" onClick={onClose} className="btn-ghost px-2.5 py-1.5 text-xs" aria-label="Close coach">
+          <button type="button" onClick={onClose} className="btn-ghost h-11 w-11 shrink-0 p-0" aria-label="Close coach">
             <X className="h-4 w-4" aria-hidden />
           </button>
         )}
@@ -278,7 +278,7 @@ export function TrainerChat({
                   key={s}
                   type="button"
                   onClick={() => void ask(s)}
-                  className="rounded-full border border-border bg-surface px-3 py-1.5 text-left text-sm text-inkSoft hover:bg-surface2 hover:text-ink"
+                  className="min-h-11 rounded-full border border-border bg-surface px-4 py-2 text-left text-sm text-inkSoft transition-colors duration-150 hover:bg-surface2 hover:text-ink active:bg-border/60"
                 >
                   {s}
                 </button>

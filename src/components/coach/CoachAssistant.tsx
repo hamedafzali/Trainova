@@ -1,15 +1,17 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useAiStatus } from "@/lib/ai";
 import { useAssistant } from "@/lib/assistant";
 import { pageFocus } from "@/lib/pageFocus";
 import { useStore } from "@/lib/store";
+import { useDialogA11y } from "@/lib/useDialogA11y";
 import { TrainerChat } from "./TrainerChat";
 
 const PANEL_ID = "coach-assistant";
+const EXIT_MS = 180;
 
 /** True while a modal other than the coach panel is open (its buttons sit where the coach button would). */
 function useOtherModalOpen(): boolean {
@@ -81,17 +83,31 @@ export function CoachAssistant() {
   const sets = useStore((s) => s.sets);
   const focus = useMemo(() => (open ? pageFocus(pathname) : null), [open, pathname, sets]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, setOpen]);
+  // Keep the panel mounted through its exit animation. It renders in the same
+  // pass that opens it, so the focus hook below finds it.
+  const [closing, setClosing] = useState(false);
+  const wasOpen = useRef(open);
+  // Layout effect: switch to "closing" before paint, so the panel never blinks out.
+  useLayoutEffect(() => {
+    if (wasOpen.current && !open) {
+      setClosing(true);
+      const t = window.setTimeout(() => setClosing(false), EXIT_MS);
+      wasOpen.current = open;
+      return () => window.clearTimeout(t);
+    }
+    wasOpen.current = open;
+    setClosing(false);
+  }, [open]);
+  const mounted = open || closing;
+
+  // Escape closes, Tab stays inside, focus returns to the button that opened it.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogA11y(open, () => setOpen(false), panelRef);
 
   if (ai.available !== true) return null;
 
   const inSession = pathname.startsWith("/session/");
-  const showFab = !open && !otherModal && !inSession;
+  const showFab = !otherModal && !inSession;
 
   return (
     <>
@@ -101,7 +117,7 @@ export function CoachAssistant() {
           onClick={() => setOpen(true)}
           tabIndex={scrolledIn ? 0 : -1}
           aria-hidden={!scrolledIn}
-          className={`fixed bottom-20 right-4 z-[60] group grid h-12 w-12 animate-popIn place-items-center rounded-full bg-accentFill text-onAccent shadow-lg transition-all duration-250 ease-standard hover:scale-105 active:scale-95 md:bottom-6 md:right-6 ${
+          className={`fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-[60] group grid h-12 w-12 animate-popIn place-items-center rounded-full bg-accentFill text-onAccent shadow-lg transition-all duration-250 ease-standard hover:scale-105 active:scale-95 md:bottom-6 md:right-6 ${
             scrolledIn ? "" : "pointer-events-none translate-y-24 opacity-0"
           }`}
           aria-label="Ask your coach"
@@ -110,16 +126,22 @@ export function CoachAssistant() {
           <Sparkles className="h-5 w-5 transition-transform duration-200 group-hover:rotate-12" aria-hidden />
         </button>
       )}
-      {open && (
+      {mounted && (
         <div id={PANEL_ID} className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Coach">
           <button
             type="button"
-            className="absolute inset-0 animate-fadeIn bg-black/40"
+            className={`absolute inset-0 bg-black/40 ${open ? "animate-fadeIn" : "animate-fadeOut"}`}
             onClick={() => setOpen(false)}
             aria-label="Close coach"
             tabIndex={-1}
           />
-          <div className="absolute inset-x-0 bottom-0 flex h-[85dvh] animate-sheetUp flex-col rounded-t-card border border-border bg-surface shadow-xl md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[420px] md:animate-drawerIn md:rounded-none md:rounded-l-card">
+          <div
+            ref={panelRef}
+            tabIndex={-1}
+            className={`absolute inset-x-0 bottom-0 flex h-[85dvh] flex-col rounded-t-card border border-border bg-surface shadow-xl outline-none md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[420px] md:rounded-none md:rounded-l-card ${
+              open ? "animate-sheetUp md:animate-drawerIn" : "animate-sheetDown md:animate-drawerOut"
+            }`}
+          >
             <TrainerChat variant="panel" focus={focus} onClose={() => setOpen(false)} />
           </div>
         </div>

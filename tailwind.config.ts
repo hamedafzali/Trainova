@@ -157,6 +157,18 @@ const config: Config = {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
         },
+        sheetDown: {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(100%)" },
+        },
+        drawerOut: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+        fadeOut: {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
+        },
         coachGlow: {
           "0%": { boxShadow: "0 0 0 0 rgb(var(--c-accent) / 0.45)" },
           "100%": { boxShadow: "0 0 0 14px rgb(var(--c-accent) / 0)" },
@@ -177,6 +189,10 @@ const config: Config = {
         sheetUp: "sheetUp 280ms cubic-bezier(0.22, 1, 0.36, 1)",
         drawerIn: "drawerIn 280ms cubic-bezier(0.22, 1, 0.36, 1)",
         fadeIn: "fadeIn 200ms ease-out",
+        // Exits run ~65% of the enter duration and hold their end frame until unmount.
+        sheetDown: "sheetDown 180ms cubic-bezier(0.4, 0, 1, 1) forwards",
+        drawerOut: "drawerOut 180ms cubic-bezier(0.4, 0, 1, 1) forwards",
+        fadeOut: "fadeOut 180ms ease-in forwards",
         coachGlow: "coachGlow 1.4s ease-out 2",
       },
     },
