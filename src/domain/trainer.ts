@@ -12,6 +12,7 @@ import type {
 import type { ExerciseType } from "./taxonomy";
 import { exerciseTypeOf } from "./exerciseType";
 import { matchExercise } from "./exerciseMatch";
+import { localDayKey, startOfWeek, weekDays, weekStreak } from "./streak";
 
 // The AI trainer sees a compact snapshot of the user's plans and recent
 // training (built on the client from the local store) and may answer with a
@@ -58,11 +59,23 @@ export interface TrainerSession {
   exercises: { name: string; sets: number; best: string }[];
 }
 
+/** How regularly they train against their active plan. */
+export interface TrainerConsistency {
+  program: string | null; // active program
+  programDays: number | null; // workouts in its rotation
+  sessionsThisWeek: number;
+  sessionsLast28: number;
+  weeksTrainedLast4: number; // of the last 4 calendar weeks, incl. this one
+  daysSinceLast: number | null;
+  weekStreak: number;
+}
+
 export interface TrainerContext {
   today: string;
   units: Units;
   profile: Pick<UserProfile, "goal" | "experience" | "sex" | "ageYears" | "weightKg">;
   nextWorkout: string | null; // workout ref
+  consistency: TrainerConsistency;
   workouts: TrainerWorkout[];
   recent: TrainerSession[];
   records: { name: string; kind: PersonalRecord["kind"]; value: number; date: string }[];
@@ -181,6 +194,7 @@ export function buildTrainerContext(input: {
     .map((p) => ({ name: nameOf(p.exerciseId), kind: p.kind, value: p.value, date: p.achievedAt.slice(0, 10) }));
 
   const nextRef = workouts.find((w) => w.templateId === input.nextTemplateId)?.ref ?? null;
+  const consistency = buildConsistency(input);
 
   return {
     today: input.now.toISOString().slice(0, 10),
@@ -193,6 +207,7 @@ export function buildTrainerContext(input: {
       weightKg: input.profile.weightKg ?? null,
     },
     nextWorkout: nextRef,
+    consistency,
     workouts,
     recent,
     records,
@@ -203,6 +218,45 @@ export function buildTrainerContext(input: {
       equipment: e.equipment ?? null,
       type: exerciseTypeOf(e),
     })),
+  };
+}
+
+const dayNumber = (key: string) => Math.round(Date.parse(`${key}T00:00:00Z`) / 86_400_000);
+
+function buildConsistency(input: {
+  now: Date;
+  programs: Program[];
+  sessions: WorkoutSession[];
+  nextTemplateId: string | null;
+}): TrainerConsistency {
+  const done = input.sessions
+    .filter((s) => s.status === "completed")
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  const lastTemplate = done[0]?.templateId ?? null;
+  const program =
+    input.programs.find((p) => input.nextTemplateId && p.dayTemplateIds.includes(input.nextTemplateId)) ??
+    input.programs.find((p) => lastTemplate && p.dayTemplateIds.includes(lastTemplate)) ??
+    input.programs[0] ??
+    null;
+
+  const today = localDayKey(input.now);
+  const dates = new Set(done.map((s) => s.date));
+  const thisWeek = new Set(weekDays(input.now));
+  let weeksTrained = 0;
+  for (let k = 0; k < 4; k++) {
+    const start = startOfWeek(input.now);
+    start.setDate(start.getDate() - 7 * k);
+    if (weekDays(start).some((d) => dates.has(d))) weeksTrained++;
+  }
+  const latest = done.reduce<string | null>((m, s) => (m === null || s.date > m ? s.date : m), null);
+  return {
+    program: program?.name ?? null,
+    programDays: program ? program.dayTemplateIds.length : null,
+    sessionsThisWeek: done.filter((s) => thisWeek.has(s.date)).length,
+    sessionsLast28: done.filter((s) => dayNumber(today) - dayNumber(s.date) < 28).length,
+    weeksTrainedLast4: weeksTrained,
+    daysSinceLast: latest ? Math.max(0, dayNumber(today) - dayNumber(latest)) : null,
+    weekStreak: weekStreak(dates, input.now),
   };
 }
 
@@ -374,4 +428,65 @@ export function describeAction(a: TrainerAction): { title: string; detail: strin
         detail: `${a.days.length} days · ${a.days.map((d) => d.name).join(", ")}`,
       };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Status review
+// ---------------------------------------------------------------------------
+
+export type ReviewStatus = "on_track" | "needs_attention" | "getting_started";
+
+export interface TrainerReview {
+  status: ReviewStatus;
+  headline: string;
+  summary: string;
+  wins: string[];
+  focus: string[];
+  nextSession: { workout: string | null; name: string | null; hints: string[] } | null;
+  actions: TrainerAction[];
+}
+
+const REVIEW_STATUSES: readonly ReviewStatus[] = ["on_track", "needs_attention", "getting_started"];
+
+function textList(v: unknown, keep: (s: string) => boolean): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((x) => str(x, 200))
+    .filter((x): x is string => !!x && keep(x))
+    .slice(0, 3);
+}
+
+/**
+ * Validates the model's review: known status, bounded text, next-session ref
+ * resolved against the client's plans, actions validated like chat actions.
+ * `keep` filters out unsafe sentences (the safety check lives server-side).
+ */
+export function parseTrainerReview(
+  raw: Record<string, unknown>,
+  ctx: TrainerContext,
+  keep: (s: string) => boolean = () => true,
+): TrainerReview | null {
+  const headline = str(raw.headline, 120);
+  const summary = str(raw.summary, 600);
+  if (!headline || !summary || !keep(headline) || !keep(summary)) return null;
+  const status = REVIEW_STATUSES.find((s) => s === raw.status) ?? (ctx.recent.length ? "on_track" : "getting_started");
+
+  let nextSession: TrainerReview["nextSession"] = null;
+  const ns = raw.nextSession && typeof raw.nextSession === "object" ? (raw.nextSession as Record<string, unknown>) : null;
+  if (ns) {
+    const ref = str(ns.workout, 6)?.toUpperCase() ?? null;
+    const w = ref ? ctx.workouts.find((x) => x.ref === ref) : undefined;
+    const hints = textList(ns.hints, keep);
+    if (hints.length) nextSession = { workout: w?.ref ?? null, name: w?.name ?? null, hints };
+  }
+
+  return {
+    status,
+    headline,
+    summary,
+    wins: textList(raw.wins, keep),
+    focus: textList(raw.focus, keep),
+    nextSession,
+    actions: validateTrainerActions(raw.actions, ctx),
+  };
 }

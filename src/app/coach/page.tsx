@@ -2,34 +2,34 @@
 
 import { useHydrated } from "@/lib/store";
 import { useCoachData } from "@/lib/useCoachData";
-import { CoachHeroInsight, pickHeroInsight } from "@/components/CoachHeroInsight";
 import { CoachInsightCard } from "@/components/CoachInsightCard";
 import { CoachNutritionCard } from "@/components/CoachNutritionCard";
 import { CoachSummaryHero } from "@/components/CoachSummaryHero";
 import { Skeleton } from "@/components/Skeleton";
 import { TrainerChat } from "@/components/coach/TrainerChat";
+import { StatusReview } from "@/components/coach/StatusReview";
+import { CoachTools } from "@/components/coach/CoachTools";
 
 export default function CoachPage() {
   const hydrated = useHydrated();
-  const { summary, insights, intro, introLoading, nutritionTargets, hasBodyStats, mealIdeas, mealsLoading } =
+  const { enabled, summary, insights, intro, introLoading, nutritionTargets, hasBodyStats, mealIdeas, mealsLoading } =
     useCoachData();
 
   if (!hydrated) return <main className="min-h-screen" />;
 
   const noTrainingData = summary.exercises.length === 0 && summary.streakDays === 0;
-  const heroInsight = pickHeroInsight(insights);
-  const secondaryInsights = heroInsight ? insights.filter((i) => i.id !== heroInsight.id) : insights;
 
   return (
     <main className="mx-auto max-w-6xl space-y-6">
       <header>
         <h1 className="page-title">Coach</h1>
-        <p className="page-subtitle">Notes from your logged training, and a coach you can ask.</p>
+        <p className="page-subtitle">Where you stand against your plan, and a coach you can ask.</p>
       </header>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-4">
-          {heroInsight && <CoachHeroInsight insight={heroInsight} />}
+          <StatusReview />
+          <CoachTools disabled={!enabled} />
           <TrainerChat />
         </div>
 
@@ -46,16 +46,14 @@ export default function CoachPage() {
               ) : intro ? (
                 <p className="enter-fade text-body-sm text-inkSoft">{intro}</p>
               ) : null}
-              {secondaryInsights.length > 0 ? (
+              {insights.length > 0 ? (
                 <div className="divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">
-                  {secondaryInsights.map((insight) => (
+                  {insights.map((insight) => (
                     <CoachInsightCard key={insight.id} insight={insight} />
                   ))}
                 </div>
               ) : (
-                !heroInsight && (
-                  <p className="text-body-sm text-inkSoft">Nothing notable to flag right now — training looks steady.</p>
-                )
+                <p className="text-body-sm text-inkSoft">Nothing notable to flag right now — training looks steady.</p>
               )}
             </>
           )}

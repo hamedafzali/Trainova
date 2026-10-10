@@ -1,11 +1,18 @@
 // AI trainer chat: one model call per user message, grounded in a snapshot of
 // the client's plans and training, returning text plus validated plan actions.
 
-import { LIMITS, validateTrainerActions, type TrainerAction, type TrainerContext } from "@/domain/trainer";
-import { DEFAULT_MODELS } from "./mistralClient";
-import { completeJson, type ChatMessage } from "./llm";
+import {
+  LIMITS,
+  parseTrainerReview,
+  validateTrainerActions,
+  type TrainerAction,
+  type TrainerConsistency,
+  type TrainerContext,
+  type TrainerReview,
+} from "@/domain/trainer";
+import { completeJson, LlmError, type ChatMessage } from "./llm";
 import { harmfulAdviceReason, hasRedFlagSymptoms, sanitizeContent } from "./safety";
-import { renderTrainerContext, TRAINER_SYSTEM_PROMPT } from "./prompts/trainer";
+import { renderTrainerContext, REVIEW_SYSTEM_PROMPT, TRAINER_SYSTEM_PROMPT } from "./prompts/trainer";
 
 export const MAX_MESSAGE_CHARS = 2000;
 export const MAX_HISTORY = 12;
@@ -31,6 +38,21 @@ const nn = (v: unknown): number | null => (typeof v === "number" && Number.isFin
 const arr = (v: unknown, max: number): Record<string, unknown>[] =>
   Array.isArray(v) ? v.slice(0, max).filter((x): x is Record<string, unknown> => !!x && typeof x === "object") : [];
 
+function parseConsistency(raw: unknown): TrainerConsistency {
+  const c = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const count = (v: unknown, max: number) => Math.min(max, Math.max(0, Math.round(n(v))));
+  const days = nn(c.daysSinceLast);
+  return {
+    program: typeof c.program === "string" ? s(c.program) : null,
+    programDays: nn(c.programDays) === null ? null : count(c.programDays, 14),
+    sessionsThisWeek: count(c.sessionsThisWeek, 21),
+    sessionsLast28: count(c.sessionsLast28, 84),
+    weeksTrainedLast4: count(c.weeksTrainedLast4, 4),
+    daysSinceLast: days === null ? null : count(days, 3650),
+    weekStreak: count(c.weekStreak, 520),
+  };
+}
+
 /** Coerces an untrusted request body into a well-formed, size-bounded context. */
 export function parseTrainerContext(raw: unknown): TrainerContext | null {
   if (!raw || typeof raw !== "object") return null;
@@ -48,6 +70,7 @@ export function parseTrainerContext(raw: unknown): TrainerContext | null {
       weightKg: nn(p.weightKg),
     },
     nextWorkout: typeof r.nextWorkout === "string" ? s(r.nextWorkout, 4) : null,
+    consistency: parseConsistency(r.consistency),
     workouts: arr(r.workouts, LIMITS.workouts).map((w) => ({
       ref: s(w.ref, 4),
       templateId: s(w.templateId),
@@ -103,7 +126,7 @@ export async function askTrainer(ctx: TrainerContext, history: TrainerTurn[]): P
     { role: "system", content: renderTrainerContext(ctx) },
     ...turns,
   ];
-  const out = await completeJson(messages, { model: DEFAULT_MODELS.COACHING, temperature: 0.4, maxTokens: 1200 });
+  const out = await completeJson(messages, { temperature: 0.4, maxTokens: 1200 });
 
   let reply = typeof out.reply === "string" ? sanitizeContent(out.reply.trim()) : "";
   let actions = validateTrainerActions(out.actions, ctx);
@@ -114,4 +137,21 @@ export async function askTrainer(ctx: TrainerContext, history: TrainerTurn[]): P
   }
   if (redFlag) actions = [];
   return { reply, actions, notice: redFlag ? RED_FLAG_NOTICE : null };
+}
+
+/** Status review of the client's training against their active plan. */
+export async function reviewTraining(ctx: TrainerContext): Promise<TrainerReview> {
+  const out = await completeJson(
+    [
+      { role: "system", content: REVIEW_SYSTEM_PROMPT },
+      { role: "system", content: renderTrainerContext(ctx) },
+      { role: "user", content: "Write my status review." },
+    ],
+    { temperature: 0.3, maxTokens: 1200 },
+  );
+  const review = parseTrainerReview(out, ctx, (text) => !harmfulAdviceReason(text));
+  if (!review) throw new LlmError("The coach couldn't put a review together. Try again.", "BAD_OUTPUT");
+  // Logged pain in recent sessions: advice only, no automatic plan edits.
+  if (ctx.recent.some((r) => r.pain && hasRedFlagSymptoms(r.pain))) review.actions = [];
+  return review;
 }

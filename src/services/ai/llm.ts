@@ -1,4 +1,4 @@
-import { getMistralClient } from "./mistralClient";
+import { chatComplete } from "./mistralClient";
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -37,13 +37,12 @@ export function parseJsonObject(text: string): Record<string, unknown> | null {
 /** One chat completion in JSON mode. Throws LlmError on outage or unparseable output. */
 export async function completeJson(
   messages: ChatMessage[],
-  opts: { model: string; temperature?: number; maxTokens?: number; timeoutMs?: number },
+  opts: { temperature?: number; maxTokens?: number; timeoutMs?: number },
 ): Promise<Record<string, unknown>> {
   let text: string;
   try {
-    const res = await getMistralClient().chat.complete(
+    const res = await chatComplete(
       {
-        model: opts.model,
         messages,
         temperature: opts.temperature ?? 0.4,
         maxTokens: opts.maxTokens ?? 900,

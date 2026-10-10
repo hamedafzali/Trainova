@@ -10,7 +10,7 @@
 // a safe fallback rather than throwing, so an AI outage never breaks the
 // Coach screen — callers can render the fallback exactly like a real result.
 
-import { getMistralClient, DEFAULT_MODELS } from "./mistralClient";
+import { chatComplete } from "./mistralClient";
 import { performSafetyCheck } from "./safety";
 import {
   createCoachIntroPrompt,
@@ -82,9 +82,7 @@ export function staticMealIdeas(goal: string | null): MealIdeasResponse {
 export async function getCoachIntro(input: CoachIntroInput): Promise<string | null> {
   if (input.situations.length === 0) return null;
   try {
-    const client = getMistralClient();
-    const response = await client.chat.complete({
-      model: DEFAULT_MODELS.COACHING,
+    const response = await chatComplete({
       messages: [
         { role: "system", content: COACH_INTRO_SYSTEM_PROMPT },
         { role: "user", content: createCoachIntroPrompt(input) },
@@ -120,9 +118,7 @@ export async function getCoachIntro(input: CoachIntroInput): Promise<string | nu
  */
 export async function getMealIdeas(input: MealIdeasInput): Promise<MealIdeasResponse> {
   try {
-    const client = getMistralClient();
-    const response = await client.chat.complete({
-      model: DEFAULT_MODELS.COACHING,
+    const response = await chatComplete({
       messages: [
         { role: "system", content: MEAL_IDEAS_SYSTEM_PROMPT },
         { role: "user", content: createMealIdeasPrompt(input) },

@@ -1,20 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, ArrowUp, Check, LogIn, RotateCcw, Sparkles, Trash2 } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { Fragment, useEffect, useRef, useState, type ReactNode, type Ref } from "react";
+import { AlertTriangle, ArrowUp, LogIn, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { postAi, useAiStatus } from "@/lib/ai";
 import { useCoachChat, type ChatMessage } from "@/lib/coachChat";
-import { applyTrainerAction } from "@/lib/trainerActions";
-import { recommendToday } from "@/domain/adaptive";
-import { buildTrainerContext, describeAction, type TrainerAction } from "@/domain/trainer";
+import { currentTrainerContext } from "@/lib/trainerContext";
+import type { TrainerAction } from "@/domain/trainer";
+import { ActionCard } from "./ActionCard";
 
 const SUGGESTIONS = [
-  "Build me a 30-minute workout for today",
   "My shoulder hurts on presses — what should I swap?",
-  "Why am I stalling, and what should I change?",
-  "Review my last two weeks",
+  "How should I warm up before squats?",
+  "How do I know when to add weight?",
 ];
 
 type Reply = { reply: string; actions: TrainerAction[]; notice: string | null };
@@ -61,51 +59,6 @@ function RichText({ text }: { text: string }) {
   return <div className="space-y-2">{blocks}</div>;
 }
 
-function ActionCard({
-  action,
-  applied,
-  onApply,
-}: {
-  action: TrainerAction;
-  applied: boolean;
-  onApply: () => { ok: true; href: string } | { ok: false; error: string };
-}) {
-  const [href, setHref] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const { title, detail } = describeAction(action);
-  return (
-    <li className="flex items-center gap-3 rounded-control border border-border bg-surface px-3 py-2.5">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink">{title}</p>
-        <p className="truncate text-xs text-muted">{error ?? detail}</p>
-      </div>
-      {applied ? (
-        href ? (
-          <Link href={href} className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-green">
-            <Check className="h-4 w-4" aria-hidden /> View
-          </Link>
-        ) : (
-          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-green">
-            <Check className="h-4 w-4" aria-hidden /> Applied
-          </span>
-        )
-      ) : (
-        <button
-          type="button"
-          className="btn-primary shrink-0 px-3 py-1.5 text-sm"
-          onClick={() => {
-            const r = onApply();
-            if (r.ok) setHref(r.href);
-            else setError(r.error);
-          }}
-        >
-          Apply
-        </button>
-      )}
-    </li>
-  );
-}
-
 function Bubble({ m, onRetry }: { m: ChatMessage; onRetry?: () => void }) {
   const markApplied = useCoachChat((s) => s.markApplied);
   if (m.role === "user") {
@@ -140,16 +93,7 @@ function Bubble({ m, onRetry }: { m: ChatMessage; onRetry?: () => void }) {
       {m.actions && m.actions.length > 0 && (
         <ul className="space-y-2" aria-label="Suggested changes">
           {m.actions.map((a, i) => (
-            <ActionCard
-              key={i}
-              action={a}
-              applied={m.applied?.[i] ?? false}
-              onApply={() => {
-                const r = applyTrainerAction(a);
-                if (r.ok) markApplied(m.id, i);
-                return r;
-              }}
-            />
+            <ActionCard key={i} action={a} applied={m.applied?.[i] ?? false} onApplied={() => markApplied(m.id, i)} />
           ))}
         </ul>
       )}
@@ -157,9 +101,17 @@ function Bubble({ m, onRetry }: { m: ChatMessage; onRetry?: () => void }) {
   );
 }
 
-function Shell({ children, onClear }: { children: ReactNode; onClear?: () => void }) {
+function Shell({
+  children,
+  onClear,
+  sectionRef,
+}: {
+  children: ReactNode;
+  onClear?: () => void;
+  sectionRef?: Ref<HTMLElement>;
+}) {
   return (
-    <section className="card flex flex-col gap-4 p-4 sm:p-5" aria-labelledby="coach-chat">
+    <section ref={sectionRef} className="card flex scroll-mt-4 flex-col gap-4 p-4 sm:p-5" aria-labelledby="coach-chat">
       <div className="flex items-center gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accentFill text-onAccent" aria-hidden>
           <Sparkles className="h-[18px] w-[18px]" />
@@ -187,6 +139,8 @@ export function TrainerChat() {
   const add = useCoachChat((s) => s.add);
   const remove = useCoachChat((s) => s.remove);
   const clear = useCoachChat((s) => s.clear);
+  const queued = useCoachChat((s) => s.queued);
+  const sectionRef = useRef<HTMLElement>(null);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -210,21 +164,7 @@ export function TrainerChat() {
     setDraft("");
     setPending(true);
     try {
-      const st = useStore.getState();
-      const rec = recommendToday({ templates: st.templates, programs: st.programs, sessions: st.sessions, feedback: st.feedback });
-      const context = buildTrainerContext({
-        now: new Date(),
-        units: st.units,
-        profile: st.profile,
-        programs: st.programs,
-        templates: st.templates,
-        sessions: st.sessions,
-        sets: st.sets,
-        prs: st.prs,
-        feedback: st.feedback,
-        exercises: st.exercises,
-        nextTemplateId: rec?.templateId ?? null,
-      });
+      const context = currentTrainerContext();
       const history = useCoachChat
         .getState()
         .messages.filter((m) => !m.error)
@@ -238,6 +178,17 @@ export function TrainerChat() {
       inputRef.current?.focus();
     }
   };
+
+  // Prompts from the coach tools above the chat.
+  const ready = ai.available === true && ai.signedIn;
+  useEffect(() => {
+    if (!queued || !ready || pending) return;
+    const text = useCoachChat.getState().takeQueued();
+    if (!text) return;
+    sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    void ask(text);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queued, ready, pending]);
 
   const retry = (errorId: string) => {
     remove(errorId);
@@ -279,12 +230,12 @@ export function TrainerChat() {
   const lastError = messages.length > 0 && messages[messages.length - 1].error ? messages[messages.length - 1].id : null;
 
   return (
-    <Shell onClear={messages.length ? clear : undefined}>
+    <Shell sectionRef={sectionRef} onClear={messages.length ? clear : undefined}>
       <div ref={listRef} className="max-h-[60vh] min-h-[8rem] space-y-4 overflow-y-auto pr-1" aria-live="polite">
         {messages.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-inkSoft">
-              Ask anything about your training. I&apos;ll answer from your plans and logged workouts, and offer changes
+              Pick a coach tool above or ask anything. I answer from your plans and logged workouts, and offer changes
               you can apply with one tap.
             </p>
             <div className="flex flex-wrap gap-2">

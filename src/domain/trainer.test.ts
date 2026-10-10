@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LIBRARY_EXERCISES } from "@/data/exercises";
-import { buildTrainerContext, describeAction, validateTrainerActions, type TrainerContext } from "./trainer";
+import { buildTrainerContext, describeAction, parseTrainerReview, validateTrainerActions, type TrainerContext } from "./trainer";
 import type { Program, UserProfile, WorkoutSession, WorkoutSet, WorkoutTemplate } from "./types";
 
 const profile: UserProfile = { displayName: null, role: "user", goal: "strength", experience: "beginner", onboarded: true };
@@ -85,6 +85,17 @@ describe("buildTrainerContext", () => {
     expect(c.recent[0]).toMatchObject({ date: "2026-10-08", minutes: 50 });
     expect(c.recent[0].exercises[0]).toEqual({ name: "Back Squat", sets: 2, best: "65kg×6" });
   });
+  it("measures consistency against the active program", () => {
+    expect(ctx().consistency).toEqual({
+      program: "Starter",
+      programDays: 1,
+      sessionsThisWeek: 1,
+      sessionsLast28: 1,
+      weeksTrainedLast4: 1,
+      daysSinceLast: 2,
+      weekStreak: 1,
+    });
+  });
   it("lists the catalogue with logging types", () => {
     const plank = ctx().catalogue.find((c) => c.id === "e-plank");
     expect(plank?.type).toBe("duration");
@@ -140,5 +151,30 @@ describe("validateTrainerActions", () => {
     expect(w).toMatchObject({ type: "create_workout", exercises: [{ exerciseId: "e-legpress", sets: 3, reps: 10, restSeconds: 120 }] });
     expect(p).toMatchObject({ type: "create_program", days: [{ name: "A" }] });
     expect(p.type === "create_program" && p.days).toHaveLength(1);
+  });
+});
+
+describe("parseTrainerReview", () => {
+  const raw = {
+    status: "needs_attention",
+    headline: "Good start — now make it regular",
+    summary: "One session in the last four weeks.",
+    wins: ["Squat up to 65kg×6", "", 42, "a", "b", "c"],
+    focus: ["Train twice this week"],
+    nextSession: { workout: "w1", hints: ["Squat 65kg for 3×6"] },
+    actions: [{ type: "set_volume", workout: "W1", slot: 1, sets: 3, reps: 6 }],
+  };
+  it("bounds lists, resolves the next workout and validates actions", () => {
+    const r = parseTrainerReview(raw, ctx())!;
+    expect(r.status).toBe("needs_attention");
+    expect(r.wins).toEqual(["Squat up to 65kg×6", "a", "b"]);
+    expect(r.nextSession).toEqual({ workout: "W1", name: "Day A", hints: ["Squat 65kg for 3×6"] });
+    expect(r.actions[0]).toMatchObject({ type: "set_volume", teId: "dayA-te0", sets: 3, reps: 6 });
+  });
+  it("drops unsafe items and rejects an unusable review", () => {
+    const keep = (t: string) => !t.includes("Squat");
+    expect(parseTrainerReview(raw, ctx(), keep)!.wins).toEqual(["a", "b", "c"]);
+    expect(parseTrainerReview({ ...raw, headline: "" }, ctx())).toBeNull();
+    expect(parseTrainerReview({ ...raw, status: "great" }, ctx())!.status).toBe("on_track");
   });
 });

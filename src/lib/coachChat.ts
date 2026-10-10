@@ -22,6 +22,10 @@ const memoryStorage: StateStorage = { getItem: () => null, setItem: () => {}, re
 
 interface ChatState {
   messages: ChatMessage[];
+  /** A prompt sent from outside the chat (coach tools); the chat sends it once. */
+  queued: string | null;
+  queue: (text: string) => void;
+  takeQueued: () => string | null;
   add: (m: Omit<ChatMessage, "id" | "at">) => string;
   markApplied: (messageId: string, index: number) => void;
   remove: (messageId: string) => void;
@@ -31,8 +35,15 @@ interface ChatState {
 /** Coach conversation, kept on this device only (separate from synced training data). */
 export const useCoachChat = create<ChatState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       messages: [],
+      queued: null,
+      queue: (text) => set({ queued: text }),
+      takeQueued: () => {
+        const q = get().queued;
+        if (q !== null) set({ queued: null });
+        return q;
+      },
       add: (m) => {
         const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
         set((s) => ({ messages: [...s.messages, { ...m, id, at: new Date().toISOString() }].slice(-MAX_MESSAGES) }));
@@ -54,6 +65,7 @@ export const useCoachChat = create<ChatState>()(
       name: "trainova-coach-chat",
       version: 1,
       skipHydration: true,
+      partialize: (s) => ({ messages: s.messages }),
       storage: createJSONStorage(() => (typeof window !== "undefined" ? window.localStorage : memoryStorage)),
     },
   ),
