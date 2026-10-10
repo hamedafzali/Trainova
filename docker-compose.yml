@@ -23,6 +23,9 @@ services:
       # Optional: enables AI plan generation (set in ACM variables).
       # Runtime switch for the AI coach: set it (e.g. in ACM project settings) to enable.
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+      # Optional: Mistral model to try first (e.g. open-mistral-nemo). Empty =
+      # automatic: best model the key can use, skipping ones out of quota.
+      - MISTRAL_MODEL=${MISTRAL_MODEL:-}
       # Optional: SMTP for password-reset emails + public URL for the reset link.
       - SMTP_HOST=${SMTP_HOST:-}
       - SMTP_PORT=${SMTP_PORT:-587}
