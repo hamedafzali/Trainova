@@ -5,6 +5,8 @@ import { Check, ChevronDown, Info, Plus, TrendingUp, X } from "lucide-react";
 import { Stepper } from "@/components/Stepper";
 import { CompleteButton } from "@/components/CompleteButton";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
+import { PlateLoader } from "@/components/PlateLoader";
+import { barWeight } from "@/domain/plates";
 import { suggestNextLoad } from "@/domain/progression";
 import { exerciseTypeOf, usesReps, usesWeight } from "@/domain/exerciseType";
 import { SET_KINDS, label, type ExerciseType, type SetKind } from "@/domain/taxonomy";
@@ -91,6 +93,8 @@ export function SessionExercise({
   const isCompound = ex?.isCompound ?? false;
   const weighted = usesWeight(type);
   const counted = usesReps(type);
+  // Bar exercises get a live plate diagram under the weight stepper.
+  const bar = type === "weight_reps" ? barWeight(ex?.equipment, units) : null;
   const rest = templateExercise?.restSeconds ?? defaultRest(isCompound);
 
   const last = useMemo(
@@ -361,6 +365,7 @@ export function SessionExercise({
                       unit={units}
                       onChange={(v) => updateSet(s.id, { actualWeight: fromDisplay(v, units) })}
                     />
+                    {bar != null && <PlateLoader total={stepperValue(startWeight(s), units)} bar={bar} units={units} />}
                   </Field>
                 )}
 

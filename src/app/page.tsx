@@ -7,7 +7,10 @@ import { CalendarDays, ChevronRight, Clock, Dumbbell, Flame, Play, Plus, Trophy 
 import { Onboarding } from "@/components/Onboarding";
 import { Welcome } from "@/components/Welcome";
 import { CoachTeaserCard } from "@/components/CoachTeaserCard";
+import { MuscleReadinessCard } from "@/components/MuscleReadinessCard";
 import { recommendToday } from "@/domain/adaptive";
+import { musclesWorked } from "@/domain/recovery";
+import type { Muscle } from "@/domain/taxonomy";
 import { localDayKey, weekDays, weekStreak } from "@/domain/streak";
 import { totalVolume } from "@/domain/volume";
 import { useHydrated, useStore } from "@/lib/store";
@@ -80,6 +83,16 @@ export default function HomePage() {
     ? Math.max(5, Math.round(next.exercises.reduce((n, te) => n + te.sets.length * (40 + te.restSeconds), 0) / 60 / 5) * 5)
     : 0;
   const trainedToday = stats.trained.has(todayKey);
+  // Muscles the next workout trains as a primary mover, outlined on the readiness map.
+  const targets = new Set<Muscle>(
+    active || !next
+      ? []
+      : next.exercises.flatMap((te) =>
+          musclesWorked(exerciseById(te.exerciseId))
+            .filter((w) => w.share === 1)
+            .map((w) => w.muscle),
+        ),
+  );
 
   const recent = sessions
     .filter((s) => s.status === "completed")
@@ -193,6 +206,8 @@ export default function HomePage() {
               </Link>
             </div>
           )}
+
+          <MuscleReadinessCard targets={targets} workoutName={next && !active ? next.name : undefined} />
 
           <section className="space-y-3">
             <div className="flex items-baseline justify-between">
