@@ -1,5 +1,6 @@
 -- Central equipment/exercise library (admin-editable, shared by all users).
--- Rows are seeded lazily from the app's seed data on first read.
+-- Rows are seeded lazily from src/data on first read and topped up with new
+-- library items on every server start (see src/server/library.ts).
 
 create table if not exists devices (
   id             text primary key,
@@ -10,7 +11,8 @@ create table if not exists devices (
   image_url      text,
   primary_muscle text,
   difficulty     text,
-  guidance       text
+  guidance       text,
+  loading        text -- 'stack' | 'plates'
 );
 
 create table if not exists exercises (
@@ -19,5 +21,6 @@ create table if not exists exercises (
   name              text not null,
   default_device_id text references devices (id) on delete set null,
   is_compound       boolean not null default false,
-  primary_muscle    text
+  primary_muscle    text,
+  meta              jsonb -- type, equipment, secondaryMuscles, level, instructions
 );

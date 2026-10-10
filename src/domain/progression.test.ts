@@ -92,4 +92,16 @@ describe("detectPrs", () => {
     );
     expect(prs).toEqual([]);
   });
+  it("flags a rep PR for bodyweight sets", () => {
+    const prs = detectPrs({ actualReps: 12, actualWeight: null }, { e1rm: 0, maxWeight: 0, maxReps: 10 });
+    expect(prs).toEqual([{ kind: "max_reps", value: 12 }]);
+  });
+  it("never flags a load PR for assisted exercises", () => {
+    const prs = detectPrs(
+      { actualReps: 8, actualWeight: 40 },
+      { e1rm: 10, maxWeight: 20, maxReps: 8 },
+      { assisted: true }
+    );
+    expect(prs).toEqual([]);
+  });
 });

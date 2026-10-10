@@ -24,12 +24,35 @@ function mergeArr(
 const arr = (v: unknown): Rec[] => (Array.isArray(v) ? (v as Rec[]) : []);
 const t = (v: unknown): string => (typeof v === "string" ? v : "");
 
+const ID_KEYS = [
+  "devices",
+  "exercises",
+  "programs",
+  "templates",
+  "sessions",
+  "sets",
+  "audit",
+  "feedback",
+  "bodyLog",
+] as const;
+
+/** Drop every record whose id has a deletion marker (tombstone). */
+export function applyTombstones(snap: Snapshot): Snapshot {
+  const dead = new Set(arr(snap.tombstones).map((x) => String(x.id)));
+  if (dead.size === 0) return snap;
+  const out: Snapshot = { ...snap };
+  for (const k of ID_KEYS) {
+    if (Array.isArray(snap[k])) out[k] = arr(snap[k]).filter((x) => !dead.has(String(x.id)));
+  }
+  return out;
+}
+
 /** Merge local over remote, keeping both sides' distinct records. */
 export function mergeSnapshots(local: Snapshot, remote: Snapshot | null): Snapshot {
-  if (!remote) return local;
+  if (!remote) return applyTombstones(local);
   const preferLocal = (l: Rec) => l;
 
-  return {
+  return applyTombstones({
     ...remote,
     ...local,
     units: local.units ?? remote.units,
@@ -54,5 +77,7 @@ export function mergeSnapshots(local: Snapshot, remote: Snapshot | null): Snapsh
     ),
     audit: mergeArr(arr(local.audit), arr(remote.audit), (x) => String(x.id), preferLocal),
     feedback: mergeArr(arr(local.feedback), arr(remote.feedback), (x) => String(x.id), preferLocal),
-  };
+    bodyLog: mergeArr(arr(local.bodyLog), arr(remote.bodyLog), (x) => String(x.id), preferLocal),
+    tombstones: mergeArr(arr(local.tombstones), arr(remote.tombstones), (x) => String(x.id), preferLocal),
+  });
 }

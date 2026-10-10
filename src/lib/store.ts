@@ -5,12 +5,15 @@ import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
 import type {
   AuditEvent,
+  BodyweightEntry,
   Device,
   Exercise,
   PersonalRecord,
   Program,
   SessionFeedback,
+  TemplateExercise,
   TemplateSet,
+  Tombstone,
   Units,
   UserProfile,
   WorkoutSession,
@@ -38,6 +41,9 @@ import {
   SEED_SESSION_SETS,
 } from "./seed";
 import { stripDate } from "./format";
+import { blueprintById, buildFromBlueprint } from "@/data/programs";
+import { SCHEMA_VERSION, upgradeWeights } from "@/domain/legacy";
+import { exerciseTypeOf } from "@/domain/exerciseType";
 import { uid } from "./id";
 
 const LOCAL_OWNER = "local-user";
@@ -79,10 +85,14 @@ export interface TrainovaState {
   sets: WorkoutSet[];
   feedback: SessionFeedback[];
   prs: PersonalRecord[];
+  bodyLog: BodyweightEntry[];
+  /** Deletion markers so sync never resurrects removed records. */
+  tombstones: Tombstone[];
 
   enterGuest: () => void;
   enterAccount: (email: string, role?: AppSession["role"]) => void;
-  leaveSession: () => void;
+  /** Sign out. `wipe` also clears personal data so the next account starts clean. */
+  leaveSession: (opts?: { wipe?: boolean }) => void;
   setUnits: (u: Units) => void;
   setLibrary: (devices: Device[], exercises: Exercise[]) => void;
   completeOnboarding: (p: Partial<UserProfile>) => void;
@@ -101,6 +111,9 @@ export interface TrainovaState {
   deleteProgram: (id: string) => void;
   addDayToProgram: (programId: string, name: string) => string;
   removeDayFromProgram: (programId: string, templateId: string) => void;
+  renameProgram: (id: string, name: string) => void;
+  /** Copy a curated starter program into the user's programs. */
+  installProgram: (blueprintId: string) => string | null;
 
   createTemplate: (name: string) => string;
   importGeneratedPlan: (plan: {
@@ -121,6 +134,13 @@ export interface TrainovaState {
   serializeTemplate: (templateId: string) => AssignedPlan | null;
   importAssignedPlan: (payload: AssignedPlan) => string;
   deleteTemplate: (id: string) => void;
+  updateTemplate: (id: string, patch: Partial<Pick<WorkoutTemplate, "name" | "notes">>) => void;
+  updateTemplateExercise: (
+    templateId: string,
+    templateExerciseId: string,
+    patch: Partial<Pick<TemplateExercise, "restSeconds" | "cue" | "deviceId" | "targetRpe">>
+  ) => void;
+  moveTemplateExercise: (templateId: string, templateExerciseId: string, delta: -1 | 1) => void;
   addTemplateExercise: (templateId: string, exerciseId: string) => void;
   removeTemplateExercise: (templateId: string, templateExerciseId: string) => void;
   setTemplateSetCount: (templateId: string, templateExerciseId: string, count: number) => void;
@@ -148,6 +168,13 @@ export interface TrainovaState {
 
   addSet: (sessionId: string, exerciseId: string) => string;
   updateSet: (setId: string, patch: Partial<WorkoutSet>) => void;
+  setSessionNotes: (sessionId: string, notes: string) => void;
+  addBodyweight: (date: string, weightKg: number) => void;
+  removeBodyweight: (id: string) => void;
+  /** Wipe personal data (sign-out / reset); keeps the shared library. */
+  resetUserData: () => void;
+  /** Replace personal data with a previously exported backup. */
+  importBackup: (data: Record<string, unknown>) => boolean;
   completeSet: (setId: string) => { newPrs: PersonalRecord["kind"][] };
   removeSet: (setId: string) => void;
 
@@ -178,6 +205,44 @@ export interface TrainovaState {
 
 const now = () => new Date().toISOString();
 
+const isWarmup = (x: Pick<WorkoutSet, "kind">) => x.kind === "warmup";
+
+/** Append deletion markers for ids (keeps the most recent 2000). */
+function tomb(list: Tombstone[], ids: Iterable<string>): Tombstone[] {
+  const at = now();
+  const fresh = [...ids].map((id) => ({ id, at }));
+  return [...list.filter((t) => !fresh.some((f) => f.id === t.id)), ...fresh].slice(-2000);
+}
+
+/** Sensible starting rep target for a newly added exercise. */
+function defaultTargetReps(ex: Exercise | undefined): number {
+  const type = exerciseTypeOf(ex);
+  if (type === "duration") return 30; // seconds
+  if (type === "cardio") return 15; // minutes
+  return ex?.isCompound ? 8 : 12;
+}
+
+/**
+ * Combine the bundled library, a newer central copy (fields it lacks fall back
+ * to the bundled entry) and the user's own custom items (owner != null).
+ */
+function mergeLibrary<T extends { id: string; owner: string | null }>(
+  bundled: T[],
+  central: T[],
+  existing: T[]
+): T[] {
+  const byId = new Map<string, T>();
+  for (const x of bundled) byId.set(x.id, x);
+  for (const x of central) {
+    const clean = Object.fromEntries(
+      Object.entries(x).filter(([, v]) => v !== undefined)
+    ) as Partial<T>;
+    byId.set(x.id, { ...(byId.get(x.id) ?? ({} as T)), ...clean, owner: null } as T);
+  }
+  const custom = existing.filter((x) => x.owner != null && !byId.has(x.id));
+  return [...byId.values(), ...custom];
+}
+
 export const useStore = create<TrainovaState>()(
   persist(
     (set, get) => ({
@@ -187,16 +252,21 @@ export const useStore = create<TrainovaState>()(
       audit: [],
       devices: SEED_DEVICES,
       exercises: SEED_EXERCISES,
-      programs: [SEED_PROGRAM],
-      templates: [SEED_PLAN],
-      sessions: [SEED_SESSION],
-      sets: [...SEED_SESSION_SETS],
+      programs: [],
+      templates: [],
+      sessions: [],
+      sets: [],
       feedback: [],
       prs: [],
+      bodyLog: [],
+      tombstones: [],
 
       enterGuest: () => set({ session: { mode: "guest", email: null } }),
       enterAccount: (email, role = "user") => set({ session: { mode: "account", email, role } }),
-      leaveSession: () => set({ session: null }),
+      leaveSession: (opts) => {
+        if (opts?.wipe) get().resetUserData();
+        set({ session: null });
+      },
 
       setUnits: (u) => set({ units: u }),
 
@@ -204,8 +274,8 @@ export const useStore = create<TrainovaState>()(
       // keeping the user's own custom devices/exercises.
       setLibrary: (devices, exercises) =>
         set((s) => ({
-          devices: [...devices, ...s.devices.filter((d) => d.owner != null)],
-          exercises: [...exercises, ...s.exercises.filter((e) => e.owner != null)],
+          devices: mergeLibrary(SEED_DEVICES, devices, s.devices),
+          exercises: mergeLibrary(SEED_EXERCISES, exercises, s.exercises),
         })),
 
       completeOnboarding: (p) =>
@@ -300,7 +370,41 @@ export const useStore = create<TrainovaState>()(
       },
 
       deleteProgram: (id) =>
-        set((s) => ({ programs: s.programs.filter((p) => p.id !== id) })),
+        set((s) => {
+          const program = s.programs.find((p) => p.id === id);
+          if (!program) return {};
+          // Day templates belong to the program; past sessions keep their snapshot title.
+          const dayIds = new Set(program.dayTemplateIds);
+          return {
+            programs: s.programs.filter((p) => p.id !== id),
+            templates: s.templates.filter((t) => !dayIds.has(t.id)),
+            tombstones: tomb(s.tombstones, [id, ...dayIds]),
+          };
+        }),
+
+      renameProgram: (id, name) =>
+        set((s) => ({
+          programs: s.programs.map((p) =>
+            p.id === id ? { ...p, name: stripDate(name) || p.name } : p
+          ),
+        })),
+
+      installProgram: (blueprintId) => {
+        const bp = blueprintById(blueprintId);
+        if (!bp) return null;
+        const st = get();
+        const { program, templates } = buildFromBlueprint(
+          bp,
+          LOCAL_OWNER,
+          uid,
+          (exId) => st.exercises.find((e) => e.id === exId)?.defaultDeviceId ?? null
+        );
+        set((s) => ({
+          programs: [...s.programs, program],
+          templates: [...s.templates, ...templates],
+        }));
+        return program.id;
+      },
 
       addDayToProgram: (programId, name) => {
         const templateId = get().createTemplate(name);
@@ -322,6 +426,7 @@ export const useStore = create<TrainovaState>()(
               : p
           ),
           templates: s.templates.filter((t) => t.id !== templateId),
+          tombstones: tomb(s.tombstones, [templateId]),
         })),
 
       createTemplate: (name) => {
@@ -434,7 +539,55 @@ export const useStore = create<TrainovaState>()(
       },
 
       deleteTemplate: (id) =>
-        set((s) => ({ templates: s.templates.filter((t) => t.id !== id) })),
+        set((s) => ({
+          templates: s.templates.filter((t) => t.id !== id),
+          programs: s.programs.map((p) =>
+            p.dayTemplateIds.includes(id)
+              ? { ...p, dayTemplateIds: p.dayTemplateIds.filter((d) => d !== id) }
+              : p
+          ),
+          tombstones: tomb(s.tombstones, [id]),
+        })),
+
+      updateTemplate: (id, patch) =>
+        set((s) => ({
+          templates: s.templates.map((t) =>
+            t.id !== id
+              ? t
+              : {
+                  ...t,
+                  ...patch,
+                  name: patch.name !== undefined ? stripDate(patch.name) || t.name : t.name,
+                }
+          ),
+        })),
+
+      updateTemplateExercise: (templateId, templateExerciseId, patch) =>
+        set((s) => ({
+          templates: s.templates.map((t) =>
+            t.id !== templateId
+              ? t
+              : {
+                  ...t,
+                  exercises: t.exercises.map((te) =>
+                    te.id === templateExerciseId ? { ...te, ...patch } : te
+                  ),
+                }
+          ),
+        })),
+
+      moveTemplateExercise: (templateId, templateExerciseId, delta) =>
+        set((s) => ({
+          templates: s.templates.map((t) => {
+            if (t.id !== templateId) return t;
+            const list = [...t.exercises].sort((a, b) => a.position - b.position);
+            const i = list.findIndex((te) => te.id === templateExerciseId);
+            const j = i + delta;
+            if (i < 0 || j < 0 || j >= list.length) return t;
+            [list[i], list[j]] = [list[j], list[i]];
+            return { ...t, exercises: list.map((te, position) => ({ ...te, position })) };
+          }),
+        })),
 
       addTemplateExercise: (templateId, exerciseId) => {
         const ex = get().exercises.find((e) => e.id === exerciseId);
@@ -451,12 +604,11 @@ export const useStore = create<TrainovaState>()(
                       exerciseId,
                       deviceId: ex?.defaultDeviceId ?? null,
                       position: t.exercises.length,
-                      sets: [
-                        { targetReps: 10, targetWeight: null },
-                        { targetReps: 10, targetWeight: null },
-                        { targetReps: 10, targetWeight: null },
-                      ],
-                      restSeconds: 90,
+                      sets: Array.from({ length: 3 }, () => ({
+                        targetReps: defaultTargetReps(ex),
+                        targetWeight: null,
+                      })),
+                      restSeconds: ex?.isCompound ? 120 : 90,
                     },
                   ],
                 }
@@ -600,6 +752,10 @@ export const useStore = create<TrainovaState>()(
         set((s) => ({
           sessions: s.sessions.filter((ss) => ss.id !== id),
           sets: s.sets.filter((x) => x.sessionId !== id),
+          tombstones: tomb(s.tombstones, [
+            id,
+            ...s.sets.filter((x) => x.sessionId === id).map((x) => x.id),
+          ]),
         })),
 
       reopenSession: (id) => {
@@ -670,15 +826,86 @@ export const useStore = create<TrainovaState>()(
       updateSet: (setId, patch) =>
         set((s) => ({ sets: s.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x)) })),
 
+      setSessionNotes: (sessionId, notes) =>
+        set((s) => ({
+          sessions: s.sessions.map((ss) =>
+            ss.id === sessionId ? { ...ss, notes: notes.trim() || null, updatedAt: now() } : ss
+          ),
+        })),
+
+      addBodyweight: (date, weightKg) =>
+        set((s) => {
+          // One entry per day — re-logging a day replaces it.
+          const existing = s.bodyLog.find((b) => b.date === date);
+          const entry: BodyweightEntry = { id: existing?.id ?? uid(), date, weightKg };
+          const bodyLog = [...s.bodyLog.filter((b) => b.date !== date), entry].sort((a, b) =>
+            a.date.localeCompare(b.date)
+          );
+          const latest = bodyLog[bodyLog.length - 1];
+          return { bodyLog, profile: { ...s.profile, weightKg: latest.weightKg } };
+        }),
+
+      removeBodyweight: (id) =>
+        set((s) => ({
+          bodyLog: s.bodyLog.filter((b) => b.id !== id),
+          tombstones: tomb(s.tombstones, [id]),
+        })),
+
+      resetUserData: () =>
+        set((s) => ({
+          profile: { displayName: null, role: "user", goal: null, experience: null, onboarded: false },
+          audit: [],
+          devices: s.devices.filter((d) => d.owner == null),
+          exercises: s.exercises.filter((e) => e.owner == null),
+          programs: [],
+          templates: [],
+          sessions: [],
+          sets: [],
+          feedback: [],
+          prs: [],
+          bodyLog: [],
+          tombstones: [],
+        })),
+
+      importBackup: (data) => {
+        const d = upgradeWeights(data as Record<string, any>);
+        const list = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+        if (!Array.isArray(d.sessions) || !Array.isArray(d.sets)) return false;
+        set((s) => ({
+          units: d.units === "lb" ? "lb" : "kg",
+          profile: d.profile && typeof d.profile === "object" ? { ...s.profile, ...d.profile } : s.profile,
+          audit: list<AuditEvent>(d.audit),
+          devices: mergeLibrary(SEED_DEVICES, s.devices.filter((x) => x.owner == null), list<Device>(d.devices)),
+          exercises: mergeLibrary(
+            SEED_EXERCISES,
+            s.exercises.filter((x) => x.owner == null),
+            list<Exercise>(d.exercises)
+          ),
+          programs: list<Program>(d.programs),
+          templates: list<WorkoutTemplate>(d.templates),
+          sessions: list<WorkoutSession>(d.sessions),
+          sets: list<WorkoutSet>(d.sets),
+          feedback: list<SessionFeedback>(d.feedback),
+          prs: list<PersonalRecord>(d.prs),
+          bodyLog: list<BodyweightEntry>(d.bodyLog),
+          tombstones: list<Tombstone>(d.tombstones),
+        }));
+        return true;
+      },
+
       completeSet: (setId) => {
         const st = get();
         const target = st.sets.find((x) => x.id === setId);
         if (!target) return { newPrs: [] };
         const bests = st.bestsFor(target.exerciseId);
-        const prs = detectPrs(
-          { actualReps: target.actualReps, actualWeight: target.actualWeight },
-          bests
-        );
+        const ex = st.exercises.find((e) => e.id === target.exerciseId);
+        const type = exerciseTypeOf(ex, st.devices.find((d) => d.id === target.deviceId));
+        const prs =
+          target.kind === "warmup" || type === "duration" || type === "cardio"
+            ? []
+            : detectPrs({ actualReps: target.actualReps, actualWeight: target.actualWeight }, bests, {
+                assisted: type === "assisted_bodyweight",
+              });
         set((s) => {
           const sets = s.sets.map((x) =>
             x.id === setId ? { ...x, completed: true, completedAt: now() } : x
@@ -702,11 +929,13 @@ export const useStore = create<TrainovaState>()(
           const target = s.sets.find((x) => x.id === setId);
           if (!target) return {};
           const remaining = s.sets.filter((x) => x.id !== setId);
+          const tombstones = target.completed ? tomb(s.tombstones, [setId]) : s.tombstones;
           // Re-number the remaining rounds of the same exercise so labels stay 1..N.
           const siblings = remaining
             .filter((x) => x.sessionId === target.sessionId && x.exerciseId === target.exerciseId)
             .sort((a, b) => a.setIndex - b.setIndex);
           return {
+            tombstones,
             sets: remaining.map((x) => {
               if (x.sessionId !== target.sessionId || x.exerciseId !== target.exerciseId) return x;
               return { ...x, setIndex: siblings.findIndex((y) => y.id === x.id) };
@@ -767,7 +996,7 @@ export const useStore = create<TrainovaState>()(
           .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
         for (const s of sessions) {
           const sets = st.sets.filter(
-            (x) => x.sessionId === s.id && x.exerciseId === exerciseId && x.completed
+            (x) => x.sessionId === s.id && x.exerciseId === exerciseId && x.completed && !isWarmup(x)
           );
           if (sets.length > 0) {
             return {
@@ -792,7 +1021,7 @@ export const useStore = create<TrainovaState>()(
         let streak = 0;
         for (const s of sessions) {
           const sets = st.sets.filter(
-            (x) => x.sessionId === s.id && x.exerciseId === exerciseId && x.completed
+            (x) => x.sessionId === s.id && x.exerciseId === exerciseId && x.completed && !isWarmup(x)
           );
           if (sets.length === 0) continue;
           const missed = sets.some((x) => (x.actualReps ?? 0) < targetReps);
@@ -805,13 +1034,13 @@ export const useStore = create<TrainovaState>()(
       bestsFor: (exerciseId) => {
         const st = get();
         const sets = st.sets.filter(
-          (x) => x.exerciseId === exerciseId && x.completed && x.actualWeight != null
+          (x) => x.exerciseId === exerciseId && x.completed && !isWarmup(x)
         );
         let e1rm = 0;
         let maxReps = 0;
         for (const x of sets) {
           if (x.actualReps != null) {
-            e1rm = Math.max(e1rm, epley1rm(x.actualWeight as number, x.actualReps));
+            if (x.actualWeight != null) e1rm = Math.max(e1rm, epley1rm(x.actualWeight, x.actualReps));
             maxReps = Math.max(maxReps, x.actualReps);
           }
         }
@@ -844,7 +1073,8 @@ export const useStore = create<TrainovaState>()(
           let durationMin = 0;
           let distance = 0;
           let durationSec = 0;
-          for (const x of sets) {
+          const working = sets.filter((x) => !isWarmup(x));
+          for (const x of working) {
             if (x.actualWeight != null && x.actualReps) {
               e1rm = Math.max(e1rm, epley1rm(x.actualWeight, x.actualReps));
             }
@@ -854,9 +1084,9 @@ export const useStore = create<TrainovaState>()(
           }
           out.push({
             date: s.date,
-            topWeight: bestWeight(sets),
+            topWeight: bestWeight(working),
             e1rm: Math.round(e1rm * 10) / 10,
-            volume: totalVolume(sets),
+            volume: totalVolume(working),
             durationMin: Math.round(durationMin * 10) / 10,
             distance: Math.round(distance * 100) / 100,
             durationSec,
@@ -869,7 +1099,7 @@ export const useStore = create<TrainovaState>()(
       // New key = hard reset of all existing data (local-first has no server DB).
       // Old "trainova-v1" data is abandoned; the app starts from the seed below.
       name: "trainova-2026-06",
-      version: 2,
+      version: SCHEMA_VERSION,
       migrate: migrateState,
       skipHydration: true,
       storage: createJSONStorage(() =>
@@ -888,6 +1118,8 @@ export const useStore = create<TrainovaState>()(
         sets: s.sets,
         feedback: s.feedback,
         prs: s.prs,
+        bodyLog: s.bodyLog,
+        tombstones: s.tombstones,
       }),
     }
   )
@@ -898,9 +1130,30 @@ export const useStore = create<TrainovaState>()(
 // session, and reset the definitions layer to the clean seed. Best-effort and
 // idempotent; preserves logged sessions/sets/PRs and custom exercises.
 // ---------------------------------------------------------------------------
-function migrateState(persisted: unknown, _version: number): TrainovaState {
-  const s = persisted as Record<string, any> | undefined;
+function migrateState(persisted: unknown, version: number): TrainovaState {
+  let s = persisted as Record<string, any> | undefined;
   if (!s) return persisted as TrainovaState;
+  if (version < 2) s = migrateV2(s);
+  return migrateV3(s);
+}
+
+/**
+ * v3: shared library refresh (new devices/exercises + richer metadata),
+ * canonical-kg weights, bodyweight log and sync tombstones. Non-destructive —
+ * every program, template, session and set the user has is kept.
+ */
+function migrateV3(s: Record<string, any>): TrainovaState {
+  const up = upgradeWeights({ ...s, schema: 0 });
+  return {
+    ...up,
+    devices: mergeLibrary(SEED_DEVICES, [], (s.devices ?? []) as Device[]),
+    exercises: mergeLibrary(SEED_EXERCISES, [], (s.exercises ?? []) as Exercise[]),
+    bodyLog: s.bodyLog ?? [],
+    tombstones: s.tombstones ?? [],
+  } as unknown as TrainovaState;
+}
+
+function migrateV2(s: Record<string, any>): Record<string, any> {
 
   const mergeById = <T extends { id: string }>(seed: T[], existing: T[]): T[] => {
     const have = new Set(seed.map((x) => x.id));
@@ -1017,7 +1270,7 @@ function migrateState(persisted: unknown, _version: number): TrainovaState {
     sets: liveSets,
     feedback: (s.feedback ?? []).filter((item: SessionFeedback) => liveSessionIds.has(item.sessionId)),
     prs: s.prs ?? [],
-  } as TrainovaState;
+  };
 }
 
 /**

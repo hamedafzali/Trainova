@@ -1,5 +1,10 @@
 // Core domain types. Pure data shapes shared by the UI and the data layer.
 // See ARCHITECTURE.md for the design rationale.
+//
+// WEIGHTS ARE ALWAYS STORED IN KILOGRAMS. `Units` is a display preference only;
+// convert at the UI boundary with src/lib/units.ts.
+
+import type { Equipment, ExerciseType, Muscle, SetKind } from "./taxonomy";
 
 export type Units = "kg" | "lb";
 
@@ -24,6 +29,8 @@ export interface Device {
   primaryMuscle: string | null;
   difficulty?: "beginner" | "intermediate" | "advanced" | null;
   guidance?: string | null; // short beginner how-to
+  /** Selectorized stack vs plate-loaded — affects the load increment shown. */
+  loading?: "stack" | "plates" | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -36,7 +43,13 @@ export interface Exercise {
   defaultDeviceId: string | null; // structured link, not text
   isCompound: boolean;
   primaryMuscle: string | null;
-  mode?: "time"; // a timed hold (plank, dead-hang) instead of weight × reps
+  /** @deprecated legacy flag — use `type: "duration"`. Still read for old data. */
+  mode?: "time";
+  type?: ExerciseType; // how sets are logged; derived from device when absent
+  equipment?: Equipment | null;
+  secondaryMuscles?: Muscle[];
+  level?: "beginner" | "intermediate" | "advanced" | null;
+  instructions?: string[]; // short ordered how-to steps
 }
 
 // ---------------------------------------------------------------------------
@@ -76,7 +89,9 @@ export interface Program {
   id: string;
   owner: string;
   name: string;
-  source: "trainer" | "self";
+  source: "trainer" | "self" | "library";
+  /** Id of the library blueprint this program was installed from. */
+  blueprintId?: string | null;
   notes: string | null;
   dayTemplateIds: string[];
 }
@@ -97,6 +112,7 @@ export interface WorkoutSession {
   completedAt: string | null;
   reopenedAt: string | null; // audit for completed→active edits
   updatedAt: string;
+  notes?: string | null;
 }
 
 export interface WorkoutSet {
@@ -120,6 +136,20 @@ export interface WorkoutSet {
   incline?: number | null;
   distance?: number | null;
   durationSec?: number | null; // a timed hold (time-mode exercises)
+  kind?: SetKind; // undefined = normal working set
+}
+
+/** A dated bodyweight measurement (kg). */
+export interface BodyweightEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  weightKg: number;
+}
+
+/** A deletion marker so synced devices don't resurrect removed records. */
+export interface Tombstone {
+  id: string;
+  at: string;
 }
 
 export type SessionDifficulty = "easy" | "right" | "hard";

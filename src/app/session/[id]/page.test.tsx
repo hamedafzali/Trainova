@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import { SEED_SESSION_ID } from "@/lib/seed";
+import { SEED_SESSION, SEED_SESSION_ID, SEED_SESSION_SETS } from "@/lib/seed";
+import { useStore } from "@/lib/store";
 import SessionPage from "./page";
+
+// New installs start empty, so put a completed session in place explicitly.
+useStore.setState({ sessions: [SEED_SESSION], sets: [...SEED_SESSION_SETS] });
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ id: SEED_SESSION_ID }),

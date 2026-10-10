@@ -120,14 +120,23 @@ export function suggestNextLoad(
   };
 }
 
-/** Detect PRs from a freshly completed set against existing bests. */
+/**
+ * Detect PRs from a freshly completed set against existing bests.
+ * Bodyweight sets (no load) can still set a rep PR. Assisted exercises never
+ * PR on load — more counterweight means an easier set.
+ */
 export function detectPrs(
   set: Pick<WorkoutSet, "actualReps" | "actualWeight">,
-  bests: { e1rm: number; maxWeight: number; maxReps: number }
+  bests: { e1rm: number; maxWeight: number; maxReps: number },
+  opts: { assisted?: boolean } = {}
 ): { kind: "e1rm" | "max_weight" | "max_reps"; value: number }[] {
   const reps = set.actualReps ?? 0;
   const weight = set.actualWeight ?? 0;
-  if (weight <= 0) return [];
+  if (weight <= 0 || opts.assisted) {
+    return reps > 0 && bests.maxReps > 0 && reps > bests.maxReps
+      ? [{ kind: "max_reps", value: reps }]
+      : [];
+  }
 
   const prs: { kind: "e1rm" | "max_weight" | "max_reps"; value: number }[] = [];
   // Top weight is the meaningful PR when only weight is tracked.

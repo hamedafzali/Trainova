@@ -3,6 +3,7 @@
 import { useStore } from "./store";
 import { clearToken, getToken } from "./auth";
 import { mergeSnapshots } from "@/domain/merge";
+import { SCHEMA_VERSION, upgradeWeights } from "@/domain/legacy";
 
 /** Expired/invalid token → drop the session so the user lands back on login. */
 function handleAuthError() {
@@ -24,6 +25,8 @@ const SYNC_KEYS = [
   "sets",
   "feedback",
   "prs",
+  "bodyLog",
+  "tombstones",
 ] as const;
 
 type Snapshot = Record<string, unknown>;
@@ -32,7 +35,17 @@ export function snapshot(): Snapshot {
   const s = useStore.getState() as unknown as Record<string, unknown>;
   const out: Snapshot = {};
   for (const k of SYNC_KEYS) out[k] = s[k];
+  out.schema = SCHEMA_VERSION;
   return out;
+}
+
+/**
+ * Fold the account copy into local state. Local-only records (e.g. a workout
+ * logged offline) survive; deletions on either side win via tombstones.
+ */
+export function mergeRemote(remote: Snapshot | null | undefined) {
+  if (!remote) return;
+  applySnapshot(mergeSnapshots(snapshot(), upgradeWeights(remote)));
 }
 
 export function applySnapshot(data: Snapshot | null | undefined) {
@@ -83,7 +96,7 @@ export async function pushState(): Promise<void> {
     // Conflict: another device wrote since our last pull. Merge and retry once.
     if (r.status === 409) {
       const j = await r.json();
-      applySnapshot(mergeSnapshots(snapshot(), j.data ?? null));
+      if (j.data) mergeRemote(j.data);
       baseUpdatedAt = j.updatedAt ?? null;
       r = await put(t);
     }

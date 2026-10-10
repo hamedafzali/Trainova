@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useHydrated, useStore } from "@/lib/store";
 import { signOut } from "@/lib/auth";
+import { pushState } from "@/lib/sync";
 import type { UserProfile, Units } from "@/domain/types";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CardSkeleton } from "@/components/Skeleton";
@@ -40,8 +41,11 @@ export default function ProfilePage() {
     );
 
   const exit = async () => {
+    const account = session?.mode === "account";
+    // Flush pending changes, then clear this device so the next account starts clean.
+    if (account) await pushState();
     await signOut();
-    leaveSession();
+    leaveSession({ wipe: account });
     router.push("/");
   };
 

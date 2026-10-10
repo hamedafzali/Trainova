@@ -8,82 +8,16 @@ import type {
   WorkoutTemplate,
 } from "@/domain/types";
 
+import { LIBRARY_DEVICES } from "@/data/devices";
+import { LIBRARY_EXERCISES } from "@/data/exercises";
+
 const OWNER = "local-user";
 
-// ---------------------------------------------------------------------------
-// Devices — structured equipment library (machine numbers are data, not text).
-// ---------------------------------------------------------------------------
-const DEVICE_DEFS: Omit<Device, "owner" | "imageUrl">[] = [
-  { id: "d-22", name: "Leg Press", machineNumber: "22", category: "machine", primaryMuscle: "quads", difficulty: "beginner", guidance: "Push the platform away with both feet; don't lock your knees." },
-  { id: "d-25", name: "Seated Leg Curl", machineNumber: "25", category: "machine", primaryMuscle: "hamstrings", difficulty: "beginner", guidance: "Curl the pad down with your heels; control the way back up." },
-  { id: "d-26", name: "Seated Leg Extension", machineNumber: "26", category: "machine", primaryMuscle: "quads", difficulty: "beginner", guidance: "Straighten your legs to lift the pad; pause at the top." },
-  { id: "d-4", name: "Lat Pulldown", machineNumber: "4", category: "machine", primaryMuscle: "back", difficulty: "beginner", guidance: "Pull the bar to your upper chest; lead with the elbows." },
-  { id: "d-7", name: "Seated Row", machineNumber: "7", category: "machine", primaryMuscle: "back", difficulty: "beginner", guidance: "Pull the handle to your stomach; squeeze the shoulder blades." },
-  { id: "d-1", name: "Chest Press", machineNumber: "1", category: "machine", primaryMuscle: "chest", difficulty: "beginner", guidance: "Press the handles forward; don't shrug your shoulders." },
-  { id: "d-12", name: "Back Extension", machineNumber: "12", category: "machine", primaryMuscle: "lower back", difficulty: "intermediate", guidance: "Bend at the hips and rise to a straight back; no over-arching." },
-  { id: "d-11", name: "Abdominal", machineNumber: "11", category: "machine", primaryMuscle: "abs", difficulty: "beginner", guidance: "Crunch forward with your abs, not your arms." },
-  { id: "d-tm", name: "Treadmill", machineNumber: null, category: "cardio", primaryMuscle: "cardio", difficulty: "beginner", guidance: "Start slow; use incline to raise effort without running faster." },
-  { id: "d-bb", name: "Barbell", machineNumber: null, category: "free_weight", primaryMuscle: null, difficulty: "intermediate", guidance: null },
-  { id: "d-db", name: "Dumbbell", machineNumber: null, category: "free_weight", primaryMuscle: null, difficulty: "beginner", guidance: null },
-  { id: "d-cable", name: "Cable Tower", machineNumber: null, category: "cable", primaryMuscle: null, difficulty: "beginner", guidance: null },
-  { id: "d-pull", name: "Pull-up Bar", machineNumber: null, category: "bodyweight", primaryMuscle: null, difficulty: "advanced", guidance: null },
-];
-
-export const SEED_DEVICES: Device[] = DEVICE_DEFS.map((d) => ({
-  ...d,
-  owner: null,
-  imageUrl: `/devices/${d.id}.svg`,
-}));
-
-// ---------------------------------------------------------------------------
-// Exercises — movements linked to a default device.
-// ---------------------------------------------------------------------------
-type SeedEx = { id: string; name: string; deviceId: string | null; isCompound: boolean; muscle: string | null };
-const EXS: SeedEx[] = [
-  { id: "e-legpress", name: "Leg Press", deviceId: "d-22", isCompound: true, muscle: "quads" },
-  { id: "e-legcurl", name: "Seated Leg Curl", deviceId: "d-25", isCompound: false, muscle: "hamstrings" },
-  { id: "e-legext", name: "Seated Leg Extension", deviceId: "d-26", isCompound: false, muscle: "quads" },
-  { id: "e-pulldown", name: "Lat Pulldown", deviceId: "d-4", isCompound: false, muscle: "back" },
-  { id: "e-row", name: "Seated Row", deviceId: "d-7", isCompound: false, muscle: "back" },
-  { id: "e-chestpress", name: "Chest Press", deviceId: "d-1", isCompound: true, muscle: "chest" },
-  { id: "e-backext", name: "Back Extension", deviceId: "d-12", isCompound: false, muscle: "lower back" },
-  { id: "e-abs", name: "Abdominal", deviceId: "d-11", isCompound: false, muscle: "abs" },
-  { id: "e-treadmill", name: "Treadmill", deviceId: "d-tm", isCompound: false, muscle: "cardio" },
-  { id: "e-squat", name: "Back Squat", deviceId: "d-bb", isCompound: true, muscle: "quads" },
-  { id: "e-bench", name: "Bench Press", deviceId: "d-bb", isCompound: true, muscle: "chest" },
-  { id: "e-deadlift", name: "Deadlift", deviceId: "d-bb", isCompound: true, muscle: "back" },
-  { id: "e-ohp", name: "Overhead Press", deviceId: "d-bb", isCompound: true, muscle: "shoulders" },
-  { id: "e-curl", name: "Dumbbell Curl", deviceId: "d-db", isCompound: false, muscle: "biceps" },
-  { id: "e-pullup", name: "Pull-up", deviceId: "d-pull", isCompound: true, muscle: "back" },
-  { id: "e-lateral", name: "Lateral Raise", deviceId: "d-db", isCompound: false, muscle: "shoulders" },
-];
-
-// Timed holds (logged as duration × sets, no weight).
-const TIME_EXS: SeedEx[] = [
-  { id: "e-plank", name: "Plank", deviceId: null, isCompound: false, muscle: "abs" },
-  { id: "e-hollow", name: "Hollow Hold", deviceId: null, isCompound: false, muscle: "abs" },
-  { id: "e-deadhang", name: "Dead Hang", deviceId: "d-pull", isCompound: false, muscle: "back" },
-];
-
-export const SEED_EXERCISES: Exercise[] = [
-  ...EXS.map((e) => ({
-    id: e.id,
-    owner: null,
-    name: e.name,
-    defaultDeviceId: e.deviceId,
-    isCompound: e.isCompound,
-    primaryMuscle: e.muscle,
-  })),
-  ...TIME_EXS.map((e) => ({
-    id: e.id,
-    owner: null,
-    name: e.name,
-    defaultDeviceId: e.deviceId,
-    isCompound: e.isCompound,
-    primaryMuscle: e.muscle,
-    mode: "time" as const,
-  })),
-];
+// The shared library lives in src/data. New installs start with it and no
+// personal data; the legacy plan/session below only feed the v2 migration for
+// installs that already had them.
+export const SEED_DEVICES: Device[] = LIBRARY_DEVICES;
+export const SEED_EXERCISES: Exercise[] = LIBRARY_EXERCISES;
 
 // ---------------------------------------------------------------------------
 // The user's 16.06.2026 session, the single source of truth for both the plan

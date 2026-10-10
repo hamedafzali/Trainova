@@ -38,3 +38,31 @@ describe("mergeSnapshots", () => {
     expect(merged.exercises.map((e) => e.id).sort()).toEqual(["a", "b", "c"]);
   });
 });
+
+describe("tombstones", () => {
+  it("does not resurrect a set deleted on one device", () => {
+    const local = { sets: [{ id: "keep" }], tombstones: [{ id: "gone", at: "2026-10-01" }] };
+    const remote = { sets: [{ id: "keep" }, { id: "gone" }] };
+    const merged = mergeSnapshots(local, remote) as { sets: { id: string }[] };
+    expect(merged.sets.map((s) => s.id)).toEqual(["keep"]);
+  });
+
+  it("honours tombstones that arrive from the remote side", () => {
+    const local = { programs: [{ id: "p1" }, { id: "p2" }] };
+    const remote = { programs: [{ id: "p1" }], tombstones: [{ id: "p2", at: "2026-10-01" }] };
+    const merged = mergeSnapshots(local, remote) as {
+      programs: { id: string }[];
+      tombstones: { id: string }[];
+    };
+    expect(merged.programs.map((p) => p.id)).toEqual(["p1"]);
+    expect(merged.tombstones).toHaveLength(1);
+  });
+
+  it("unions bodyweight entries", () => {
+    const merged = mergeSnapshots(
+      { bodyLog: [{ id: "a", date: "2026-10-01", weightKg: 80 }] },
+      { bodyLog: [{ id: "b", date: "2026-10-02", weightKg: 79.5 }] }
+    ) as { bodyLog: unknown[] };
+    expect(merged.bodyLog).toHaveLength(2);
+  });
+});
