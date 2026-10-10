@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   Building2,
   Check,
+  ChevronDown,
   Clock,
   Cog,
   Dumbbell,
@@ -161,8 +162,9 @@ export function Onboarding({ onUseAiOnboarding }: { onUseAiOnboarding?: () => vo
             <Heading title="Your program" sub="Recommended from your answers. You can edit every exercise later." />
             <ProgramCard bp={pick} recommended={pick.id === recommended.id} />
             <details className="group">
-              <summary className="cursor-pointer list-none text-sm font-semibold text-accent">
+              <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-sm font-semibold text-accent [&::-webkit-details-marker]:hidden">
                 Choose a different program
+                <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden />
               </summary>
               <ul className="mt-3 space-y-2">
                 {PROGRAM_BLUEPRINTS.filter((b) => b.id !== pick.id).map((b) => (

@@ -30,7 +30,7 @@ function targetLabel(type: ExerciseType): { unit: string; label: string; step: n
   return { unit: "reps", label: "Reps", step: 1, max: 100 };
 }
 
-export function summarize(sets: TemplateSet[], type: ExerciseType, units: Units): string {
+function summarize(sets: TemplateSet[], type: ExerciseType, units: Units): string {
   if (sets.length === 0) return "No sets";
   const t = targetLabel(type);
   const reps = [...new Set(sets.map((s) => s.targetReps))];
@@ -111,7 +111,7 @@ export default function TemplateEditPage() {
         <ArrowLeft className="h-4 w-4" aria-hidden /> Plans
       </Link>
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           {editingName ? (
             <input
@@ -131,17 +131,17 @@ export default function TemplateEditPage() {
               }}
             />
           ) : (
-            <h1 className="page-title flex flex-wrap items-center gap-2">
-              <span className="min-w-0 break-words">{template.name}</span>
+            <h1 className="page-title break-words">
+              {template.name}
               <button
                 type="button"
                 aria-label="Rename plan"
                 onClick={() => setEditingName(true)}
-                className="grid h-8 w-8 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink"
+                className="ml-1.5 inline-grid h-8 w-8 place-items-center rounded-control align-middle text-muted hover:bg-surface2 hover:text-ink"
               >
                 <Pencil className="h-4 w-4" aria-hidden />
               </button>
-              {template.id === SEED_PLAN_ID && <span className="badge-accent text-xs">Sample</span>}
+              {template.id === SEED_PLAN_ID && <span className="badge-accent ml-1 align-middle text-xs">Sample</span>}
             </h1>
           )}
           <p className="page-subtitle">
@@ -149,7 +149,7 @@ export default function TemplateEditPage() {
             {template.exercises.length > 0 && ` · ~${estimateMinutes(template.exercises)} min`}
           </p>
         </div>
-        <button className="btn-primary shrink-0 px-6" onClick={start} disabled={template.exercises.length === 0}>
+        <button className="btn-primary w-full shrink-0 px-6 sm:w-auto" onClick={start} disabled={template.exercises.length === 0}>
           <Play className="h-4 w-4" aria-hidden /> Start workout
         </button>
       </header>
@@ -188,7 +188,7 @@ export default function TemplateEditPage() {
             return (
               <li key={te.id} className="card overflow-hidden">
                 <div className="flex items-center gap-3 p-3 sm:p-4">
-                  <span className="w-5 shrink-0 text-center text-sm font-semibold tabular-nums text-muted">{idx + 1}</span>
+                  <span className="hidden w-5 shrink-0 text-center text-sm font-semibold tabular-nums text-muted sm:inline">{idx + 1}</span>
                   <DeviceAvatar device={device} className="h-10 w-10 rounded-control text-sm" />
                   <button
                     type="button"
@@ -201,30 +201,23 @@ export default function TemplateEditPage() {
                       {summarize(te.sets, type, units)} · rest {te.restSeconds}s
                     </p>
                   </button>
-                  <div className="flex shrink-0 items-center">
-                    <IconBtn label="Move up" disabled={idx === 0} onClick={() => moveTemplateExercise(template.id, te.id, -1)}>
-                      <ArrowUp className="h-4 w-4" aria-hidden />
-                    </IconBtn>
-                    <IconBtn
-                      label="Move down"
-                      disabled={idx === template.exercises.length - 1}
-                      onClick={() => moveTemplateExercise(template.id, te.id, 1)}
-                    >
-                      <ArrowDown className="h-4 w-4" aria-hidden />
-                    </IconBtn>
-                    <IconBtn label={open ? "Collapse" : "Edit"} onClick={() => setOpenId(open ? null : te.id)}>
-                      <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
-                    </IconBtn>
-                  </div>
+                  <IconBtn label={open ? "Collapse" : "Edit"} onClick={() => setOpenId(open ? null : te.id)}>
+                    <ChevronDown className={`h-5 w-5 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+                  </IconBtn>
                 </div>
 
                 {open && (
                   <div className="space-y-4 border-t border-border bg-surface2/40 p-3 sm:p-4">
                     <div className="space-y-2">
+                      <div className={`grid items-center gap-2 text-xs font-medium text-muted ${usesWeight(type) ? "grid-cols-[2rem_1fr_1fr]" : "grid-cols-[2rem_1fr]"}`}>
+                        <span>Set</span>
+                        <span className="text-center">{t.label} {t.unit !== "reps" && `(${t.unit})`}</span>
+                        {usesWeight(type) && <span className="text-center">Weight ({units})</span>}
+                      </div>
                       {te.sets.map((st, i) => (
-                        <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                          <span className="w-12 shrink-0 text-sm font-medium text-muted">Set {i + 1}</span>
-                          <div className="min-w-[9rem] flex-1">
+                        <div key={i} className={`grid items-center gap-2 ${usesWeight(type) ? "grid-cols-[2rem_1fr_1fr]" : "grid-cols-[2rem_1fr]"}`}>
+                          <span className="text-center text-sm font-semibold tabular-nums text-inkSoft">{i + 1}</span>
+                          <div className="min-w-0">
                             <Stepper
                               label={`Set ${i + 1} ${t.label.toLowerCase()}`}
                               value={st.targetReps}
@@ -232,13 +225,15 @@ export default function TemplateEditPage() {
                               min={1}
                               max={t.max}
                               unit={t.unit}
+                              size="sm"
                               onChange={(v) => updateTemplateSet(template.id, te.id, i, { targetReps: v })}
                             />
                           </div>
                           {usesWeight(type) && (
-                            <div className="min-w-[9rem] flex-1">
+                            <div className="min-w-0">
                               <Stepper
                                 label={`Set ${i + 1} weight`}
+                                size="sm"
                                 value={displayWeight(st.targetWeight ?? 0, units)}
                                 step={weightStep(units)}
                                 max={units === "kg" ? 500 : 1100}
@@ -299,9 +294,19 @@ export default function TemplateEditPage() {
                       </label>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <Link href={`/exercises/${te.exerciseId}`} className="text-sm font-medium text-accent">
-                        Exercise details
+                    <div className="flex items-center gap-1">
+                      <IconBtn label="Move up" disabled={idx === 0} onClick={() => moveTemplateExercise(template.id, te.id, -1)}>
+                        <ArrowUp className="h-4 w-4" aria-hidden />
+                      </IconBtn>
+                      <IconBtn
+                        label="Move down"
+                        disabled={idx === template.exercises.length - 1}
+                        onClick={() => moveTemplateExercise(template.id, te.id, 1)}
+                      >
+                        <ArrowDown className="h-4 w-4" aria-hidden />
+                      </IconBtn>
+                      <Link href={`/exercises/${te.exerciseId}`} className="ml-2 mr-auto text-sm font-medium text-accent">
+                        Details
                       </Link>
                       <button
                         type="button"

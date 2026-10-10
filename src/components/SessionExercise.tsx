@@ -380,7 +380,7 @@ export function SessionExercise({
                 )}
 
                 {counted && kind !== "warmup" && (
-                  <Field label="Effort (RPE, optional)" hint="10 = nothing left · 8 = two reps left">
+                  <Field label="Effort (RPE)" hint="Optional · 10 = nothing left, 8 = 2 in reserve">
                     <div className="grid grid-cols-5 gap-1.5">
                       {[6, 7, 8, 9, 10].map((rpe) => (
                         <button

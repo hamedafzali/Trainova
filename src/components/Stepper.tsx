@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
  *
  * `size="lg"` is the hero treatment for the one number that matters most on
  * screen (the active set's weight) — everything else stays default-sized so
- * the hierarchy reads at a glance.
+ * the hierarchy reads at a glance. `size="sm"` fits several per row (plan editor).
  */
 export function Stepper({
   value,
@@ -33,7 +33,7 @@ export function Stepper({
   unit?: string;
   /** Accessible name, e.g. "Weight". */
   label?: string;
-  size?: "default" | "lg";
+  size?: "default" | "lg" | "sm";
   /** Precision for typed values; defaults to the step's precision. */
   decimals?: number;
 }) {
@@ -117,13 +117,15 @@ export function Stepper({
   }, [value]);
 
   const lg = size === "lg";
-  const numberClass = `${lg ? "text-[2.75rem] leading-none sm:text-hero" : "text-stat"} tabular-nums text-ink`;
+  const sm = size === "sm";
+  const numberClass = `${lg ? "text-[2.75rem] leading-none sm:text-hero" : sm ? "text-lg font-semibold" : "text-stat"} tabular-nums text-ink`;
+  const pad = lg ? "py-5" : sm ? "py-1.5" : "py-2";
 
   return (
-    <div className="flex items-center gap-2.5">
+    <div className={`flex items-center ${sm ? "gap-1" : "gap-2.5"}`}>
       <HoldButton dir={-1} label={label} onStart={() => startHold(-1)} onStop={stop} onKey={() => bump(-1)} size={size} />
       {editing ? (
-        <div className={`flex min-w-0 flex-1 items-baseline justify-center gap-1.5 rounded-control bg-surface2 ring-2 ring-accent/50 ${lg ? "py-5" : "py-2"}`}>
+        <div className={`flex min-w-0 flex-1 items-baseline justify-center gap-1.5 rounded-control bg-surface2 ring-2 ring-accent/50 ${pad}`}>
           <input
             ref={inputRef}
             aria-label={label}
@@ -138,7 +140,7 @@ export function Stepper({
               if (e.key === "Escape") setEditing(false);
             }}
           />
-          {unit && <span className={`${lg ? "text-sm" : "text-xs"} pr-3 text-muted`}>{unit}</span>}
+          {unit && !sm && <span className={`${lg ? "text-sm" : "text-xs"} pr-3 text-muted`}>{unit}</span>}
         </div>
       ) : (
         <div
@@ -150,7 +152,7 @@ export function Stepper({
           aria-valuemax={max}
           aria-valuetext={unit ? `${display} ${unit}` : String(display)}
           title="Tap to type · drag to adjust"
-          className={`flex min-w-0 flex-1 cursor-ew-resize select-none items-baseline justify-center gap-1.5 overflow-hidden rounded-control bg-surface2 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${lg ? "py-5" : "py-2"}`}
+          className={`flex min-w-0 flex-1 cursor-ew-resize select-none items-baseline justify-center gap-1.5 overflow-hidden rounded-control bg-surface2 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${pad}`}
           style={{ touchAction: "none" }}
           onPointerDown={onPointerDownValue}
           onPointerMove={onPointerMoveValue}
@@ -178,7 +180,7 @@ export function Stepper({
           >
             {display}
           </span>
-          {unit && <span className={`${lg ? "text-sm" : "text-xs"} text-muted`}>{unit}</span>}
+          {unit && !sm && <span className={`${lg ? "text-sm" : "text-xs"} text-muted`}>{unit}</span>}
         </div>
       )}
       <HoldButton dir={1} label={label} onStart={() => startHold(1)} onStop={stop} onKey={() => bump(1)} size={size} />
@@ -199,15 +201,16 @@ function HoldButton({
   onStart: () => void;
   onStop: () => void;
   onKey: () => void;
-  size?: "default" | "lg";
+  size?: "default" | "lg" | "sm";
 }) {
   const lg = size === "lg";
+  const dims = lg ? "h-14 w-14 text-3xl" : size === "sm" ? "h-9 w-8 text-lg" : "h-12 w-12 text-2xl";
   const what = label ? ` ${label.toLowerCase()}` : "";
   return (
     <button
       type="button"
       aria-label={dir > 0 ? `Increase${what}` : `Decrease${what}`}
-      className={`flex ${lg ? "h-14 w-14 text-3xl" : "h-12 w-12 text-2xl"} shrink-0 items-center justify-center rounded-control bg-surface2 font-bold text-ink transition-transform duration-100 active:scale-90 active:bg-border focus-visible:ring-2 focus-visible:ring-accent/50`}
+      className={`flex ${dims} shrink-0 items-center justify-center rounded-control bg-surface2 font-bold text-ink transition-transform duration-100 active:scale-90 active:bg-border focus-visible:ring-2 focus-visible:ring-accent/50`}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         e.preventDefault();
