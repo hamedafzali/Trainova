@@ -17,8 +17,8 @@ export const PROFILE: NavItem = { href: "/profile", label: "Profile", icon: User
 /** Bottom tab bar (phones): five destinations, everything else one tap away. */
 export const MOBILE_TABS: NavItem[] = [HOME, PLANS, HISTORY, PROGRESS, PROFILE];
 
-export function sidebarItems(ai: boolean): NavItem[] {
-  return [HOME, PLANS, EXERCISES, HISTORY, PROGRESS, ...(ai ? [COACH] : []), PROFILE];
+export function sidebarItems(): NavItem[] {
+  return [HOME, PLANS, EXERCISES, HISTORY, PROGRESS, COACH, PROFILE];
 }
 
 /** Which nav item a path belongs to (calendar lives under History, etc.). */

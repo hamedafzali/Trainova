@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { isAiEnabled } from "@/lib/supabase/client";
 import { isActive, sidebarItems } from "./nav";
 
 export function SidebarNav() {
   const path = usePathname();
-  const items = sidebarItems(isAiEnabled());
+  const items = sidebarItems();
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 md:bg-elevated md:border-r md:border-border md:px-5 md:py-7">

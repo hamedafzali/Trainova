@@ -10,17 +10,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCoachIntro, getMealIdeas, staticMealIdeas, CoachError } from "@/services/ai/coach";
 import type { CoachIntroInput, MealIdeasInput } from "@/services/ai/prompts/coach";
 import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
+import { aiConfigured, aiDisabledResponse } from "@/server/aiConfig";
 import { cached } from "@/lib/cache/cacheMiddleware";
 import { CACHE_KEYS, CACHE_TTL } from "@/lib/cache/cacheKeys";
 
-function aiEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_AI_ENABLED === "1";
-}
-
 export async function POST(request: NextRequest) {
-  if (!aiEnabled()) {
-    return NextResponse.json({ error: "AI features are disabled", code: "AI_DISABLED" }, { status: 404 });
-  }
+  if (!aiConfigured()) return aiDisabledResponse();
 
   const body = await request.json().catch(() => null);
 

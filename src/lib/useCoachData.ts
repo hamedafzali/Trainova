@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { getToken } from "@/lib/auth";
-import { isAiEnabled } from "@/lib/supabase/client";
+import { useAiStatus } from "@/lib/ai";
 import { stableHash } from "@/lib/hash";
 import {
   buildDeterministicInsights,
@@ -76,7 +76,8 @@ const KIND_TO_SITUATION: Record<CoachInsight["kind"], string> = {
  * caching so unchanged training data never re-hits the model.
  */
 export function useCoachData() {
-  const enabled = isAiEnabled();
+  const ai = useAiStatus();
+  const enabled = ai.available === true && ai.signedIn;
 
   const profile = useStore((s) => s.profile);
   const units = useStore((s) => s.units);

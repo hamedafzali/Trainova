@@ -6,7 +6,3 @@
 export function isCloudEnabled(): boolean {
   return process.env.NEXT_PUBLIC_AUTH_ENABLED === "1";
 }
-
-export function isAiEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_AI_ENABLED === "1";
-}

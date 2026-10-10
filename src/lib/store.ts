@@ -23,6 +23,8 @@ import type {
 import { detectPrs, epley1rm } from "@/domain/progression";
 import type { LastPerformance } from "@/domain/progression";
 import { bestWeight, totalVolume } from "@/domain/volume";
+import { matchExercise } from "@/domain/exerciseMatch";
+import { clearCoachChat } from "@/lib/coachChat";
 import {
   activeSession,
   canCreateSession,
@@ -116,21 +118,6 @@ export interface TrainovaState {
   installProgram: (blueprintId: string) => string | null;
 
   createTemplate: (name: string) => string;
-  importGeneratedPlan: (plan: {
-    name: string;
-    notes: string | null;
-    exercises: {
-      name: string;
-      muscle: string | null;
-      sets: number;
-      reps: number;
-      restSeconds?: number;
-      tempo?: string | null;
-      targetRpe?: number | null;
-      cue?: string | null;
-      substitution?: string | null;
-    }[];
-  }) => string;
   serializeTemplate: (templateId: string) => AssignedPlan | null;
   importAssignedPlan: (payload: AssignedPlan) => string;
   deleteTemplate: (id: string) => void;
@@ -142,6 +129,8 @@ export interface TrainovaState {
   ) => void;
   moveTemplateExercise: (templateId: string, templateExerciseId: string, delta: -1 | 1) => void;
   addTemplateExercise: (templateId: string, exerciseId: string) => void;
+  /** Swap the movement in a slot; sets, rest and position are kept. */
+  replaceTemplateExercise: (templateId: string, templateExerciseId: string, exerciseId: string) => void;
   removeTemplateExercise: (templateId: string, templateExerciseId: string) => void;
   setTemplateSetCount: (templateId: string, templateExerciseId: string, count: number) => void;
   updateTemplateSet: (
@@ -451,46 +440,6 @@ export const useStore = create<TrainovaState>()(
         return id;
       },
 
-      importGeneratedPlan: (plan) => {
-        const id = uid();
-        const exercises = plan.exercises.map((ex, i) => {
-          let exer = get().exercises.find(
-            (e) => e.name.toLowerCase() === ex.name.trim().toLowerCase()
-          );
-          if (!exer) {
-            exer = get().addExercise({
-              name: ex.name.trim(),
-              defaultDeviceId: null,
-              isCompound: false,
-              primaryMuscle: ex.muscle ?? null,
-            });
-          }
-          const count = Math.max(1, Math.min(8, Math.round(ex.sets) || 3));
-          const reps = Math.max(1, Math.round(ex.reps) || 10);
-          return {
-            id: `${id}-${i}`,
-            exerciseId: exer.id,
-            deviceId: exer.defaultDeviceId,
-            position: i,
-            restSeconds: ex.restSeconds ?? 90,
-            tempo: ex.tempo ?? null,
-            targetRpe: ex.targetRpe ?? null,
-            cue: ex.cue ?? null,
-            substitution: ex.substitution ?? null,
-            sets: Array.from({ length: count }, () => ({ targetReps: reps, targetWeight: null })),
-          };
-        });
-        const tpl: WorkoutTemplate = {
-          id,
-          owner: LOCAL_OWNER,
-          name: stripDate(plan.name) || "AI Plan",
-          notes: plan.notes ?? null,
-          exercises,
-        };
-        set((s) => ({ templates: [...s.templates, tpl] }));
-        return id;
-      },
-
       serializeTemplate: (templateId) => {
         const t = get().templates.find((x) => x.id === templateId);
         if (!t) return null;
@@ -511,9 +460,7 @@ export const useStore = create<TrainovaState>()(
       importAssignedPlan: (payload) => {
         const id = uid();
         const exercises = payload.exercises.map((ex, i) => {
-          let exer = get().exercises.find(
-            (e) => e.name.toLowerCase() === ex.name.trim().toLowerCase()
-          );
+          let exer = matchExercise(ex.name, get().exercises) ?? undefined;
           if (!exer) {
             exer = get().addExercise({
               name: ex.name.trim(),
@@ -619,6 +566,25 @@ export const useStore = create<TrainovaState>()(
                       restSeconds: ex?.isCompound ? 120 : 90,
                     },
                   ],
+                }
+          ),
+        }));
+      },
+
+      replaceTemplateExercise: (templateId, templateExerciseId, exerciseId) => {
+        const ex = get().exercises.find((e) => e.id === exerciseId);
+        if (!ex) return;
+        set((s) => ({
+          templates: s.templates.map((t) =>
+            t.id !== templateId
+              ? t
+              : {
+                  ...t,
+                  exercises: t.exercises.map((te) =>
+                    te.id === templateExerciseId
+                      ? { ...te, exerciseId, deviceId: ex.defaultDeviceId ?? null, cue: null, substitution: null }
+                      : te
+                  ),
                 }
           ),
         }));
@@ -863,7 +829,8 @@ export const useStore = create<TrainovaState>()(
           tombstones: tomb(s.tombstones, [id]),
         })),
 
-      resetUserData: (opts) =>
+      resetUserData: (opts) => {
+        clearCoachChat();
         set((s) => ({
           tombstones: opts?.forget
             ? tomb(s.tombstones, [
@@ -887,7 +854,8 @@ export const useStore = create<TrainovaState>()(
           feedback: [],
           prs: [],
           bodyLog: [],
-        })),
+        }));
+      },
 
       importBackup: (data) => {
         const d = upgradeWeights(data as Record<string, any>);

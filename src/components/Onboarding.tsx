@@ -13,7 +13,6 @@ import {
   Flame,
   HeartPulse,
   PersonStanding,
-  Sparkles,
   Sprout,
   TrendingUp,
   Trophy,
@@ -47,7 +46,7 @@ const DAYS = [2, 3, 4, 5];
 const STEPS = ["Goal", "Experience", "Schedule", "Equipment", "Program"] as const;
 
 /** Guided setup: a few questions, then a matching program is installed. */
-export function Onboarding({ onUseAiOnboarding }: { onUseAiOnboarding?: () => void }) {
+export function Onboarding() {
   const setUnits = useStore((s) => s.setUnits);
   const units = useStore((s) => s.units);
   const completeOnboarding = useStore((s) => s.completeOnboarding);
@@ -202,11 +201,6 @@ export function Onboarding({ onUseAiOnboarding }: { onUseAiOnboarding?: () => vo
         ) : (
           <button className="btn-secondary w-full" onClick={next}>
             {step === 2 ? "Continue" : "Skip this question"}
-          </button>
-        )}
-        {onUseAiOnboarding && step === 0 && (
-          <button className="btn-ghost w-full text-sm" onClick={onUseAiOnboarding}>
-            <Sparkles className="h-4 w-4" aria-hidden /> Set up with the AI coach instead
           </button>
         )}
         <p className="text-center text-xs text-muted">Your answers stay on this device and can be changed in Profile.</p>

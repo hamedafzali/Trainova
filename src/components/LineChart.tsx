@@ -2,7 +2,7 @@
 
 // Optional trend color, defaulting to the blue action accent (this chart's
 // original, still-correct behavior anywhere it isn't showing a directional
-// trend — e.g. WorkoutAnalysis). Progress passes the same up/down/flat
+// trend). Progress passes the same up/down/flat
 // language its row sparkline and badge already use, so expanding a row
 // doesn't switch the story to a different color.
 const TREND_CLASSES: Record<"up" | "down" | "flat" | "accent", { stroke: string; guide: string; dotFaint: string; dot: string; halo: string; label: string; labelBg: string }> = {

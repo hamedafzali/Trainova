@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { CalendarDays, ChevronRight, Clock, Dumbbell, Flame, Play, Plus, Trophy } from "lucide-react";
 import { Onboarding } from "@/components/Onboarding";
-import { AiOnboarding } from "@/components/AiOnboarding";
 import { Welcome } from "@/components/Welcome";
 import { CoachTeaserCard } from "@/components/CoachTeaserCard";
 import { recommendToday } from "@/domain/adaptive";
@@ -33,7 +32,6 @@ export default function HomePage() {
   const exerciseById = useStore((s) => s.exerciseById);
   const getActiveSession = useStore((s) => s.getActiveSession);
   const startSession = useStore((s) => s.startSession);
-  const [useAiOnboarding, setUseAiOnboarding] = useState(false);
 
   const today = new Date();
   const todayKey = localDayKey(today);
@@ -61,10 +59,7 @@ export default function HomePage() {
 
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
   if (!session) return <Welcome />;
-  if (!profile.onboarded) {
-    if (useAiOnboarding) return <AiOnboarding />;
-    return <Onboarding onUseAiOnboarding={() => setUseAiOnboarding(true)} />;
-  }
+  if (!profile.onboarded) return <Onboarding />;
 
   const active = getActiveSession();
   const start = (templateId: string | null) => {

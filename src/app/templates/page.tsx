@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Check, ChevronRight, Clock, Play, Plus } from "lucide-react";
+import { Check, ChevronRight, Clock, Play, Plus, Sparkles } from "lucide-react";
 import { useHydrated, useStore } from "@/lib/store";
-import { AiPlanButton } from "@/components/AiPlanButton";
 import { AssignmentsInbox } from "@/components/AssignmentsInbox";
 import { ListSkeleton } from "@/components/Skeleton";
 import { recommendToday } from "@/domain/adaptive";
 import { PROGRAM_BLUEPRINTS, type ProgramBlueprint } from "@/data/programs";
-import { isAiEnabled } from "@/lib/supabase/client";
 import { SEED_PLAN_ID, SEED_PROGRAM_ID } from "@/lib/seed";
 import { label } from "@/domain/taxonomy";
 import type { WorkoutTemplate } from "@/domain/types";
@@ -227,7 +225,12 @@ export default function PlansPage() {
             {standalone.map((t) => dayRow(t))}
           </ul>
         )}
-        {isAiEnabled() && <AiPlanButton />}
+        <Link
+          href={`/coach?ask=${encodeURIComponent("Build me a workout for today")}`}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline"
+        >
+          <Sparkles className="h-4 w-4" aria-hidden /> Ask your coach to build one
+        </Link>
       </section>
 
       <section className="space-y-3">
