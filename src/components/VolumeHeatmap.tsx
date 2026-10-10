@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { totalVolume } from "@/domain/volume";
 import { formatVolume } from "@/lib/units";
 import type { Units, WorkoutSession, WorkoutSet } from "@/domain/types";
+import { Sprout } from "lucide-react";
 
 const DOW = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -90,9 +91,9 @@ export function VolumeHeatmap({
   if (daysWithData < MIN_DAYS_FOR_GRID) {
     return (
       <div className="rounded-card border border-dashed border-border bg-surface p-6 text-center space-y-2">
-        <p className="text-2xl" aria-hidden>
-          🌱
-        </p>
+        <span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-green/10 text-green" aria-hidden>
+          <Sprout className="h-5 w-5" />
+        </span>
         <p className="font-semibold text-ink">Your heatmap is still filling in</p>
         <p className="text-body-sm text-inkSoft max-w-xs mx-auto">
           {daysWithData === 0

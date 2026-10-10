@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Info, Trophy } from "lucide-react";
+import { ArrowLeft, Info, SearchX, Trophy } from "lucide-react";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { EmptyState } from "@/components/EmptyState";
 import { LineChart } from "@/components/LineChart";
@@ -76,7 +76,7 @@ export default function ExerciseDetailPage() {
   if (!exercise)
     return (
       <EmptyState
-        icon="🔍"
+        icon={SearchX}
         title="Exercise not found"
         body="It may have been removed from your library."
         action={
@@ -97,7 +97,7 @@ export default function ExerciseDetailPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-6">
-      <Link href="/exercises" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
+      <Link href="/exercises" className="-my-3 -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-medium text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Exercises
       </Link>
 
@@ -183,7 +183,7 @@ export default function ExerciseDetailPage() {
                       role="radio"
                       aria-checked={metric.key === m.key}
                       onClick={() => setMetricKey(m.key)}
-                      className={`rounded-[8px] px-3 py-1 text-xs font-semibold transition-colors ${
+                      className={`min-h-9 rounded-[8px] px-3 py-1 text-xs font-semibold transition-colors ${
                         metric.key === m.key ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"
                       }`}
                     >

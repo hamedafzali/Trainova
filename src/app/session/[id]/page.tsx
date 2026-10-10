@@ -8,8 +8,11 @@ import {
   ArrowRight,
   Check,
   ChevronLeft,
+  Dumbbell,
+  Inbox,
   MoreVertical,
   Plus,
+  SearchX,
   StickyNote,
   Trash2,
   type LucideIcon,
@@ -150,7 +153,7 @@ export default function SessionPage() {
   if (!session) {
     return (
       <main className="mx-auto max-w-2xl">
-        <EmptyState icon="🔎" title="Workout not found" body="It may have been deleted on another device." />
+        <EmptyState icon={SearchX} title="Workout not found" body="It may have been deleted on another device." />
         <Link href="/" className="btn-ghost mt-4 w-full">
           Back to home
         </Link>
@@ -211,7 +214,7 @@ export default function SessionPage() {
           <Link
             href={isActive ? "/" : "/history"}
             aria-label="Back"
-            className="-ml-2 grid h-10 w-10 shrink-0 place-items-center rounded-control text-inkSoft hover:bg-surface2 hover:text-ink"
+            className="-ml-2 grid h-11 w-11 shrink-0 place-items-center rounded-control text-inkSoft hover:bg-surface2 hover:text-ink"
           >
             <ChevronLeft className="h-6 w-6" aria-hidden />
           </Link>
@@ -242,7 +245,7 @@ export default function SessionPage() {
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
-              className="grid h-10 w-10 place-items-center rounded-control text-inkSoft hover:bg-surface2 hover:text-ink"
+              className="grid h-11 w-11 place-items-center rounded-control text-inkSoft hover:bg-surface2 hover:text-ink"
             >
               <MoreVertical className="h-5 w-5" aria-hidden />
             </button>
@@ -358,7 +361,7 @@ export default function SessionPage() {
 
       {exerciseOrder.length === 0 && isActive && (
         <EmptyState
-          icon="🏋️"
+          icon={Dumbbell}
           title="Empty workout"
           body="Add your first exercise to start logging."
           action={
@@ -369,7 +372,7 @@ export default function SessionPage() {
         />
       )}
       {exerciseOrder.length === 0 && !isActive && (
-        <EmptyState icon="📭" title="No sets logged" body="This workout has no recorded sets." />
+        <EmptyState icon={Inbox} title="No sets logged" body="This workout has no recorded sets." />
       )}
 
       {/* active: one exercise in focus, strip to jump between them */}
@@ -388,7 +391,7 @@ export default function SessionPage() {
                       type="button"
                       aria-current={on ? "step" : undefined}
                       onClick={() => setCurrent(exId)}
-                      className={`flex max-w-[11rem] items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                      className={`flex min-h-11 max-w-[11rem] items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${
                         on
                           ? "border-accent bg-accent/10 text-ink"
                           : complete
@@ -410,7 +413,7 @@ export default function SessionPage() {
                 <button
                   type="button"
                   onClick={() => setPicking(true)}
-                  className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1.5 text-sm font-medium text-accent"
+                  className="flex min-h-11 items-center gap-1 rounded-full border border-dashed border-border px-3 py-1.5 text-sm font-medium text-accent"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden /> Add
                 </button>

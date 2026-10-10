@@ -73,7 +73,7 @@ export function Onboarding() {
           type="button"
           aria-label="Back"
           onClick={() => setStep((s) => Math.max(0, s - 1))}
-          className={`grid h-9 w-9 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink ${step === 0 ? "invisible" : ""}`}
+          className={`grid h-11 w-11 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink ${step === 0 ? "invisible" : ""}`}
         >
           <ArrowLeft className="h-5 w-5" aria-hidden />
         </button>

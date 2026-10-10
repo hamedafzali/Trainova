@@ -51,7 +51,7 @@ function Segmented<T extends string>({
           role="radio"
           aria-checked={value === o.key}
           onClick={() => onChange(o.key)}
-          className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
             value === o.key
               ? "border-accentFill bg-accentFill text-onAccent"
               : "border-border bg-surface2 text-inkSoft hover:text-ink"
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   aria-label={`Delete entry for ${b.date}`}
-                  className="grid h-8 w-8 place-items-center rounded-control text-muted hover:bg-danger/10 hover:text-danger"
+                  className="grid h-11 w-11 place-items-center rounded-control text-muted hover:bg-danger/10 hover:text-danger"
                   onClick={() => state.removeBodyweight(b.id)}
                 >
                   <X className="h-4 w-4" aria-hidden />
@@ -290,7 +290,7 @@ export default function ProfilePage() {
         <Row label="Delete all data" hint="Removes every workout, plan and measurement. Export a backup first.">
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-control border border-danger/40 px-4 py-2.5 text-sm font-semibold text-danger hover:bg-danger/10"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-danger/40 px-4 py-2.5 text-sm font-semibold text-danger hover:bg-danger/10"
             onClick={() => setResetting(true)}
           >
             <Trash2 className="h-4 w-4" aria-hidden /> Delete all data

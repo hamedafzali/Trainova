@@ -129,7 +129,7 @@ export default function CalendarPage() {
           <div className="rounded-card border border-border bg-surface shadow-card overflow-hidden">
             <div className="p-4 sm:p-6">
               <div className="mb-4 flex items-center justify-between">
-                <button onClick={() => shift(-1)} className="btn-ghost px-3 py-1.5" aria-label="Previous month">
+                <button onClick={() => shift(-1)} className="btn-ghost h-11 w-11 p-0" aria-label="Previous month">
                   <ChevronLeft className="h-4 w-4" aria-hidden />
                 </button>
                 <div className="text-center">
@@ -140,7 +140,7 @@ export default function CalendarPage() {
                     {monthCount} session{monthCount === 1 ? "" : "s"} this month
                   </p>
                 </div>
-                <button onClick={() => shift(1)} className="btn-ghost px-3 py-1.5" aria-label="Next month">
+                <button onClick={() => shift(1)} className="btn-ghost h-11 w-11 p-0" aria-label="Next month">
                   <ChevronRight className="h-4 w-4" aria-hidden />
                 </button>
               </div>
@@ -162,7 +162,7 @@ export default function CalendarPage() {
                     <button
                       key={i}
                       onClick={() => setSelected(k)}
-                      className={`relative flex aspect-square items-center justify-center rounded-control text-sm tabular-nums transition-colors ${
+                      className={`relative flex h-11 items-center sm:h-auto sm:aspect-square justify-center rounded-control text-sm tabular-nums transition-colors ${
                         isSel
                           ? "bg-accentFill font-bold text-onAccent shadow-sm"
                           : isToday

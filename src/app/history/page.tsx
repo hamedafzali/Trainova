@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CalendarDays, ChevronRight, Clock, Dumbbell, Trophy } from "lucide-react";
+import { CalendarDays, ChevronRight, Clock, Dumbbell, TrendingUp, Trophy } from "lucide-react";
 import { useHydrated, useStore } from "@/lib/store";
 import { VolumeHeatmap } from "@/components/VolumeHeatmap";
 import { ListSkeleton } from "@/components/Skeleton";
@@ -84,7 +84,7 @@ export default function HistoryPage() {
         <ListSkeleton />
       ) : rows.length === 0 ? (
         <EmptyState
-          icon="📈"
+          icon={TrendingUp}
           title="No workouts yet"
           body="Finish your first workout and it will show up here with your weekly trends."
           action={

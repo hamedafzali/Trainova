@@ -9,6 +9,7 @@ import type { Device } from "@/domain/types";
 import { toast } from "@/lib/toast";
 import { ListSkeleton } from "@/components/Skeleton";
 import { ErrorState } from "@/components/ErrorState";
+import { ArrowLeft } from "lucide-react";
 
 const CATEGORIES = ["machine", "free_weight", "cable", "bodyweight", "cardio"];
 const LEVELS = ["beginner", "intermediate", "advanced"];
@@ -70,8 +71,8 @@ export default function AdminDevicesPage() {
       <main className="mx-auto max-w-3xl space-y-3 p-4">
         <div className="rounded-card border border-border bg-surface shadow-card p-6">
           <p className="text-muted">Admins only.</p>
-          <Link href="/" className="mt-2 inline-block text-accent hover:text-accentHover">
-            ← Home
+          <Link href="/" className="-ml-2 mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 font-semibold text-accent hover:text-accentHover">
+            <ArrowLeft className="h-4 w-4" aria-hidden /> Home
           </Link>
         </div>
       </main>
@@ -84,8 +85,8 @@ export default function AdminDevicesPage() {
           <h1 className="page-title">Devices</h1>
           <p className="page-subtitle">Shared equipment library · {devices.length}</p>
         </div>
-        <Link href="/admin" className="text-sm text-accent hover:text-accentHover font-semibold transition-colors">
-          ← Admin
+        <Link href="/admin" className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-accent transition-colors hover:text-accentHover">
+          <ArrowLeft className="h-4 w-4" aria-hidden /> Admin
         </Link>
       </header>
 

@@ -55,7 +55,7 @@ export function CoachHeaderButton() {
       type="button"
       onClick={() => setOpen(true)}
       aria-label="Ask your coach"
-      className="grid h-10 w-10 shrink-0 place-items-center rounded-control text-accent hover:bg-surface2"
+      className="grid h-11 w-11 shrink-0 place-items-center rounded-control text-accent hover:bg-surface2"
     >
       <Sparkles className="h-5 w-5" aria-hidden />
     </button>

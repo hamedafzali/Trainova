@@ -8,6 +8,7 @@ import { CoachAttentionInbox } from "@/components/CoachAttentionInbox";
 import { ListSkeleton } from "@/components/Skeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
+import { ArrowLeft, Users } from "lucide-react";
 
 type Client = { id: string; email: string; workouts: number };
 type Progress = { workouts: number; sessions: { title: string; date: string }[] };
@@ -113,8 +114,8 @@ export default function TrainerPage() {
         <h1 className="page-title">Trainer</h1>
         <div className="rounded-card border border-border bg-surface shadow-card p-6">
           <p className="text-muted">This area is for trainers. Ask an admin to enable trainer mode.</p>
-          <Link href="/" className="mt-2 inline-block text-accent hover:text-accentHover">
-            ← Home
+          <Link href="/" className="-ml-2 mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 font-semibold text-accent hover:text-accentHover">
+            <ArrowLeft className="h-4 w-4" aria-hidden /> Home
           </Link>
         </div>
       </main>
@@ -211,7 +212,7 @@ export default function TrainerPage() {
           {clients.length === 0 && (
             <li>
               <EmptyState
-                icon="🧑‍🏫"
+                icon={Users}
                 title="No clients yet"
                 body="Add a client by their account email to assign plans and view progress."
               />

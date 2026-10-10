@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowLeft, ChevronRight, Pencil, Play, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, CalendarPlus, ChevronRight, FolderX, Pencil, Play, Plus, Trash2, X } from "lucide-react";
 import { useHydrated, useStore } from "@/lib/store";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ListSkeleton } from "@/components/Skeleton";
@@ -51,7 +51,7 @@ export default function ProgramEditPage() {
   if (!program) {
     return (
       <EmptyState
-        icon="🗂️"
+        icon={FolderX}
         title="Program not found"
         body="It may have been deleted."
         action={
@@ -68,7 +68,7 @@ export default function ProgramEditPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 pb-16">
-      <Link href="/templates" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
+      <Link href="/templates" className="-my-3 -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-medium text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Plans
       </Link>
 
@@ -97,7 +97,7 @@ export default function ProgramEditPage() {
               type="button"
               aria-label="Rename program"
               onClick={() => setEditingName(true)}
-              className="grid h-8 w-8 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink"
+              className="grid h-11 w-11 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink"
             >
               <Pencil className="h-4 w-4" aria-hidden />
             </button>
@@ -110,7 +110,7 @@ export default function ProgramEditPage() {
       </header>
 
       {days.length === 0 ? (
-        <EmptyState icon="📅" title="No days yet" body="Add the first training day to start building this program." />
+        <EmptyState icon={CalendarPlus} title="No days yet" body="Add the first training day to start building this program." />
       ) : (
         <ol className="space-y-3">
           {days.map((d, i) => {
@@ -126,7 +126,7 @@ export default function ProgramEditPage() {
                   >
                     {i + 1}
                   </span>
-                  <Link href={`/templates/${d.id}`} className="min-w-0 flex-1">
+                  <Link href={`/templates/${d.id}`} className="-my-1 min-w-0 flex-1 py-1">
                     <p className="flex items-center gap-2 font-semibold text-ink">
                       <span className="truncate">{d.name}</span>
                       {isNext && <span className="badge-accent shrink-0 text-[10px]">Up next</span>}
@@ -135,14 +135,14 @@ export default function ProgramEditPage() {
                       {names.length ? names.join(" · ") : "No exercises yet — tap to add"}
                     </p>
                   </Link>
-                  <Link href={`/templates/${d.id}`} aria-label={`Edit ${d.name}`} className="hidden text-muted hover:text-ink sm:block">
+                  <Link href={`/templates/${d.id}`} aria-label={`Edit ${d.name}`} className="hidden h-11 w-11 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink sm:grid">
                     <ChevronRight className="h-5 w-5" aria-hidden />
                   </Link>
                 </div>
                 <div className="flex border-t border-border">
                   <button
                     type="button"
-                    className="flex flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-accent hover:bg-accent/[0.05] disabled:text-muted"
+                    className="flex min-h-11 flex-1 items-center justify-center gap-1.5 py-2.5 text-sm font-semibold text-accent hover:bg-accent/[0.05] disabled:text-muted"
                     disabled={d.exercises.length === 0}
                     onClick={() => start(d.id)}
                   >
@@ -150,7 +150,7 @@ export default function ProgramEditPage() {
                   </button>
                   <button
                     type="button"
-                    className="flex items-center justify-center gap-1.5 border-l border-border px-5 py-2.5 text-sm text-muted hover:bg-danger/10 hover:text-danger"
+                    className="flex min-h-11 items-center justify-center gap-1.5 border-l border-border px-5 py-2.5 text-sm text-muted hover:bg-danger/10 hover:text-danger"
                     onClick={() => setRemoveDay({ id: d.id, name: d.name })}
                     aria-label={`Remove ${d.name}`}
                   >
@@ -176,7 +176,7 @@ export default function ProgramEditPage() {
       <div className="border-t border-border pt-6">
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-danger hover:underline"
+          className="-ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-medium text-danger hover:bg-danger/10"
           onClick={() => setDeleting(true)}
         >
           <Trash2 className="h-4 w-4" aria-hidden /> Delete program

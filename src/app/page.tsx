@@ -244,7 +244,7 @@ export default function HomePage() {
               <h2 id="this-week" className="section-label">
                 This week
               </h2>
-              <Link href="/calendar" className="inline-flex items-center gap-1 text-xs font-semibold text-accent">
+              <Link href="/calendar" className="-my-3 -mr-2 inline-flex min-h-11 items-center gap-1 px-2 text-xs font-semibold text-accent">
                 <CalendarDays className="h-3.5 w-3.5" aria-hidden /> Calendar
               </Link>
             </div>
@@ -261,11 +261,11 @@ export default function HomePage() {
                     <span
                       className={`grid aspect-square w-full max-w-[2.25rem] place-items-center rounded-full text-xs font-semibold tabular-nums ${
                         trained
-                          ? "bg-green text-white"
+                          ? "bg-green text-onStatus"
                           : isToday
                             ? "border-2 border-accent text-accent"
                             : k > todayKey
-                              ? "text-muted/60"
+                              ? "text-muted"
                               : "bg-surface2 text-muted"
                       }`}
                     >

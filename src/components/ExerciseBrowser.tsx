@@ -141,7 +141,7 @@ export function ExerciseBrowser({
             type="button"
             aria-label="Clear search"
             onClick={() => setQ("")}
-            className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-control text-muted hover:text-ink"
+            className="absolute right-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-control text-muted hover:text-ink"
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
@@ -156,7 +156,7 @@ export function ExerciseBrowser({
               type="button"
               aria-pressed={group === g.key}
               onClick={() => setGroup(g.key)}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`min-h-11 shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                 group === g.key
                   ? "border-accentFill bg-accentFill text-onAccent"
                   : "border-border bg-surface2 text-inkSoft hover:text-ink"
@@ -170,7 +170,7 @@ export function ExerciseBrowser({
           aria-label="Equipment"
           value={equipment}
           onChange={(e) => setEquipment(e.target.value as Equipment | "all")}
-          className="shrink-0 rounded-control border border-border bg-surface2 px-2 py-1.5 text-xs text-inkSoft"
+          className="min-h-11 shrink-0 rounded-control border border-border bg-surface2 px-3 py-1.5 text-sm text-inkSoft"
         >
           <option value="all">All equipment</option>
           {usedEquipment.map((x) => (

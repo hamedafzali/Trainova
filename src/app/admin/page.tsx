@@ -9,6 +9,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PromptDialog } from "@/components/PromptDialog";
 import { ListSkeleton } from "@/components/Skeleton";
 import { ErrorState } from "@/components/ErrorState";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 
 type AdminUser = {
   id: string;
@@ -142,8 +143,8 @@ export default function AdminPage() {
         <h1 className="page-title">Admin</h1>
         <div className="rounded-card border border-border bg-surface shadow-card p-6">
           <p className="text-muted">Admins only.</p>
-          <Link href="/" className="mt-2 inline-block text-accent hover:text-accentHover">
-            ← Home
+          <Link href="/" className="-ml-2 mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 font-semibold text-accent hover:text-accentHover">
+            <ArrowLeft className="h-4 w-4" aria-hidden /> Home
           </Link>
         </div>
       </main>
@@ -186,8 +187,8 @@ export default function AdminPage() {
             href="/admin/devices"
             className="flex items-center justify-between rounded-card border border-border bg-surface shadow-card px-5 py-4 hover:bg-border/60 transition-colors"
           >
-            <span className="font-semibold text-h3 text-ink">🏋️ Manage device library</span>
-            <span className="text-muted">→</span>
+            <span className="font-semibold text-h3 text-ink">Manage device library</span>
+            <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
           </Link>
 
           <ul className="space-y-3">
@@ -197,7 +198,7 @@ export default function AdminPage() {
                   <p className="font-semibold text-h3 text-ink">{u.email}</p>
                   <p className="text-xs text-muted mt-0.5">
                     {u.role}
-                    {u.role === "admin" ? " ★" : ""} · joined{" "}
+                     · joined{" "}
                     {new Date(u.created_at).toLocaleDateString()} ·{" "}
                     {Number(u.has_state) > 0 ? "has data" : "no data"}
                   </p>

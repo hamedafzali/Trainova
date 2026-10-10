@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronRight, Dumbbell, Trophy } from "lucide-react";
+import { BarChart3, ChevronRight, Dumbbell, Trophy } from "lucide-react";
 import { LineChart } from "@/components/LineChart";
 import { Sparkline } from "@/components/Sparkline";
 import { StatSkeleton } from "@/components/Skeleton";
@@ -126,7 +126,7 @@ export default function ProgressPage() {
         </div>
       ) : rows.length === 0 ? (
         <EmptyState
-          icon="📊"
+          icon={BarChart3}
           title="No trends yet"
           body="Log a couple of workouts and your progress for every exercise will show up here."
           action={
@@ -189,7 +189,7 @@ export default function ProgressPage() {
                     type="button"
                     aria-pressed={group === g.key}
                     onClick={() => setGroup(g.key)}
-                    className={`shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                    className={`min-h-11 shrink-0 rounded-full border px-4 py-1.5 text-sm transition-colors ${
                       group === g.key
                         ? "border-accentFill bg-accentFill text-onAccent"
                         : "border-border bg-surface text-inkSoft hover:text-ink"

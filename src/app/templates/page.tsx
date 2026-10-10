@@ -83,7 +83,7 @@ export default function PlansPage() {
     const last = lastDone.get(t.id);
     return (
       <li key={t.id} className="flex items-center gap-3 px-4 py-3 sm:px-5">
-        <Link href={`/templates/${t.id}`} className="min-w-0 flex-1">
+        <Link href={`/templates/${t.id}`} className="-my-1 min-w-0 flex-1 py-1">
           <p className="flex items-center gap-2 font-medium text-ink">
             <span className="truncate">
               {prefix && <span className="text-muted">{prefix} · </span>}
@@ -103,7 +103,7 @@ export default function PlansPage() {
           aria-label={`Start ${t.name}`}
           disabled={t.exercises.length === 0}
           onClick={() => start(t.id)}
-          className={`shrink-0 ${isNext ? "btn-primary" : "btn-secondary"} px-4 py-2 text-sm`}
+          className={`shrink-0 ${isNext ? "btn-primary" : "btn-secondary"} min-h-11 px-4 py-2 text-sm`}
         >
           <Play className="h-3.5 w-3.5" aria-hidden /> Start
         </button>
@@ -227,7 +227,7 @@ export default function PlansPage() {
         )}
         <Link
           href={`/coach?ask=${encodeURIComponent("Build me a workout for today")}`}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent hover:underline"
+          className="-ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-accent hover:underline"
         >
           <Sparkles className="h-4 w-4" aria-hidden /> Ask your coach to build one
         </Link>

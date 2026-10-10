@@ -206,7 +206,7 @@ export function SessionExercise({
             onClick={() => setShowInfo((v) => !v)}
             aria-expanded={showInfo}
             aria-label="How to do this exercise"
-            className={`grid h-10 w-10 shrink-0 place-items-center rounded-control transition-colors ${
+            className={`grid h-11 w-11 shrink-0 place-items-center rounded-control transition-colors ${
               showInfo ? "bg-accent/15 text-accent" : "bg-surface2 text-inkSoft hover:text-ink"
             }`}
           >
@@ -292,7 +292,7 @@ export function SessionExercise({
                   </p>
                   <button
                     type="button"
-                    className="flex items-center gap-1 rounded-control px-2 py-1 text-xs text-muted hover:text-danger"
+                    className="-my-2 -mr-2 flex min-h-11 items-center gap-1 rounded-control px-3 text-xs text-muted hover:text-danger"
                     onClick={() => removeSet(s.id)}
                   >
                     <X className="h-3.5 w-3.5" aria-hidden /> Remove
@@ -308,7 +308,7 @@ export function SessionExercise({
                         role="radio"
                         aria-checked={kind === k.key}
                         onClick={() => updateSet(s.id, { kind: k.key === "normal" ? undefined : k.key })}
-                        className={`rounded-md py-1.5 text-xs font-semibold transition-colors ${
+                        className={`min-h-10 rounded-md py-2 text-xs font-semibold transition-colors ${
                           kind === k.key ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-inkSoft"
                         }`}
                       >
@@ -388,7 +388,7 @@ export function SessionExercise({
                           type="button"
                           aria-pressed={s.rpe === rpe}
                           onClick={() => updateSet(s.id, { rpe: s.rpe === rpe ? null : rpe })}
-                          className={`rounded-control py-2.5 text-sm font-semibold transition-transform duration-100 active:scale-95 ${
+                          className={`min-h-11 rounded-control py-2.5 text-sm font-semibold transition-transform duration-100 active:scale-95 ${
                             s.rpe === rpe ? "bg-accentFill text-onAccent" : "bg-surface2 text-inkSoft hover:text-ink"
                           }`}
                         >
@@ -468,7 +468,7 @@ export function SessionExercise({
                   type="button"
                   aria-label={`Delete set ${tag}`}
                   onClick={() => removeSet(s.id)}
-                  className="grid h-7 w-7 place-items-center rounded-control text-muted hover:text-danger"
+                  className="-my-2 -mr-2 grid h-11 w-11 place-items-center rounded-control text-muted hover:text-danger"
                 >
                   <X className="h-4 w-4" aria-hidden />
                 </button>
@@ -479,9 +479,11 @@ export function SessionExercise({
                   aria-label={`Undo set ${tag}`}
                   title="Undo"
                   onClick={() => updateSet(s.id, { completed: false, completedAt: null })}
-                  className="grid h-7 w-7 place-items-center rounded-control bg-green text-onStatus transition-transform active:scale-90"
+                  className="group -my-2 -mr-2 grid h-11 w-11 place-items-center"
                 >
-                  <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
+                  <span className="grid h-7 w-7 place-items-center rounded-control bg-green text-onStatus transition-transform group-active:scale-90">
+                    <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
+                  </span>
                 </button>
               ) : s.completed ? (
                 <Check className="h-4 w-4 text-green" strokeWidth={3} aria-label="Done" />

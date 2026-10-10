@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, ChevronDown, Dumbbell, FolderX, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { ExercisePicker } from "@/components/ExercisePicker";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { Stepper } from "@/components/Stepper";
@@ -80,7 +80,7 @@ export default function TemplateEditPage() {
   if (!template) {
     return (
       <EmptyState
-        icon="🗂️"
+        icon={FolderX}
         title="Plan not found"
         body="It may have been deleted."
         action={
@@ -107,7 +107,7 @@ export default function TemplateEditPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 pb-24">
-      <Link href="/templates" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
+      <Link href="/templates" className="-my-3 -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-medium text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden /> Plans
       </Link>
 
@@ -137,7 +137,7 @@ export default function TemplateEditPage() {
                 type="button"
                 aria-label="Rename plan"
                 onClick={() => setEditingName(true)}
-                className="ml-1.5 inline-grid h-8 w-8 place-items-center rounded-control align-middle text-muted hover:bg-surface2 hover:text-ink"
+                className="ml-1 inline-grid h-11 w-11 place-items-center rounded-control align-middle text-muted hover:bg-surface2 hover:text-ink"
               >
                 <Pencil className="h-4 w-4" aria-hidden />
               </button>
@@ -168,7 +168,7 @@ export default function TemplateEditPage() {
 
       {template.exercises.length === 0 ? (
         <EmptyState
-          icon="💪"
+          icon={Dumbbell}
           title="No exercises yet"
           body="Add the exercises you want to do in this workout. You can set sets, reps, weights and rest for each."
           action={
@@ -310,7 +310,7 @@ export default function TemplateEditPage() {
                       </Link>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-1.5 rounded-control px-3 py-2 text-sm font-medium text-danger hover:bg-danger/10"
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-3 py-2 text-sm font-medium text-danger hover:bg-danger/10"
                         onClick={() => setRemoving(te.id)}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden /> Remove
@@ -336,7 +336,7 @@ export default function TemplateEditPage() {
       <div className="border-t border-border pt-6">
         <button
           type="button"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-danger hover:underline"
+          className="-ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-medium text-danger hover:bg-danger/10"
           onClick={() => setDeleting(true)}
         >
           <Trash2 className="h-4 w-4" aria-hidden /> Delete plan
@@ -400,7 +400,7 @@ function IconBtn({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="grid h-9 w-9 place-items-center rounded-control text-muted transition-colors hover:bg-surface2 hover:text-ink disabled:opacity-30"
+      className="grid h-11 w-11 place-items-center rounded-control text-muted transition-colors hover:bg-surface2 hover:text-ink disabled:opacity-30"
     >
       {children}
     </button>

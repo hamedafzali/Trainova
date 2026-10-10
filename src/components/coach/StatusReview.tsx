@@ -201,7 +201,7 @@ export function StatusReview({ summary }: { summary?: TrainingSummary } = {}) {
       ) : error && !review ? (
         <div className="space-y-2">
           <p className="text-sm text-inkSoft">{error}</p>
-          <button type="button" onClick={() => void run()} className="btn-secondary px-3 py-1.5 text-sm">
+          <button type="button" onClick={() => void run()} className="btn-secondary px-4 py-1.5 text-sm">
             Try again
           </button>
         </div>
