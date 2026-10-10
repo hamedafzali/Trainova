@@ -9,9 +9,10 @@ import { useStore } from "@/lib/store";
 import { TrainerChat } from "./TrainerChat";
 
 /**
- * The coach on every page: a floating button that opens the chat in a panel
- * (bottom sheet on mobile, side drawer on desktop). It shares the conversation
- * with /coach and tells the coach what the client has open.
+ * The coach on every page: a floating button on the top layer (above nav,
+ * toasts and dialogs) that opens the chat in a panel (bottom sheet on mobile,
+ * side drawer on desktop). Mounted in the root layout, outside AppShell. It
+ * shares the conversation with /coach and tells the coach what the client has open.
  */
 export function CoachAssistant() {
   const ai = useAiStatus();
@@ -28,7 +29,7 @@ export function CoachAssistant() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  if (ai.available !== true || pathname === "/coach") return null;
+  if (ai.available !== true) return null;
 
   // Clear the bottom nav on mobile, and the rest timer bar during a workout.
   const inSession = pathname.startsWith("/session/");
@@ -40,14 +41,14 @@ export function CoachAssistant() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={`fixed right-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-accentFill text-onAccent shadow-lg transition-transform hover:scale-105 active:scale-95 md:right-6 ${fabPos}`}
+          className={`fixed right-4 z-[60] grid h-12 w-12 place-items-center rounded-full bg-accentFill text-onAccent shadow-lg transition-transform hover:scale-105 active:scale-95 md:right-6 ${fabPos}`}
           aria-label="Ask your coach"
         >
           <Sparkles className="h-5 w-5" aria-hidden />
         </button>
       )}
       {open && (
-        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Coach">
+        <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Coach">
           <button
             type="button"
             className="absolute inset-0 bg-black/40"

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { CoachAssistant } from "@/components/coach/CoachAssistant";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { SyncManager } from "@/components/SyncManager";
 import { NO_FLASH_THEME_SCRIPT } from "@/lib/theme";
@@ -36,6 +37,7 @@ export default function RootLayout({
         <ServiceWorker />
         <SyncManager />
         <AppShell>{children}</AppShell>
+        <CoachAssistant />
       </body>
     </html>
   );
