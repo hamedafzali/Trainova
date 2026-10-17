@@ -153,3 +153,29 @@ export function detectPrs(
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
+
+/**
+ * Personal records for one exercise, rebuilt from its logged sets in the order
+ * they were completed. Used after a logged set is corrected, moved or deleted,
+ * so a typo (350 instead of 35) can't leave a phantom record behind.
+ */
+export function replayPrs(
+  sets: (Pick<WorkoutSet, "actualReps" | "actualWeight"> & { completedAt: string; assisted?: boolean })[]
+): { kind: "e1rm" | "max_weight" | "max_reps"; value: number; achievedAt: string }[] {
+  const ordered = [...sets].sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+  const bests = { e1rm: 0, maxWeight: 0, maxReps: 0 };
+  const latest = new Map<string, { kind: "e1rm" | "max_weight" | "max_reps"; value: number; achievedAt: string }>();
+  for (const s of ordered) {
+    for (const pr of detectPrs(s, bests, { assisted: s.assisted })) {
+      latest.set(pr.kind, { ...pr, achievedAt: s.completedAt });
+    }
+    // Same running bests as the store's bestsFor().
+    const reps = s.actualReps ?? 0;
+    if (s.actualWeight != null) bests.maxWeight = Math.max(bests.maxWeight, s.actualWeight);
+    if (s.actualReps != null) {
+      if (s.actualWeight != null) bests.e1rm = Math.max(bests.e1rm, epley1rm(s.actualWeight, reps));
+      bests.maxReps = Math.max(bests.maxReps, reps);
+    }
+  }
+  return [...latest.values()];
+}

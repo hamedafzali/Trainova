@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   detectPrs,
+  replayPrs,
   epley1rm,
   roundToIncrement,
   suggestNextLoad,
@@ -103,5 +104,29 @@ describe("detectPrs", () => {
       { assisted: true }
     );
     expect(prs).toEqual([]);
+  });
+});
+
+describe("replayPrs", () => {
+  const at = (h: number) => `2026-10-${String(10 + h).padStart(2, "0")}T10:00:00.000Z`;
+  it("drops a record that only existed because of a typo", () => {
+    const sets = [
+      { actualWeight: 30, actualReps: 8, completedAt: at(0) },
+      { actualWeight: 35, actualReps: 8, completedAt: at(1) }, // was logged as 350, now corrected
+    ];
+    const prs = replayPrs(sets);
+    expect(prs.find((p) => p.kind === "max_weight")).toMatchObject({ value: 35, achievedAt: at(1) });
+  });
+
+  it("keeps the earliest set that reached the best, in completion order", () => {
+    const prs = replayPrs([
+      { actualWeight: 40, actualReps: 5, completedAt: at(2) },
+      { actualWeight: 40, actualReps: 5, completedAt: at(1) },
+    ]);
+    expect(prs.find((p) => p.kind === "max_weight")?.achievedAt).toBe(at(1));
+  });
+
+  it("returns nothing when no sets remain", () => {
+    expect(replayPrs([])).toEqual([]);
   });
 });

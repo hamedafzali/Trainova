@@ -20,7 +20,7 @@ import type {
   WorkoutSet,
   WorkoutTemplate,
 } from "@/domain/types";
-import { detectPrs, epley1rm } from "@/domain/progression";
+import { detectPrs, epley1rm, replayPrs } from "@/domain/progression";
 import type { LastPerformance } from "@/domain/progression";
 import { bestWeight, totalVolume } from "@/domain/volume";
 import { matchExercise } from "@/domain/exerciseMatch";
@@ -171,6 +171,10 @@ export interface TrainovaState {
   importBackup: (data: Record<string, unknown>) => boolean;
   completeSet: (setId: string) => { newPrs: PersonalRecord["kind"][] };
   removeSet: (setId: string) => void;
+  /** Log this exercise's sets in a workout against a different machine. */
+  setExerciseDevice: (sessionId: string, exerciseId: string, deviceId: string | null) => void;
+  /** Move a logged set to another exercise in the same workout (logged on the wrong card). */
+  moveSet: (setId: string, toExerciseId: string) => void;
 
   // selectors
   getActiveSession: () => WorkoutSession | null;
@@ -202,6 +206,30 @@ export interface TrainovaState {
 const now = () => new Date().toISOString();
 
 const isWarmup = (x: Pick<WorkoutSet, "kind">) => x.kind === "warmup";
+
+/**
+ * Personal records for the given exercises, rebuilt from their logged sets.
+ * Called whenever a logged set changes after the fact.
+ */
+function withRebuiltPrs(
+  st: { prs: PersonalRecord[]; sets: WorkoutSet[]; exercises: Exercise[]; devices: Device[] },
+  exerciseIds: string[]
+): PersonalRecord[] {
+  const ids = new Set(exerciseIds);
+  const rebuilt: PersonalRecord[] = [];
+  for (const exerciseId of ids) {
+    const ex = st.exercises.find((e) => e.id === exerciseId);
+    const logged = st.sets
+      .filter((x) => x.exerciseId === exerciseId && x.completed && !isWarmup(x))
+      .flatMap((x) => {
+        const type = exerciseTypeOf(ex, st.devices.find((d) => d.id === x.deviceId));
+        if (type === "duration" || type === "cardio") return [];
+        return [{ ...x, completedAt: x.completedAt ?? now(), assisted: type === "assisted_bodyweight" }];
+      });
+    for (const pr of replayPrs(logged)) rebuilt.push({ exerciseId, ...pr });
+  }
+  return [...st.prs.filter((p) => !ids.has(p.exerciseId)), ...rebuilt];
+}
 
 /** Append deletion markers for ids (keeps the most recent 10k). */
 function tomb(list: Tombstone[], ids: Iterable<string>): Tombstone[] {
@@ -299,10 +327,14 @@ export const useStore = create<TrainovaState>()(
           reason: reason ?? null,
           at: now(),
         };
-        set((s) => ({
-          sets: s.sets.map((x) => (x.id === setId ? { ...x, ...patch, editedAt: now() } : x)),
-          audit: [event, ...s.audit],
-        }));
+        set((s) => {
+          const sets = s.sets.map((x) => (x.id === setId ? { ...x, ...patch, editedAt: now() } : x));
+          return {
+            sets,
+            audit: [event, ...s.audit],
+            prs: target.completed ? withRebuiltPrs({ ...s, sets }, [target.exerciseId]) : s.prs,
+          };
+        });
       },
 
       revertSet: (setId) => {
@@ -325,14 +357,14 @@ export const useStore = create<TrainovaState>()(
           reason: "revert to original",
           at: now(),
         };
-        set((s) => ({
-          sets: s.sets.map((x) =>
+        set((s) => {
+          const sets = s.sets.map((x) =>
             x.id === setId
               ? { ...x, actualWeight: original.actualWeight, actualReps: original.actualReps, editedAt: null }
               : x
-          ),
-          audit: [event, ...s.audit],
-        }));
+          );
+          return { sets, audit: [event, ...s.audit], prs: withRebuiltPrs({ ...s, sets }, [target.exerciseId]) };
+        });
       },
 
       auditForSet: (setId) =>
@@ -773,8 +805,7 @@ export const useStore = create<TrainovaState>()(
         const prev = existing[existing.length - 1];
         const index = existing.length;
 
-        // Prefer the next ramp target from the session's template (e.g. set 3 of
-        // Row → 42.5), falling back to the previous logged set.
+        // Carry over what was just lifted; the plan's numbers are only a fallback.
         const session = st.sessions.find((s) => s.id === sessionId);
         const tpl = session?.templateId
           ? st.templates.find((t) => t.id === session.templateId)
@@ -790,7 +821,7 @@ export const useStore = create<TrainovaState>()(
           deviceId: prev?.deviceId ?? device,
           setIndex: index,
           targetReps: templateSet?.targetReps ?? prev?.targetReps ?? null,
-          targetWeight: templateSet?.targetWeight ?? prev?.actualWeight ?? prev?.targetWeight ?? null,
+          targetWeight: prev?.actualWeight ?? prev?.targetWeight ?? templateSet?.targetWeight ?? null,
           actualReps: null,
           actualWeight: null,
           rpe: null,
@@ -802,7 +833,13 @@ export const useStore = create<TrainovaState>()(
       },
 
       updateSet: (setId, patch) =>
-        set((s) => ({ sets: s.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x)) })),
+        set((s) => {
+          const target = s.sets.find((x) => x.id === setId);
+          const sets = s.sets.map((x) => (x.id === setId ? { ...x, ...patch } : x));
+          // Undoing a logged set takes back any record it set.
+          const undone = target?.completed && patch.completed === false;
+          return { sets, prs: undone ? withRebuiltPrs({ ...s, sets }, [target.exerciseId]) : s.prs };
+        }),
 
       setSessionNotes: (sessionId, notes) =>
         set((s) => ({
@@ -924,13 +961,43 @@ export const useStore = create<TrainovaState>()(
           const siblings = remaining
             .filter((x) => x.sessionId === target.sessionId && x.exerciseId === target.exerciseId)
             .sort((a, b) => a.setIndex - b.setIndex);
+          const sets = remaining.map((x) => {
+            if (x.sessionId !== target.sessionId || x.exerciseId !== target.exerciseId) return x;
+            return { ...x, setIndex: siblings.findIndex((y) => y.id === x.id) };
+          });
           return {
             tombstones,
-            sets: remaining.map((x) => {
-              if (x.sessionId !== target.sessionId || x.exerciseId !== target.exerciseId) return x;
-              return { ...x, setIndex: siblings.findIndex((y) => y.id === x.id) };
-            }),
+            sets,
+            prs: target.completed ? withRebuiltPrs({ ...s, sets }, [target.exerciseId]) : s.prs,
           };
+        }),
+
+      setExerciseDevice: (sessionId, exerciseId, deviceId) =>
+        set((s) => {
+          const sets = s.sets.map((x) =>
+            x.sessionId === sessionId && x.exerciseId === exerciseId ? { ...x, deviceId } : x
+          );
+          return { sets, prs: withRebuiltPrs({ ...s, sets }, [exerciseId]) };
+        }),
+
+      moveSet: (setId, toExerciseId) =>
+        set((s) => {
+          const target = s.sets.find((x) => x.id === setId);
+          if (!target || target.exerciseId === toExerciseId) return {};
+          const dest = s.sets.filter((x) => x.sessionId === target.sessionId && x.exerciseId === toExerciseId);
+          const destDevice =
+            dest[0]?.deviceId ?? s.exercises.find((e) => e.id === toExerciseId)?.defaultDeviceId ?? null;
+          // Logged sets go after the destination's logged ones; renumber both cards.
+          const moved = { ...target, exerciseId: toExerciseId, deviceId: destDevice, editedAt: now() };
+          const order = (ex: string, list: WorkoutSet[]) =>
+            list
+              .filter((x) => x.sessionId === target.sessionId && x.exerciseId === ex)
+              .sort((a, b) => Number(b.completed) - Number(a.completed) || a.setIndex - b.setIndex);
+          const next = s.sets.map((x) => (x.id === setId ? { ...moved, setIndex: Number.MAX_SAFE_INTEGER } : x));
+          const index = new Map<string, number>();
+          for (const ex of [target.exerciseId, toExerciseId]) order(ex, next).forEach((x, i) => index.set(x.id, i));
+          const sets = next.map((x) => (index.has(x.id) ? { ...x, setIndex: index.get(x.id)! } : x));
+          return { sets, prs: withRebuiltPrs({ ...s, sets }, [target.exerciseId, toExerciseId]) };
         }),
 
       getActiveSession: () => activeSession(get().sessions),

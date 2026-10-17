@@ -436,6 +436,7 @@ export default function SessionPage() {
             sessionId={session.id}
             exerciseId={focused}
             sets={setsByExercise.get(focused) ?? []}
+            editable
             onPr={showPr}
           />
 

@@ -14,7 +14,7 @@ import { useStore } from "@/lib/store";
 import { useRestTimer, defaultRest } from "@/lib/restTimer";
 import { formatWeight, fromDisplay, toDisplay, weightStep } from "@/lib/units";
 import { haptic } from "@/lib/haptics";
-import type { Units, WorkoutSet } from "@/domain/types";
+import type { Device, Units, WorkoutSet } from "@/domain/types";
 
 const WARMUP_REST = 60;
 
@@ -64,7 +64,7 @@ export function SessionExercise({
   exerciseId: string;
   sets: WorkoutSet[];
   readOnly?: boolean;
-  editable?: boolean; // completed session → allow safe correction of logged sets
+  editable?: boolean; // allow correcting logged sets (live or finished workout)
   onPr: (kinds: string[]) => void;
 }) {
   const units = useStore((s) => s.units);
@@ -76,6 +76,15 @@ export function SessionExercise({
   const completeSet = useStore((s) => s.completeSet);
   const editSet = useStore((s) => s.editSet);
   const revertSet = useStore((s) => s.revertSet);
+  const setExerciseDevice = useStore((s) => s.setExerciseDevice);
+  const moveSet = useStore((s) => s.moveSet);
+  const devices = useStore((s) => s.devices);
+  // Other exercises in this workout, for "logged on the wrong card".
+  const siblings = useStore((s) => {
+    const ids: string[] = [];
+    for (const x of s.sets) if (x.sessionId === sessionId && x.exerciseId !== exerciseId && !ids.includes(x.exerciseId)) ids.push(x.exerciseId);
+    return ids.join(",");
+  });
   const lastPerformance = useStore((s) => s.lastPerformance);
   const missStreak = useStore((s) => s.missStreak);
   const templateExercise = useStore((s) => {
@@ -127,17 +136,16 @@ export function SessionExercise({
   const done = sets.filter((s) => s.completed);
   const activeSet = readOnly ? undefined : sets.find((s) => !s.completed);
   const lastDone = done[done.length - 1];
+  // A warm-up shouldn't drag the next working set down to warm-up weight.
+  const lastWorking = [...done].reverse().find((s) => s.kind !== "warmup") ?? lastDone;
+  const lastTime = (s: WorkoutSet) => last?.sets[s.setIndex] ?? last?.sets[last.sets.length - 1];
 
-  // Starting values for the current set: what's typed → the plan → what you
-  // just did → what you did last time.
+  // Starting values for the current set: what's typed → what you just did →
+  // what you did last time → the plan. Suggestions only apply when tapped.
   const startWeight = (s: WorkoutSet) =>
-    s.actualWeight ?? s.targetWeight ?? lastDone?.actualWeight ?? last?.sets[s.setIndex]?.actualWeight ?? 0;
+    s.actualWeight ?? lastWorking?.actualWeight ?? lastTime(s)?.actualWeight ?? s.targetWeight ?? 0;
   const startReps = (s: WorkoutSet) =>
-    s.actualReps ??
-    s.targetReps ??
-    last?.sets[s.setIndex]?.actualReps ??
-    lastDone?.actualReps ??
-    targetReps;
+    s.actualReps ?? lastWorking?.actualReps ?? lastTime(s)?.actualReps ?? s.targetReps ?? targetReps;
   const startHold = (s: WorkoutSet) => s.durationSec ?? s.targetReps ?? lastDone?.durationSec ?? 30;
   const startMinutes = (s: WorkoutSet) => s.durationMin ?? lastDone?.durationMin ?? s.targetReps ?? 20;
   const startSpeed = (s: WorkoutSet) => s.speed ?? lastDone?.speed ?? 0;
@@ -186,6 +194,22 @@ export function SessionExercise({
     if (kind?.short) numbers.set(s.id, kind.short);
     else numbers.set(s.id, String(++working));
   }
+
+  // Machines that could stand in for this one: same kind, same muscle first.
+  const deviceChoices = useMemo(() => {
+    if (!device) return [];
+    return devices
+      .filter((d) => d.category === device.category)
+      .sort(
+        (a, b) =>
+          Number(b.primaryMuscle === device.primaryMuscle) - Number(a.primaryMuscle === device.primaryMuscle) ||
+          a.name.localeCompare(b.name),
+      );
+  }, [devices, device]);
+  const siblingList = useMemo(
+    () => (siblings ? siblings.split(",") : []).map((id) => ({ id, name: exerciseById(id)?.name ?? "Exercise" })),
+    [siblings, exerciseById],
+  );
 
   const muscles = [ex?.primaryMuscle, ...(ex?.secondaryMuscles ?? [])].filter(Boolean) as string[];
   const steps = ex?.instructions ?? [];
@@ -271,8 +295,9 @@ export function SessionExercise({
               }`}
             >
               <TrendingUp className="h-3.5 w-3.5" aria-hidden />
-              {suggestion.action === "increase" ? "Go up to" : suggestion.action === "deload" ? "Deload to" : "Repeat"}{" "}
-              {suggestion.weight} {units}
+              {suggestion.action === "increase" ? "Try" : suggestion.action === "deload" ? "Deload to" : "Repeat"}{" "}
+              {suggestion.weight} {units}?
+              <span className="ml-0.5 underline underline-offset-2">Apply</span>
             </button>
           )}
         </div>
@@ -412,28 +437,38 @@ export function SessionExercise({
             );
           }
 
-          if (editable && editingId === s.id && counted) {
+          if (editable && editingId === s.id && s.completed) {
             return (
               <EditSetRow
                 key={s.id}
                 set={s}
                 tag={tag}
                 weighted={weighted}
+                counted={counted}
                 units={units}
+                device={device?.id ?? null}
+                devices={deviceChoices}
+                exercises={siblingList}
                 onCancel={() => setEditingId(null)}
                 onRevert={() => {
                   revertSet(s.id);
                   setEditingId(null);
                 }}
-                onSave={(kg, r) => {
-                  editSet(s.id, { actualWeight: weighted ? kg : null, actualReps: r > 0 ? r : null });
+                onDelete={() => {
+                  removeSet(s.id);
+                  setEditingId(null);
+                }}
+                onSave={({ kg, reps, deviceId, moveTo }) => {
+                  if (counted) editSet(s.id, { actualWeight: weighted ? kg : null, actualReps: reps > 0 ? reps : null });
+                  if (deviceId !== (device?.id ?? null)) setExerciseDevice(sessionId, exerciseId, deviceId);
+                  if (moveTo) moveSet(s.id, moveTo);
                   setEditingId(null);
                 }}
               />
             );
           }
 
-          const canEdit = editable && s.completed && counted;
+          const canEdit = editable && s.completed;
           return (
             <li
               key={s.id}
@@ -463,7 +498,12 @@ export function SessionExercise({
                 {tag}
               </span>
               <span className={`min-w-0 flex-1 truncate font-semibold tabular-nums ${s.completed ? "text-ink" : "text-muted"}`}>
-                {describeSet(s, type, units, !s.completed)}
+                {describeSet(
+                  s.completed || !counted ? s : { ...s, actualWeight: startWeight(s), actualReps: startReps(s) },
+                  type,
+                  units,
+                  !s.completed,
+                )}
                 {s.completed && s.rpe != null && <span className="ml-2 text-xs font-normal text-muted">RPE {s.rpe}</span>}
                 {s.editedAt && <span className="ml-2 text-[10px] font-semibold uppercase text-amber">edited</span>}
               </span>
@@ -472,7 +512,10 @@ export function SessionExercise({
                 <button
                   type="button"
                   aria-label={`Delete set ${tag}`}
-                  onClick={() => removeSet(s.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeSet(s.id);
+                  }}
                   className="-my-2 -mr-2 grid h-11 w-11 place-items-center rounded-control text-muted hover:text-danger"
                 >
                   <X className="h-4 w-4" aria-hidden />
@@ -483,7 +526,10 @@ export function SessionExercise({
                   type="button"
                   aria-label={`Undo set ${tag}`}
                   title="Undo"
-                  onClick={() => updateSet(s.id, { completed: false, completedAt: null })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateSet(s.id, { completed: false, completedAt: null });
+                  }}
                   className="group -my-2 -mr-2 grid h-11 w-11 place-items-center"
                 >
                   <span className="grid h-7 w-7 place-items-center rounded-control bg-green text-onStatus transition-transform group-active:scale-90">
@@ -507,9 +553,9 @@ export function SessionExercise({
           <Plus className="h-4 w-4" aria-hidden /> Add set
         </button>
       )}
-      {editable && done.length > 0 && counted && (
+      {editable && done.length > 0 && (
         <p className="flex items-center justify-center gap-1 text-center text-xs text-muted">
-          <ChevronDown className="h-3.5 w-3.5" aria-hidden /> Tap a set to correct it
+          <ChevronDown className="h-3.5 w-3.5" aria-hidden /> Tap a logged set to fix it
         </p>
       )}
     </section>
@@ -528,43 +574,93 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-/** Inline corrector for a logged set; saving writes an audit entry. */
+/** Inline corrector for a logged set; value edits write an audit entry. */
 function EditSetRow({
   set,
   tag,
   weighted,
+  counted,
   units,
+  device,
+  devices,
+  exercises,
   onSave,
   onRevert,
+  onDelete,
   onCancel,
 }: {
   set: WorkoutSet;
   tag: string;
   weighted: boolean;
+  counted: boolean;
   units: Units;
-  onSave: (weightKg: number, reps: number) => void;
+  device: string | null;
+  devices: Device[];
+  exercises: { id: string; name: string }[];
+  onSave: (v: { kg: number; reps: number; deviceId: string | null; moveTo: string | null }) => void;
   onRevert: () => void;
+  onDelete: () => void;
   onCancel: () => void;
 }) {
   const [w, setW] = useState(stepperValue(set.actualWeight ?? 0, units));
   const [r, setR] = useState(set.actualReps ?? 0);
+  const [deviceId, setDeviceId] = useState(device);
+  const [moveTo, setMoveTo] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   return (
     <li className="space-y-3 rounded-control border border-accent/40 bg-bg/60 p-3">
       <div className="flex items-center justify-between text-xs text-muted">
-        <span>Correct set {tag}</span>
+        <span className="font-semibold text-ink">Fix set {tag}</span>
         {set.editedAt && (
-          <button type="button" className="text-accent" onClick={onRevert}>
+          <button type="button" className="-my-2 min-h-11 px-1 text-accent" onClick={onRevert}>
             Revert to original
           </button>
         )}
       </div>
-      {weighted && <Stepper label="Weight" value={w} step={weightStep(units)} unit={units} onChange={setW} />}
-      <Stepper label="Reps" value={r} step={1} min={0} unit="reps" onChange={setR} />
+      {counted && weighted && <Stepper label="Weight" value={w} step={weightStep(units)} unit={units} onChange={setW} />}
+      {counted && <Stepper label="Reps" value={r} step={1} min={0} unit="reps" onChange={setR} />}
+      {devices.length > 1 && (
+        <label className="block space-y-1 text-xs font-medium text-muted">
+          <span>Machine (all sets of this exercise)</span>
+          <select className="input py-2.5 text-sm" value={deviceId ?? ""} onChange={(e) => setDeviceId(e.target.value || null)}>
+            {devices.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+                {d.machineNumber ? ` · No. ${d.machineNumber}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {exercises.length > 0 && (
+        <label className="block space-y-1 text-xs font-medium text-muted">
+          <span>Logged on the wrong exercise?</span>
+          <select className="input py-2.5 text-sm" value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>
+            <option value="">Keep it here</option>
+            {exercises.map((x) => (
+              <option key={x.id} value={x.id}>
+                Move to {x.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="flex gap-2">
+        <button
+          type="button"
+          className={`btn flex-none px-4 ${confirmDelete ? "bg-danger text-white" : "bg-danger/[0.08] text-danger"}`}
+          onClick={() => (confirmDelete ? onDelete() : setConfirmDelete(true))}
+        >
+          {confirmDelete ? "Tap to delete" : "Delete"}
+        </button>
         <button type="button" className="btn-ghost flex-1" onClick={onCancel}>
           Cancel
         </button>
-        <button type="button" className="btn-primary flex-1" onClick={() => onSave(fromDisplay(w, units), r)}>
+        <button
+          type="button"
+          className="btn-primary flex-1"
+          onClick={() => onSave({ kg: fromDisplay(w, units), reps: r, deviceId, moveTo: moveTo || null })}
+        >
           Save
         </button>
       </div>

@@ -6,9 +6,10 @@ import { useEffect, useRef, useState } from "react";
  * Numeric control built for gym hands. Ways to change the value:
  *  - tap − / +            (one step)
  *  - press & hold − / +   (accelerating auto-repeat for big jumps)
- *  - drag the value horizontally (continuous ±)
  *  - tap the value to type an exact number
  *  - keyboard: focus the value, ↑/↓ (Shift = ×5), Enter to type
+ *
+ * The value itself never reacts to swipes, so scrolling the page over it is safe.
  *
  * `size="lg"` is the hero treatment for the one number that matters most on
  * screen (the active set's weight) — everything else stays default-sized so
@@ -40,7 +41,6 @@ export function Stepper({
   const valRef = useRef(value);
   valRef.current = value;
   const timer = useRef<number | null>(null);
-  const drag = useRef<{ x: number; base: number; moved: boolean } | null>(null);
   const [pulse, setPulse] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -73,23 +73,6 @@ export function Stepper({
       timer.current = window.setTimeout(run, delay);
     };
     timer.current = window.setTimeout(run, 420);
-  };
-
-  const onPointerDownValue = (e: React.PointerEvent) => {
-    drag.current = { x: e.clientX, base: valRef.current, moved: false };
-    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-  };
-  const onPointerMoveValue = (e: React.PointerEvent) => {
-    if (!drag.current) return;
-    const dx = e.clientX - drag.current.x;
-    if (Math.abs(dx) > 6) drag.current.moved = true;
-    const steps = Math.round(dx / 20);
-    if (steps !== 0) onChange(clampStep(drag.current.base + steps * step));
-  };
-  const endDrag = () => {
-    const wasTap = drag.current && !drag.current.moved;
-    drag.current = null;
-    if (wasTap) startEdit();
   };
 
   const startEdit = () => {
@@ -151,13 +134,9 @@ export function Stepper({
           aria-valuemin={min}
           aria-valuemax={max}
           aria-valuetext={unit ? `${display} ${unit}` : String(display)}
-          title="Tap to type · drag to adjust"
-          className={`flex min-w-0 flex-1 cursor-ew-resize select-none items-baseline justify-center gap-1.5 overflow-hidden rounded-control bg-surface2 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${pad}`}
-          style={{ touchAction: "none" }}
-          onPointerDown={onPointerDownValue}
-          onPointerMove={onPointerMoveValue}
-          onPointerUp={endDrag}
-          onPointerCancel={() => (drag.current = null)}
+          title="Tap to type"
+          className={`flex min-w-0 flex-1 cursor-text select-none items-baseline justify-center gap-1.5 overflow-hidden rounded-control bg-surface2 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${pad}`}
+          onClick={startEdit}
           onKeyDown={(e) => {
             const mult = e.shiftKey ? 5 : 1;
             if (e.key === "ArrowUp" || e.key === "ArrowRight") {
@@ -206,19 +185,44 @@ function HoldButton({
   const lg = size === "lg";
   const dims = lg ? "h-14 w-14 text-3xl" : size === "sm" ? "h-9 w-8 text-lg" : "h-12 w-12 text-2xl";
   const what = label ? ` ${label.toLowerCase()}` : "";
+  // A press only counts once it's clearly a tap or a hold: a finger that
+  // lands here to scroll the page must not change the number.
+  const press = useRef<{ x: number; y: number; holding: boolean; timer: number } | null>(null);
+  const cancel = () => {
+    if (!press.current) return;
+    clearTimeout(press.current.timer);
+    if (press.current.holding) onStop();
+    press.current = null;
+  };
+  useEffect(() => cancel, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <button
       type="button"
       aria-label={dir > 0 ? `Increase${what}` : `Decrease${what}`}
-      className={`flex ${dims} shrink-0 items-center justify-center rounded-control bg-surface2 font-bold text-ink transition-transform duration-100 active:scale-90 active:bg-border focus-visible:ring-2 focus-visible:ring-accent/50`}
+      className={`flex ${dims} shrink-0 touch-manipulation items-center justify-center rounded-control bg-surface2 font-bold text-ink transition-transform duration-100 active:scale-90 active:bg-border focus-visible:ring-2 focus-visible:ring-accent/50`}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
-        e.preventDefault();
-        onStart();
+        cancel();
+        const p = { x: e.clientX, y: e.clientY, holding: false, timer: 0 };
+        p.timer = window.setTimeout(() => {
+          p.holding = true;
+          onStart();
+        }, 380);
+        press.current = p;
       }}
-      onPointerUp={onStop}
-      onPointerLeave={onStop}
-      onPointerCancel={onStop}
+      onPointerMove={(e) => {
+        const p = press.current;
+        if (p && !p.holding && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) cancel();
+      }}
+      onPointerUp={() => {
+        const p = press.current;
+        if (!p) return;
+        if (!p.holding) onKey(); // a plain tap: one step
+        cancel();
+      }}
+      onPointerLeave={cancel}
+      onPointerCancel={cancel}
+      onContextMenu={(e) => e.preventDefault()}
       // Pointer presses are handled above; `detail === 0` means keyboard activation.
       onClick={(e) => {
         if (e.detail === 0) onKey();
