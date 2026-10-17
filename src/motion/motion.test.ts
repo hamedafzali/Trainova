@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LIBRARY_EXERCISES as EXERCISES } from "@/data/exercises";
-import { MOTIONS, motionSpecFor, resolveMotion } from "./catalog";
+import { DEVICE, MACHINE, MOTIONS, motionSpecFor, resolveMotion } from "./catalog";
 import { BODY, solve } from "./rig";
 import { sample } from "./timeline";
 import { dist } from "./vec";
@@ -42,10 +42,23 @@ describe("movement guide engine", () => {
     }
   });
 
+  it("shows every free-weight lift on its machine version", () => {
+    for (const [free, machine] of Object.entries(MACHINE)) {
+      expect(MOTIONS[free], free).toBeDefined();
+      expect(DEVICE[machine], machine).toBeTruthy();
+    }
+    const squat = motionSpecFor({ id: "e-squat", name: "Back squat", equipment: "barbell", primaryMuscle: "quads" });
+    expect(squat.device).toBe("Smith machine");
+    expect(squat.equipment?.some((p) => p.kind === "smith")).toBe(true);
+    const curl = motionSpecFor({ id: "custom-4", name: "Dumbbell curl", equipment: "dumbbell", primaryMuscle: "biceps" });
+    expect(curl.device).toBe("Biceps curl machine");
+  });
+
   it("infers a movement for exercises outside the library", () => {
     const spec = motionSpecFor({ id: "custom-1", name: "Incline Dumbbell Fly", equipment: "dumbbell", primaryMuscle: "chest" });
     expect(spec.pattern).toBe("armArc");
-    expect(spec.equipment?.some((p) => p.kind === "dumbbell")).toBe(true);
+    expect(spec.device).toBe("Pec deck");
+    expect(spec.equipment?.some((p) => p.kind === "dumbbell")).toBe(false);
     expect(motionSpecFor({ id: "custom-2", name: "Mystery move", equipment: "machine", primaryMuscle: "lats" }).pattern).toBe("pulldown");
     expect(motionSpecFor({ id: "custom-3", name: "Thing", equipment: "other", primaryMuscle: null }).pattern).toBe("squat");
   });

@@ -83,8 +83,9 @@ const xRod = (len: number, r: number, mat: THREE.Material, geo = GEO.cyl) => {
 
 // ── Figure ─────────────────────────────────────────────────────────────────
 
+export { buildFigure, type Figure, type Highlight } from "./body";
 type Level = 0 | 1 | 2;
-export type Highlight = Partial<Record<Muscle, Level>>;
+type Highlight = Partial<Record<Muscle, Level>>;
 
 /** Muscles shown on the figure, expanded for the catch-all groups. */
 export function highlightFor(primary: Muscle | null | undefined, secondary: Muscle[] = []): Highlight {
@@ -98,125 +99,6 @@ export function highlightFor(primary: Muscle | null | undefined, secondary: Musc
   for (const m of secondary) expand(m, 1);
   if (primary) expand(primary, 2);
   return h;
-}
-
-/** Ellipsoid overlays for torso muscles, in torso-local [left, up, fwd] offsets. */
-const OVERLAYS: { muscle: Muscle; from: "chest" | "pelvis" | "shoulder"; at: V3; size: V3; mirror?: boolean }[] = [
-  { muscle: "chest", from: "chest", at: [0.085, -0.13, 0.08], size: [0.085, 0.07, 0.05], mirror: true },
-  { muscle: "abs", from: "pelvis", at: [0, 0.24, 0.085], size: [0.075, 0.15, 0.04] },
-  { muscle: "obliques", from: "pelvis", at: [0.12, 0.2, 0.04], size: [0.04, 0.11, 0.07], mirror: true },
-  { muscle: "lats", from: "chest", at: [0.135, -0.21, -0.03], size: [0.055, 0.14, 0.08], mirror: true },
-  { muscle: "upper back", from: "chest", at: [0, -0.1, -0.09], size: [0.13, 0.1, 0.05] },
-  { muscle: "traps", from: "chest", at: [0, 0.015, -0.035], size: [0.12, 0.06, 0.06] },
-  { muscle: "lower back", from: "pelvis", at: [0, 0.16, -0.08], size: [0.095, 0.1, 0.04] },
-  { muscle: "glutes", from: "pelvis", at: [0.07, -0.03, -0.075], size: [0.08, 0.085, 0.06], mirror: true },
-  { muscle: "abductors", from: "pelvis", at: [0.155, -0.03, 0], size: [0.05, 0.085, 0.075], mirror: true },
-  { muscle: "shoulders", from: "shoulder", at: [0.012, 0.01, 0], size: [0.068, 0.068, 0.068], mirror: true },
-  { muscle: "rear delts", from: "shoulder", at: [0.012, 0.01, -0.02], size: [0.066, 0.066, 0.06], mirror: true },
-];
-
-const LIMB_MUSCLES = {
-  upperArm: ["biceps", "triceps"],
-  forearm: ["forearms"],
-  thigh: ["quads", "hamstrings", "adductors"],
-  shin: ["calves"],
-} as const satisfies Record<string, readonly Muscle[]>;
-
-export interface Figure {
-  group: THREE.Group;
-  update(sk: Skeleton, pulse: number): void;
-  dispose(): void;
-}
-
-export function buildFigure(highlight: Highlight): Figure {
-  const group = new THREE.Group();
-  const body = std(PALETTE.body, { roughness: 0.55 });
-  const primary = std(PALETTE.primary, { emissive: PALETTE.primary, emissiveIntensity: 0.25, roughness: 0.5 });
-  const secondary = std(PALETTE.secondary, { emissive: PALETTE.secondary, emissiveIntensity: 0.12, roughness: 0.55 });
-  const face = std(PALETTE.face, { roughness: 0.3, metalness: 0.4 });
-  const matFor = (l: Level | undefined) => (l === 2 ? primary : l === 1 ? secondary : body);
-  const limbMat = (k: keyof typeof LIMB_MUSCLES) => matFor(Math.max(0, ...LIMB_MUSCLES[k].map((m) => highlight[m] ?? 0)) as Level);
-
-  const add3 = <T extends THREE.Object3D>(o: T) => (group.add(o), o);
-  const pair = <T>(f: () => T): [T, T] => [f(), f()];
-  const limb = (mat: THREE.Material) => pair(() => add3(mesh(GEO.cyl, mat)));
-  const ball = (mat: THREE.Material = body) => pair(() => add3(mesh(GEO.sphere, mat)));
-
-  const upper = limb(limbMat("upperArm"));
-  const fore = limb(limbMat("forearm"));
-  const thigh = limb(limbMat("thigh"));
-  const shin = limb(limbMat("shin"));
-  const foot = pair(() => add3(mesh(GEO.box, body)));
-  const [shoulderJ, elbowJ, handJ, hipJ, kneeJ, ankleJ] = [ball(), ball(), ball(), ball(), ball(), ball()];
-  const chestM = add3(mesh(GEO.sphere, body));
-  const waistM = add3(mesh(GEO.sphere, body));
-  const pelvisM = add3(mesh(GEO.sphere, body));
-  const neckM = add3(mesh(GEO.cyl, body));
-  const headM = add3(mesh(GEO.sphere, body));
-  const visor = add3(mesh(GEO.sphere, face, false));
-
-  const overlays = OVERLAYS.flatMap((o) => {
-    const l = highlight[o.muscle];
-    if (!l) return [];
-    const sides = o.mirror ? [1, -1] : [1];
-    return sides.map((s) => ({ ...o, side: s, m: add3(mesh(GEO.sphere, matFor(l), false)) }));
-  });
-
-  const basis = new THREE.Matrix4();
-  const torsoQ = new THREE.Quaternion();
-  const headQ = new THREE.Quaternion();
-  const place = (m: THREE.Object3D, p: V3, r: number | V3, q?: THREE.Quaternion) => {
-    m.position.copy(v(p));
-    if (typeof r === "number") m.scale.setScalar(r);
-    else m.scale.copy(v(r));
-    if (q) m.quaternion.copy(q);
-  };
-
-  return {
-    group,
-    update(sk, pulse) {
-      primary.emissiveIntensity = 0.18 + 0.5 * pulse;
-      const f = sk.frame;
-      basis.makeBasis(v(f.left), v(f.up), v(f.fwd));
-      torsoQ.setFromRotationMatrix(basis);
-      for (const i of [0, 1] as const) {
-        span(upper[i], sk.shoulder[i], sk.elbow[i], 0.048);
-        span(fore[i], sk.elbow[i], sk.hand[i], 0.038);
-        span(thigh[i], sk.hip[i], sk.knee[i], 0.072);
-        span(shin[i], sk.knee[i], sk.ankle[i], 0.05);
-        place(shoulderJ[i], sk.shoulder[i], 0.055);
-        place(elbowJ[i], sk.elbow[i], 0.042);
-        place(handJ[i], sk.hand[i], 0.04);
-        place(hipJ[i], sk.hip[i], 0.072);
-        place(kneeJ[i], sk.knee[i], 0.056);
-        place(ankleJ[i], sk.ankle[i], 0.044);
-        // Foot: a block from heel to toe, flat side down.
-        const heel = sk.ankle[i];
-        const toe = sk.toe[i];
-        const d = v(sub(toe, heel)).normalize();
-        foot[i].position.copy(v(mid(heel, toe))).add(new THREE.Vector3(0, -0.035, 0));
-        foot[i].quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), d);
-        foot[i].scale.set(0.085, 0.06, dist(heel, toe) + 0.06);
-      }
-      place(chestM, local(sk.chest, f, [0, -0.15, 0]), [0.175, 0.17, 0.115], torsoQ);
-      place(waistM, local(sk.pelvis, f, [0, 0.2, 0]), [0.145, 0.15, 0.1], torsoQ);
-      place(pelvisM, sk.pelvis, [0.165, 0.11, 0.11], torsoQ);
-      span(neckM, sk.chest, sk.neck, 0.045);
-      const headUp = v(sub(sk.head, sk.neck)).normalize();
-      const hf = v(sk.headFwd);
-      basis.makeBasis(new THREE.Vector3().crossVectors(headUp, hf), headUp, hf);
-      headQ.setFromRotationMatrix(basis);
-      place(headM, sk.head, [0.088, 0.112, 0.098], headQ);
-      place(visor, add(sk.head, mul3(sk.headFwd, 0.066)), [0.07, 0.035, 0.04], headQ);
-      for (const o of overlays) {
-        const origin = o.from === "chest" ? sk.chest : o.from === "pelvis" ? sk.pelvis : sk.shoulder[o.side === 1 ? 0 : 1];
-        place(o.m, local(origin, f, [o.at[0] * o.side, o.at[1], o.at[2]]), o.size, torsoQ);
-      }
-    },
-    dispose() {
-      for (const m of [body, primary, secondary, face]) m.dispose();
-    },
-  };
 }
 
 const mul3 = (a: V3, s: number): V3 => [a[0] * s, a[1] * s, a[2] * s];

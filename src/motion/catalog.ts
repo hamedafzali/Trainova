@@ -403,6 +403,14 @@ export const MOTIONS: Record<string, MotionSpec> = {
     camera: { yaw: 20, pitch: 30 },
   },
 
+  // Machine versions of free-weight lifts (see MACHINE below)
+  "m-smithrdl": { pattern: "hinge", equipment: [{ kind: "smith", z: 0.08 }, bar("straight", 1.9)] },
+  "m-smithdeadlift": { pattern: "hinge", params: { from: "floor" }, equipment: [{ kind: "smith", z: 0.04 }, bar("straight", 1.9)] },
+  "m-smithsplit": { pattern: "lunge", params: { style: "split", hold: "back" }, equipment: [{ kind: "smith", z: -0.1 }, bar("straight", 1.9)], camera: { yaw: 70 } },
+  "m-smithshrug": { pattern: "shrug", equipment: [{ kind: "smith", z: 0.05 }, bar("straight", 1.9)] },
+  "m-smithclose": { pattern: "press", params: { grip: 0.2, tucked: true }, equipment: [flatBench(), { kind: "smith", z: -0.43 }, bar("straight", 1.9)] },
+  "m-cablefront": { pattern: "armArc", params: { plane: "sagittal", from: 6, to: 88, bend: 10 }, equipment: [tower([0, 0.1, -0.35], "bar")], camera: { yaw: 60 } },
+
   // Cardio
   "e-treadmill": { pattern: "cardio", params: { machine: "treadmill" }, equipment: [{ kind: "treadmill" }] },
   "e-bike": { pattern: "cardio", params: { machine: "bike" }, equipment: [{ kind: "bike" }] },
@@ -431,6 +439,111 @@ export const MOTIONS: Record<string, MotionSpec> = {
       { kind: "pad", to: "footR", size: [0.14, 0.03, 0.3], offset: [0, -0.09, 0.08] },
     ],
   },
+};
+
+// ── Machines everywhere ────────────────────────────────────────────────────
+
+/**
+ * Free-weight lift → the standard machine that trains the same movement. The
+ * guide shows the machine; the free-weight specs stay in the library as data.
+ * Bodyweight moves and implements with no machine equivalent (kettlebell
+ * swing, carries) keep their own setup.
+ */
+export const MACHINE: Record<string, string> = {
+  "e-squat": "e-smithsquat",
+  "e-frontsquat": "e-hacksquat",
+  "e-gobletsquat": "e-hacksquat",
+  "e-kbgoblet": "e-hacksquat",
+  "e-rdl": "m-smithrdl",
+  "e-dbrdl": "m-smithrdl",
+  "e-deadlift": "m-smithdeadlift",
+  "e-trapdeadlift": "m-smithdeadlift",
+  "e-lunge": "m-smithsplit",
+  "e-splitsquat": "m-smithsplit",
+  "e-stepup": "e-legpress",
+  "e-hipthrust": "e-hipthrustm",
+  "e-bench": "e-smithbench",
+  "e-inclinebench": "e-inclinepressm",
+  "e-dbbench": "e-chestpress",
+  "e-dbincline": "e-inclinepressm",
+  "e-dbfly": "e-pecdeck",
+  "e-closebench": "m-smithclose",
+  "e-bbrow": "e-row",
+  "e-dbrow": "e-cablerow",
+  "e-shrug": "m-smithshrug",
+  "e-ohp": "e-shpressm",
+  "e-dbpress": "e-shpressm",
+  "e-arnold": "e-shpressm",
+  "e-lateral": "e-latraisem",
+  "e-frontraise": "m-cablefront",
+  "e-dbreversefly": "e-reversefly",
+  "e-curl": "e-curlm",
+  "e-hammercurl": "e-cablecurl",
+  "e-bbcurl": "e-cablecurl",
+  "e-ezcurl": "e-cablecurl",
+  "e-preacher": "e-curlm",
+  "e-skullcrusher": "e-trim",
+  "e-dbohext": "e-ohcableext",
+};
+
+/** The machine or station each spec shows, for the guide's label. */
+const SMITH = "Smith machine";
+const CABLE = "Cable station";
+export const DEVICE: Record<string, string> = {
+  "e-legpress": "Leg press",
+  "e-legcurl": "Seated leg curl",
+  "e-legext": "Leg extension",
+  "e-lycurl": "Lying leg curl",
+  "e-hacksquat": "Hack squat",
+  "e-adduct": "Adductor machine",
+  "e-abduct": "Abductor machine",
+  "e-calfraise": "Standing calf machine",
+  "e-seatcalf": "Seated calf machine",
+  "e-glutekick": "Glute kickback machine",
+  "e-hipthrustm": "Hip thrust machine",
+  "e-smithsquat": SMITH,
+  "e-chestpress": "Chest press machine",
+  "e-inclinepressm": "Incline press machine",
+  "e-pecdeck": "Pec deck",
+  "e-cablefly": "Cable crossover",
+  "e-smithbench": SMITH,
+  "e-assistdip": "Assisted dip machine",
+  "e-pulldown": "Lat pulldown",
+  "e-row": "Seated row machine",
+  "e-cablerow": "Seated cable row",
+  "e-closepulldown": "Lat pulldown",
+  "e-straightpd": CABLE,
+  "e-tbarrow": "T-bar row",
+  "e-assistpullup": "Assisted pull-up machine",
+  "e-backext": "Back extension machine",
+  "e-hyperext": "Hyperextension bench",
+  "e-facepull": CABLE,
+  "e-shpressm": "Shoulder press machine",
+  "e-latraisem": "Lateral raise machine",
+  "e-cablelateral": CABLE,
+  "e-reversefly": "Reverse fly machine",
+  "e-uprightrow": CABLE,
+  "e-cablecurl": CABLE,
+  "e-curlm": "Biceps curl machine",
+  "e-pushdown": CABLE,
+  "e-ohcableext": CABLE,
+  "e-trim": "Triceps extension machine",
+  "e-dipm": "Triceps dip machine",
+  "e-abs": "Ab crunch machine",
+  "e-cablecrunch": CABLE,
+  "e-rotary": "Rotary torso machine",
+  "e-woodchop": CABLE,
+  "e-treadmill": "Treadmill",
+  "e-bike": "Exercise bike",
+  "e-rower": "Rowing machine",
+  "e-elliptical": "Elliptical",
+  "e-stairs": "Stair climber",
+  "m-smithrdl": SMITH,
+  "m-smithdeadlift": SMITH,
+  "m-smithsplit": SMITH,
+  "m-smithshrug": SMITH,
+  "m-smithclose": SMITH,
+  "m-cablefront": CABLE,
 };
 
 // ── Fallback for exercises outside the library ────────────────────────────
@@ -566,14 +679,17 @@ function equipmentFor(ex: Pick<Exercise, "equipment">, spec: MotionSpec): Part[]
   }
 }
 
-/** Movement for any exercise: the library entry, or one inferred from its name, equipment and muscles. */
+/** Movement for any exercise, shown on a machine wherever one exists: the
+ * library entry, or one inferred from its name, equipment and muscles. */
 export function motionSpecFor(ex: Pick<Exercise, "id" | "name" | "equipment" | "primaryMuscle">): MotionSpec {
-  const known = MOTIONS[ex.id];
-  if (known) return known;
+  const known = !!MOTIONS[ex.id];
   const name = ex.name.toLowerCase();
-  const id = KEYWORDS.find(([re]) => re.test(name))?.[1] ?? BY_MUSCLE[ex.primaryMuscle ?? ""] ?? "e-bwsquat";
-  const spec = MOTIONS[id];
-  return { ...spec, equipment: equipmentFor(ex, spec) };
+  const id = known ? ex.id : (KEYWORDS.find(([re]) => re.test(name))?.[1] ?? BY_MUSCLE[ex.primaryMuscle ?? ""] ?? "e-bwsquat");
+  const shown = MACHINE[id] ?? id;
+  const spec = MOTIONS[shown];
+  // A machine keeps its own setup; an inferred free-weight move takes the exercise's loading.
+  const equipment = known || DEVICE[shown] ? spec.equipment : equipmentFor(ex, spec);
+  return { ...spec, equipment, device: DEVICE[shown] };
 }
 
 /** A spec turned into a playable motion. Spec equipment and tempo win over the pattern's own. */

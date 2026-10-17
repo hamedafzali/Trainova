@@ -4,6 +4,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Pause, Play } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import type { Muscle } from "@/domain/taxonomy";
 import type { Exercise } from "@/domain/types";
 import { motionSpecFor, resolveMotion } from "@/motion/catalog";
@@ -76,7 +77,7 @@ function Scene({
   yawRef: React.MutableRefObject<number>;
   onCue: (cue: string) => void;
 }) {
-  const { camera } = useThree();
+  const { camera, gl, scene } = useThree();
   const { motion, equipment } = useMemo(() => resolveMotion(spec), [spec]);
   const figure = useMemo(() => buildFigure(highlight), [highlight]);
   const parts = useMemo(() => equipment.map(buildPart), [equipment]);
@@ -86,7 +87,20 @@ function Scene({
 
   useEffect(() => () => figure.dispose(), [figure]);
 
-  useFrame((_, delta) => {
+  // Soft studio reflections so the body reads as rounded, not flat.
+  useEffect(() => {
+    const pmrem = new THREE.PMREMGenerator(gl);
+    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = env;
+    scene.environmentIntensity = 0.2;
+    return () => {
+      scene.environment = null;
+      env.dispose();
+      pmrem.dispose();
+    };
+  }, [gl, scene]);
+
+  useFrame(({ invalidate }, delta) => {
     if (playing) timeRef.current += Math.min(delta, 0.1) * speed;
     const f = sample(motion, timeRef.current, spec.tempo);
     const sk = solve(f.pose);
@@ -98,6 +112,8 @@ function Scene({
     }
     // Ease the orbit towards the requested angle.
     yaw.current += (yawRef.current - yaw.current) * Math.min(1, delta * 8);
+    // On-demand rendering (paused): keep drawing until the orbit settles.
+    if (Math.abs(yawRef.current - yaw.current) > 0.05) invalidate();
     const pitch = THREE.MathUtils.degToRad(spec.camera?.pitch ?? 14);
     const y = THREE.MathUtils.degToRad(yaw.current);
     const d =
@@ -114,12 +130,13 @@ function Scene({
 
   return (
     <>
-      <hemisphereLight args={["#E4E8FF", "#2A3260", 1.25]} />
+      <hemisphereLight args={["#E4E8FF", "#1E2448", 0.4]} />
       <directionalLight
-        position={[2.2, 4.5, 3]}
-        intensity={1.6}
+        position={[-2.6, 4, 2.2]}
+        intensity={2.2}
         castShadow
         shadow-mapSize={[1024, 1024]}
+        shadow-radius={4}
         shadow-camera-left={-2.5}
         shadow-camera-right={2.5}
         shadow-camera-top={2.5}
@@ -127,9 +144,9 @@ function Scene({
         shadow-bias={-0.0004}
       />
       <directionalLight
-        position={[-2.5, 2, -3]}
-        intensity={0.45}
-        color={PALETTE.primary}
+        position={[2.8, 2.2, -2.6]}
+        intensity={0.7}
+        color="#B8C4FF"
       />
       <mesh rotation-x={-Math.PI / 2} receiveShadow>
         <circleGeometry args={[2.4, 48]} />
@@ -238,11 +255,11 @@ export default function MotionViewer({ exercise }: Props) {
       >
         <div
           role="img"
-          aria-label={`Animated 3D guide showing how to do ${exercise.name}. Drag sideways to turn the view.`}
+          aria-label={`Animated 3D guide showing how to do ${exercise.name}${spec.device ? ` on the ${spec.device.toLowerCase()}` : ""}. Drag sideways to turn the view.`}
           className="absolute inset-0"
         >
           <Canvas
-            shadows
+            shadows="soft"
             dpr={[1, 2]}
             frameloop={frameloop}
             camera={{ fov: FOV, near: 0.05, far: 30, position: [3, 1.5, 3] }}
@@ -270,6 +287,11 @@ export default function MotionViewer({ exercise }: Props) {
             className="pointer-events-none absolute left-3 top-3 rounded-full bg-night/70 px-3 py-1 font-display text-sm uppercase tracking-wide text-volt backdrop-blur"
           >
             {cue}
+          </p>
+        )}
+        {spec.device && (
+          <p className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-night/70 px-3 py-1 text-xs font-semibold text-white/85 backdrop-blur">
+            {spec.device}
           </p>
         )}
         {repSeconds !== null && (

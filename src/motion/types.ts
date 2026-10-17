@@ -126,6 +126,8 @@ export interface MotionSpec {
   /** Seconds: [first half, pause, second half, pause]. Overrides the pattern's default. */
   tempo?: [number, number, number, number];
   camera?: { yaw?: number; pitch?: number; zoom?: number };
+  /** Name of the machine or station shown, e.g. "Smith machine". */
+  device?: string;
 }
 
 /** What a pattern produces: a time-less movement the timeline plays. */

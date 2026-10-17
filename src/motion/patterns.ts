@@ -375,16 +375,19 @@ function lunge(p: Params): Motion {
     return { keys, kind: "rep", effort: "first", cues: cues(p, ["Step up", "Step down"]), tempo: [1.2, 0.4, 1.6, 0.3] };
   }
   const bulgarian = style === "bulgarian";
+  const onBack = str(p, "hold", "sides" as "sides" | "back") === "back";
   const front: V3 = [0.12, A, bulgarian ? 0.26 : 0.34];
   const rear: V3 = bulgarian ? [-0.12, 0.5, -0.62] : [-0.12, 0.14, -0.44];
   const keys = sweep(7, (t) => {
     const e = ease(t);
     const pelvis: V3 = [0, lerp(bulgarian ? 0.88 : 0.88, bulgarian ? 0.52 : 0.5, e), lerp(-0.04, -0.07, e)];
     const torso: V3 = [lerp(2, bulgarian ? 12 : 6, e), 0, 0];
+    const f = frameOf(torso);
     return {
       pelvis,
       torso,
-      hands: pair((i) => hang(pelvis, torso, i, 0.25)),
+      hands: pair((i, s): V3 => (onBack ? local(chestOf(pelvis, torso), f, [s * 0.42, 0.0, -0.07]) : hang(pelvis, torso, i, 0.25))),
+      ...(onBack ? { elbowPole: pair((_, s) => pole(f, s, -1, -0.4, 0.4)) } : {}),
       feet: [front, rear],
       kneePole: [
         [0, 0, 1],
