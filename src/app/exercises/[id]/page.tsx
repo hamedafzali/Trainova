@@ -7,6 +7,7 @@ import { ArrowLeft, Info, SearchX, Trophy } from "lucide-react";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { EmptyState } from "@/components/EmptyState";
 import { LineChart } from "@/components/LineChart";
+import { MovementGuide } from "@/components/motion/MovementGuide";
 import { ListSkeleton } from "@/components/Skeleton";
 import { describeSet } from "@/components/SessionExercise";
 import { equipmentOf, exerciseTypeLabel } from "@/components/ExerciseBrowser";
@@ -120,6 +121,8 @@ export default function ExerciseDetailPage() {
           </p>
         </div>
       </header>
+
+      <MovementGuide exercise={exercise} />
 
       {(exercise.instructions?.length || device?.guidance) && (
         <section className="card space-y-3 p-4 sm:p-6">
