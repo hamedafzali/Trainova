@@ -1,5 +1,5 @@
 import { getPool } from "./db";
-import { bearer, verifyToken } from "./auth";
+import { getSessionUser } from "./session";
 
 /**
  * Returns the admin's user id if the request carries a valid token AND that user
@@ -7,14 +7,9 @@ import { bearer, verifyToken } from "./auth";
  * null — callers answer 401/403.
  */
 export async function requireAdmin(req: Request): Promise<string | null> {
-  const token = bearer(req);
-  if (!token) return null;
-  const u = await verifyToken(token);
-  if (!u) return null;
-  const pool = getPool();
-  if (!pool) return null;
-  const r = await pool.query("select role from users where id = $1", [u.userId]);
-  return r.rows[0]?.role === "admin" ? u.userId : null;
+  if (!getPool()) return null;
+  const u = await getSessionUser(req);
+  return u?.role === "admin" ? u.userId : null;
 }
 
 /** True when an email is the configured bootstrap admin. */

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
-import { getToken } from "@/lib/auth";
+import { apiFetch } from "@/lib/auth";
 import { CoachAttentionInbox } from "@/components/CoachAttentionInbox";
 import { ListSkeleton } from "@/components/Skeleton";
 import { ErrorState } from "@/components/ErrorState";
@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, Users } from "lucide-react";
 
 type Client = { id: string; email: string; workouts: number };
+type Pending = { id: string; email: string; invitedAt: string };
 type Progress = { workouts: number; sessions: { title: string; date: string }[] };
 
 export default function TrainerPage() {
@@ -21,20 +22,23 @@ export default function TrainerPage() {
   const serializeTemplate = useStore((s) => s.serializeTemplate);
 
   const [clients, setClients] = useState<Client[]>([]);
+  const [pending, setPending] = useState<Pending[]>([]);
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<Record<string, Progress>>({});
 
-  const auth = () => ({ authorization: `Bearer ${getToken()}` });
-
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/trainer/clients", { headers: { authorization: `Bearer ${getToken()}` } });
-      if (r.ok) setClients((await r.json()).clients ?? []);
+      const r = await apiFetch("/api/trainer/clients");
+      if (r.ok) {
+        const j = await r.json();
+        setClients(j.clients ?? []);
+        setPending(j.pending ?? []);
+      }
       else setError("Couldn't load clients.");
     } catch {
       setError("Couldn't load clients. Check your connection and try again.");
@@ -52,14 +56,14 @@ export default function TrainerPage() {
   const addClient = async () => {
     setMsg(null);
     try {
-      const r = await fetch("/api/trainer/clients", {
+      const r = await apiFetch("/api/trainer/clients", {
         method: "POST",
-        headers: { "content-type": "application/json", ...auth() },
         body: JSON.stringify({ email }),
       });
       const j = await r.json();
       if (r.ok) {
         setEmail("");
+        setMsg(j.message ?? "Invitation sent.");
         load();
       } else setMsg(j.error ?? "Failed");
     } catch {
@@ -73,9 +77,8 @@ export default function TrainerPage() {
     const tpl = templates.find((t) => t.id === templateId);
     if (!payload || !tpl) return;
     try {
-      const r = await fetch("/api/trainer/assign", {
+      const r = await apiFetch("/api/trainer/assign", {
         method: "POST",
-        headers: { "content-type": "application/json", ...auth() },
         body: JSON.stringify({ clientId, name: tpl.name, payload }),
       });
       setMsg(r.ok ? `Assigned “${tpl.name}”.` : "Assign failed");
@@ -85,9 +88,19 @@ export default function TrainerPage() {
     setTimeout(() => setMsg(null), 2500);
   };
 
+  const removeClient = async (clientId: string) => {
+    try {
+      const r = await apiFetch("/api/trainer/clients", { method: "DELETE", body: JSON.stringify({ clientId }) });
+      if (r.ok) load();
+      else setMsg("Couldn't remove that link.");
+    } catch {
+      setMsg("Couldn't reach the server. Check your connection and try again.");
+    }
+  };
+
   const viewProgress = async (clientId: string) => {
     try {
-      const r = await fetch(`/api/trainer/progress?clientId=${clientId}`, { headers: auth() });
+      const r = await apiFetch(`/api/trainer/progress?clientId=${encodeURIComponent(clientId)}`);
       if (r.ok) {
         const data = (await r.json()) as Progress;
         setProgress((p) => ({ ...p, [clientId]: data }));
@@ -126,7 +139,9 @@ export default function TrainerPage() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="page-title">Clients</h1>
-          <p className="page-subtitle">{clients.length} linked</p>
+          <p className="page-subtitle">
+            {clients.length} linked{pending.length > 0 && ` · ${pending.length} invited`}
+          </p>
         </div>
         <Link href="/profile" className="text-sm text-accent hover:text-accentHover font-semibold transition-colors">
           Done
@@ -150,10 +165,31 @@ export default function TrainerPage() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <button className="btn-primary shrink-0" onClick={addClient}>
-            Add
+            Invite
           </button>
         </div>
-        {msg && <p className="text-xs text-accent">{msg}</p>}
+        <p className="text-xs text-muted">
+          Clients accept the invitation in their Profile before you can see their training.
+        </p>
+        {msg && (
+          <p className="text-xs text-accent" role="status">
+            {msg}
+          </p>
+        )}
+        {pending.length > 0 && (
+          <ul className="divide-y divide-border pt-1" aria-label="Pending invitations">
+            {pending.map((p) => (
+              <li key={p.id} className="flex items-center justify-between gap-2 py-2">
+                <span className="min-w-0 truncate text-sm text-ink">
+                  {p.email} <span className="text-xs text-muted">· waiting for them to accept</span>
+                </span>
+                <button className="btn-ghost min-h-11 text-xs" onClick={() => removeClient(p.id)}>
+                  Withdraw
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {error ? (
@@ -167,9 +203,14 @@ export default function TrainerPage() {
                   <p className="font-semibold text-h3 text-ink">{c.email}</p>
                   <p className="text-xs text-muted mt-0.5">{c.workouts} workouts logged</p>
                 </div>
-                <button className="btn-ghost text-xs" onClick={() => viewProgress(c.id)}>
-                  Progress
-                </button>
+                <div className="flex gap-1">
+                  <button className="btn-ghost min-h-11 text-xs" onClick={() => viewProgress(c.id)}>
+                    Progress
+                  </button>
+                  <button className="btn-ghost min-h-11 text-xs" onClick={() => removeClient(c.id)}>
+                    Remove
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -214,7 +255,7 @@ export default function TrainerPage() {
               <EmptyState
                 icon={Users}
                 title="No clients yet"
-                body="Add a client by their account email to assign plans and view progress."
+                body="Invite a client by their account email. Once they accept, you can assign plans and view progress."
               />
             </li>
           )}

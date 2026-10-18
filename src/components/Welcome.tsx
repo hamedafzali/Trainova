@@ -37,11 +37,11 @@ export function Welcome() {
   const emailError =
     emailTouched && email.trim() && !emailValid ? "Enter a valid email address" : null;
   const passwordError =
-    mode === "up" && passwordTouched && password && password.length < 6
-      ? "Use at least 6 characters"
+    mode === "up" && passwordTouched && password && password.length < 8
+      ? "Use at least 8 characters"
       : null;
   const canSubmit =
-    cloud && !busy && emailValid && password.length > 0 && !(mode === "up" && password.length < 6);
+    cloud && !busy && emailValid && password.length > 0 && !(mode === "up" && password.length < 8);
 
   const forgot = async () => {
     setError(null);
@@ -179,7 +179,7 @@ export function Welcome() {
                 className="input pr-12"
                 type={showPassword ? "text" : "password"}
                 autoComplete={mode === "up" ? "new-password" : "current-password"}
-                placeholder={mode === "up" ? "At least 6 characters" : "Your password"}
+                placeholder={mode === "up" ? "At least 8 characters" : "Your password"}
                 value={password}
                 aria-invalid={Boolean(passwordError)}
                 onChange={(e) => setPassword(e.target.value)}

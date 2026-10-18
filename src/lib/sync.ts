@@ -1,15 +1,9 @@
 "use client";
 
 import { useStore } from "./store";
-import { clearToken, getToken } from "./auth";
+import { apiFetch, handleUnauthorized, isSignedIn } from "./auth";
 import { mergeSnapshots } from "@/domain/merge";
 import { SCHEMA_VERSION, upgradeWeights } from "@/domain/legacy";
-
-/** Expired/invalid token → drop the session so the user lands back on login. */
-function handleAuthError() {
-  clearToken();
-  useStore.getState().leaveSession();
-}
 
 // The slice of store state that syncs to the account (everything persisted
 // except the session/auth flag itself).
@@ -55,54 +49,68 @@ export function applySnapshot(data: Snapshot | null | undefined) {
   useStore.setState(patch as Partial<ReturnType<typeof useStore.getState>>);
 }
 
-// The server's updated_at the client last saw — used for conflict detection.
-let baseUpdatedAt: string | null = null;
+// The server version the client last saw — the write is a compare-and-set on it.
+let baseVersion: number | null = null;
+let lastSyncError: string | null = null;
+
+/** Why the last push failed (shown in Profile), or null when healthy. */
+export function syncError(): string | null {
+  return lastSyncError;
+}
 
 export async function pullState(): Promise<Snapshot | null> {
-  const t = getToken();
-  if (!t) return null;
+  if (!isSignedIn()) return null;
   try {
-    const r = await fetch("/api/state", { headers: { authorization: `Bearer ${t}` } });
+    const r = await apiFetch("/api/state");
     if (r.status === 401) {
-      handleAuthError();
+      handleUnauthorized();
       return null;
     }
     if (!r.ok) return null;
     const j = await r.json();
-    baseUpdatedAt = j.updatedAt ?? null;
+    baseVersion = typeof j.version === "number" ? j.version : 0;
     return (j.data as Snapshot) ?? null;
   } catch {
     return null; // offline → keep local
   }
 }
 
-async function put(t: string): Promise<Response> {
-  return fetch("/api/state", {
+function put(): Promise<Response> {
+  return apiFetch("/api/state", {
     method: "PUT",
-    headers: { "content-type": "application/json", authorization: `Bearer ${t}` },
-    body: JSON.stringify({ data: snapshot(), base: baseUpdatedAt }),
+    body: JSON.stringify({ data: snapshot(), baseVersion }),
   });
 }
 
 export async function pushState(): Promise<void> {
-  const t = getToken();
-  if (!t) return;
+  if (!isSignedIn()) return;
   try {
-    let r = await put(t);
+    // Never pushed or pulled yet: learn the server version first so we merge
+    // rather than get a guaranteed conflict.
+    if (baseVersion === null) {
+      const blob = await pullState();
+      if (blob) mergeRemote(blob);
+      if (baseVersion === null) return;
+    }
+    let r = await put();
     if (r.status === 401) {
-      handleAuthError();
+      handleUnauthorized();
       return;
     }
     // Conflict: another device wrote since our last pull. Merge and retry once.
     if (r.status === 409) {
       const j = await r.json();
       if (j.data) mergeRemote(j.data);
-      baseUpdatedAt = j.updatedAt ?? null;
-      r = await put(t);
+      baseVersion = typeof j.version === "number" ? j.version : null;
+      r = await put();
     }
     if (r.ok) {
       const j = await r.json().catch(() => ({}));
-      if (j.updatedAt) baseUpdatedAt = j.updatedAt;
+      if (typeof j.version === "number") baseVersion = j.version;
+      lastSyncError = null;
+    } else if (r.status === 413 || r.status === 422) {
+      const j = await r.json().catch(() => ({}));
+      lastSyncError = j.error ?? "Sync rejected";
     }
   } catch {
     /* offline → will resync on next change */

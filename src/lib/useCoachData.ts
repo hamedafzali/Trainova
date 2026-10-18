@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
-import { getToken } from "@/lib/auth";
+import { apiFetch, isSignedIn } from "@/lib/auth";
 import { useAiStatus } from "@/lib/ai";
 import { stableHash } from "@/lib/hash";
 import {
@@ -45,12 +45,10 @@ function writeLocalCache<T>(key: string, hash: string, value: T): void {
 }
 
 async function postCoach<T>(action: string, data: unknown, contextHash: string): Promise<T | null> {
-  const token = getToken();
-  if (!token) return null;
+  if (!isSignedIn()) return null;
   try {
-    const res = await fetch("/api/ai/coach", {
+    const res = await apiFetch("/api/ai/coach", {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
       body: JSON.stringify({ action, data, contextHash }),
     });
     if (!res.ok) return null;
@@ -77,7 +75,7 @@ const KIND_TO_SITUATION: Record<CoachInsight["kind"], string> = {
  */
 export function useCoachData() {
   const ai = useAiStatus();
-  const enabled = ai.available === true && ai.signedIn;
+  const enabled = ai.available === true && ai.signedIn && ai.consented === true;
 
   const profile = useStore((s) => s.profile);
   const units = useStore((s) => s.units);

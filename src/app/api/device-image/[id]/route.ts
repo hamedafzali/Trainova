@@ -4,13 +4,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Public: serve a device photo stored in Postgres.
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const pool = getPool();
   if (!pool) return new Response("Not found", { status: 404 });
 
   try {
     const r = await pool.query("select mime, bytes from device_images where device_id = $1", [
-      params.id,
+      id,
     ]);
     const row = r.rows[0];
     if (!row) return new Response("Not found", { status: 404 });

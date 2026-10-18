@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 
@@ -25,40 +26,56 @@ export function requireJwtSecret(): string {
 
 const secret = () => new TextEncoder().encode(requireJwtSecret());
 
+export const MIN_PASSWORD_LENGTH = 8;
+
+/** Server-side password policy; returns an error message or null. */
+export function passwordProblem(plain: unknown): string | null {
+  if (typeof plain !== "string" || plain.length < MIN_PASSWORD_LENGTH) {
+    return `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
+  if (plain.length > 200) return "That password is too long.";
+  return null;
+}
+
 export function hashPassword(plain: string): Promise<string> {
-  return bcrypt.hash(plain, 10);
+  return bcrypt.hash(plain, 11);
 }
 
 export function verifyPassword(plain: string, hash: string): Promise<boolean> {
   return bcrypt.compare(plain, hash);
 }
 
-export function signToken(userId: string, email: string, role = "user"): Promise<string> {
-  return new SignJWT({ email, role })
+/**
+ * Session token. `tv` is the user's token_version at issue time; bumping the
+ * column (password reset, "sign out everywhere") revokes every older token.
+ * Role is deliberately not a claim: callers read it from the database.
+ */
+export function signToken(userId: string, email: string, _role = "user", version = 0): Promise<string> {
+  return new SignJWT({ email, tv: version })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(userId)
     .setIssuedAt()
-    .setExpirationTime("60d")
+    .setExpirationTime("30d")
     .sign(secret());
 }
 
 export async function verifyToken(
   token: string
-): Promise<{ userId: string; email: string; role: string } | null> {
+): Promise<{ userId: string; email: string; version: number } | null> {
   try {
-    const { payload } = await jwtVerify(token, secret());
+    const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
+    if (!payload.sub) return null;
     return {
       userId: String(payload.sub),
       email: String(payload.email ?? ""),
-      role: String(payload.role ?? "user"),
+      version: typeof payload.tv === "number" ? payload.tv : 0,
     };
   } catch {
     return null;
   }
 }
 
-/** Extract the bearer token from an Authorization header. */
-export function bearer(req: Request): string | null {
-  const h = req.headers.get("authorization") ?? "";
-  return h.startsWith("Bearer ") ? h.slice(7) : null;
+/** Reset tokens are stored hashed; only the emailed link carries the secret. */
+export function hashResetToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }

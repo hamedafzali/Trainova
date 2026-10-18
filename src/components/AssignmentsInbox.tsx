@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useStore, type AssignedPlan } from "@/lib/store";
-import { getToken } from "@/lib/auth";
+import { apiFetch } from "@/lib/auth";
 
 type Assignment = { id: string; name: string; payload: AssignedPlan; trainer_email: string };
 
@@ -13,9 +13,9 @@ export function AssignmentsInbox() {
   const [items, setItems] = useState<Assignment[]>([]);
 
   const load = useCallback(async () => {
-    if (!account || !getToken()) return;
+    if (!account) return;
     try {
-      const r = await fetch("/api/assignments", { headers: { authorization: `Bearer ${getToken()}` } });
+      const r = await apiFetch("/api/assignments");
       if (r.ok) setItems((await r.json()).assignments ?? []);
     } catch {
       // offline/unreachable — inbox just stays empty, no visible error state by design
@@ -29,9 +29,8 @@ export function AssignmentsInbox() {
   const accept = async (a: Assignment) => {
     importAssignedPlan(a.payload);
     try {
-      await fetch("/api/assignments", {
+      await apiFetch("/api/assignments", {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ id: a.id }),
       });
     } catch {

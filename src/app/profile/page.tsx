@@ -11,6 +11,7 @@ import type { UserProfile, Units } from "@/domain/types";
 import { SCHEMA_VERSION } from "@/domain/legacy";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { AccountPrivacy } from "@/components/AccountPrivacy";
 import { Stepper } from "@/components/Stepper";
 import { CardSkeleton } from "@/components/Skeleton";
 import { buildBackup, buildSetsCsv, download } from "@/lib/backup";
@@ -335,6 +336,8 @@ export default function ProfilePage() {
           {session?.mode === "account" ? "Sign out" : "Switch account / sign in"}
         </button>
       </Section>
+
+      {session?.mode === "account" && <AccountPrivacy />}
 
       <p className="text-center text-xs text-muted">Trainova v{pkg.version}</p>
 

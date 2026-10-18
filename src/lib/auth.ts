@@ -1,50 +1,103 @@
 "use client";
 
 import { isCloudEnabled } from "./supabase/client";
+import { useStore } from "./store";
 
 export { isCloudEnabled };
 
-const TOKEN_KEY = "trainova-token";
+// The session lives in an HttpOnly cookie that JavaScript can't read. Older
+// builds kept a bearer token in localStorage; it's sent once to /api/auth/me,
+// which swaps it for the cookie, and is then deleted.
+const LEGACY_TOKEN_KEY = "trainova-token";
 
-export function getToken(): string | null {
-  if (typeof localStorage === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+function legacyToken(): string | null {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage.getItem(LEGACY_TOKEN_KEY);
+  } catch {
+    return null;
+  }
 }
-export function setToken(t: string) {
-  localStorage.setItem(TOKEN_KEY, t);
+
+function dropLegacyToken() {
+  try {
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    /* storage unavailable */
+  }
 }
-export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY);
+
+/** True when the user is signed in to an account (cookie session). */
+export function isSignedIn(): boolean {
+  return useStore.getState().session?.mode === "account";
+}
+
+/** Signed-out locally after the server rejected the session. */
+export function handleUnauthorized() {
+  dropLegacyToken();
+  if (isSignedIn()) useStore.getState().leaveSession();
+}
+
+/**
+ * fetch() for our own API: sends the session cookie, plus the legacy bearer
+ * while one still exists. JSON bodies get the content-type header.
+ */
+export function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers);
+  if (init.body !== undefined && typeof init.body === "string" && !headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+  const legacy = legacyToken();
+  if (legacy && !headers.has("authorization")) headers.set("authorization", `Bearer ${legacy}`);
+  return fetch(path, { ...init, headers, credentials: "same-origin" });
 }
 
 export type AuthResult = { email: string; role: "user" | "trainer" | "admin" };
+export type Me = AuthResult & {
+  aiConsent: { at: string; version: string | null } | null;
+  analyticsOptOut: boolean;
+};
 
-async function post(
-  path: string,
-  body: unknown
-): Promise<{ token: string; email: string; role: AuthResult["role"] }> {
-  const r = await fetch(path, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
+/** Current account; also completes the legacy-token → cookie migration. */
+export async function fetchMe(): Promise<Me | null> {
+  try {
+    const r = await apiFetch("/api/auth/me");
+    if (r.status === 401) {
+      handleUnauthorized();
+      return null;
+    }
+    if (!r.ok) return null;
+    dropLegacyToken();
+    return (await r.json()) as Me;
+  } catch {
+    return null; // offline
+  }
+}
+
+let mePromise: Promise<Me | null> | null = null;
+
+/** fetchMe shared across components; `refresh` after changing settings. */
+export function fetchMeCached(refresh = false): Promise<Me | null> {
+  if (refresh || !mePromise) mePromise = fetchMe().then((me) => (me ? me : ((mePromise = null), null)));
+  return mePromise;
+}
+
+async function post(path: string, body: unknown): Promise<AuthResult> {
+  const r = await apiFetch(path, { method: "POST", body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}) as Record<string, string>);
   if (!r.ok) throw new Error(j.error || "Request failed");
-  return j as { token: string; email: string; role: AuthResult["role"] };
-}
-
-export async function signUp(email: string, password: string): Promise<AuthResult> {
-  const j = await post("/api/auth/signup", { email, password });
-  setToken(j.token);
+  dropLegacyToken();
   return { email: j.email, role: j.role ?? "user" };
 }
 
-export async function signIn(email: string, password: string): Promise<AuthResult> {
-  const j = await post("/api/auth/login", { email, password });
-  setToken(j.token);
-  return { email: j.email, role: j.role ?? "user" };
-}
+export const signUp = (email: string, password: string) => post("/api/auth/signup", { email, password });
+export const signIn = (email: string, password: string) => post("/api/auth/login", { email, password });
 
-export async function signOut(): Promise<void> {
-  clearToken();
+/** Ends the session on the server; `everywhere` revokes every device. */
+export async function signOut(opts: { everywhere?: boolean } = {}): Promise<void> {
+  try {
+    await apiFetch("/api/auth/logout", { method: "POST", body: JSON.stringify(opts) });
+  } catch {
+    /* offline: the cookie still expires; local state is cleared by the caller */
+  }
+  dropLegacyToken();
 }

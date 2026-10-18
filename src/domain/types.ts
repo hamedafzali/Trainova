@@ -31,6 +31,8 @@ export interface Device {
   guidance?: string | null; // short beginner how-to
   /** Selectorized stack vs plate-loaded — affects the load increment shown. */
   loading?: "stack" | "plates" | null;
+  /** Last local edit (ISO); sync keeps the newer copy. */
+  updatedAt?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -50,6 +52,8 @@ export interface Exercise {
   secondaryMuscles?: Muscle[];
   level?: "beginner" | "intermediate" | "advanced" | null;
   instructions?: string[]; // short ordered how-to steps
+  /** Last local edit (ISO); sync keeps the newer copy. */
+  updatedAt?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -79,6 +83,8 @@ export interface WorkoutTemplate {
   name: string; // INVARIANT: no dates
   notes: string | null;
   exercises: TemplateExercise[];
+  /** Last local edit (ISO); sync keeps the newer copy. */
+  updatedAt?: string | null;
 }
 
 /**
@@ -94,6 +100,8 @@ export interface Program {
   blueprintId?: string | null;
   notes: string | null;
   dayTemplateIds: string[];
+  /** Last local edit (ISO); sync keeps the newer copy. */
+  updatedAt?: string | null;
 }
 
 // ---------------------------------------------------------------------------

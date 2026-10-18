@@ -40,6 +40,7 @@
   --c-on-accent: 255 255 255;
 
   --c-success: 24 126 75; /* #187E4B — darkened from #1FA160 (3.1:1 against bg, below AA) */
+  --c-ai: 110 79 216; /* #6E4FD8 — AI interpretation, AA on light surfaces */
   --c-error: 175 57 44; /* #AF392C — darkened from #D64536 (4.1:1 against bg, below AA) */
   --c-warning: 153 98 8; /* #996208 — darkened from #C77F0A (3.0:1 against bg, below AA) */
   --c-gold: 143 104 8; /* #8F6808 — darkened from #B3820A (3.2:1 against bg, below AA) */
@@ -93,6 +94,7 @@
     --c-on-accent: 255 255 255;
 
     --c-success: 52 199 123; /* #34C77B */
+    --c-ai: 185 160 255; /* #B9A0FF */
     --c-error: 242 86 75; /* #F2564B */
     --c-warning: 245 166 35; /* #F5A623 */
     --c-gold: 255 201 74; /* #FFC94A */
@@ -132,6 +134,7 @@
   --c-on-accent: 255 255 255;
 
   --c-success: 52 199 123;
+  --c-ai: 185 160 255; /* #B9A0FF */
   --c-error: 242 86 75;
   --c-warning: 245 166 35;
   --c-gold: 255 201 74;

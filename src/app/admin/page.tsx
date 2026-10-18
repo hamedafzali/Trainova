@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
-import { getToken } from "@/lib/auth";
+import { apiFetch } from "@/lib/auth";
 import { toast } from "@/lib/toast";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { PromptDialog } from "@/components/PromptDialog";
@@ -43,15 +43,12 @@ export default function AdminPage() {
   const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
 
   const load = useCallback(async () => {
-    const t = getToken();
-    if (!t) return;
     setLoading(true);
     setError(null);
     try {
-      const auth = { authorization: `Bearer ${t}` };
       const [u, s] = await Promise.all([
-        fetch("/api/admin/users", { headers: auth }),
-        fetch("/api/admin/stats", { headers: auth }),
+        apiFetch("/api/admin/users"),
+        apiFetch("/api/admin/stats"),
       ]);
       if (!u.ok) {
         const j = await u.json().catch(() => ({}) as { error?: string });
@@ -82,9 +79,8 @@ export default function AdminPage() {
     if (!u) return;
     setResetPasswordUser(null);
     try {
-      const r = await fetch("/api/admin/reset-password", {
+      const r = await apiFetch("/api/admin/reset-password", {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ userId: u.id, password: pw }),
       });
       toast(r.ok ? "Password updated." : "Failed to update password.", {
@@ -104,9 +100,8 @@ export default function AdminPage() {
     if (!u) return;
     setConfirmDeleteUser(null);
     try {
-      const r = await fetch("/api/admin/delete-user", {
+      const r = await apiFetch("/api/admin/delete-user", {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ userId: u.id }),
       });
       if (r.ok) load();
@@ -118,9 +113,8 @@ export default function AdminPage() {
 
   const setRole = async (u: AdminUser, role: string) => {
     try {
-      const r = await fetch("/api/admin/set-role", {
+      const r = await apiFetch("/api/admin/set-role", {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
         body: JSON.stringify({ userId: u.id, role }),
       });
       if (r.ok) load();
@@ -245,9 +239,9 @@ export default function AdminPage() {
         title="Reset password"
         body={resetPasswordUser ? `Set a new password for ${resetPasswordUser.email}.` : undefined}
         label="New password"
-        placeholder="6+ characters"
+        placeholder="8+ characters"
         confirmLabel="Save"
-        minLength={6}
+        minLength={8}
         onConfirm={submitResetPassword}
         onCancel={() => setResetPasswordUser(null)}
       />

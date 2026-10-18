@@ -29,6 +29,7 @@ const config: Config = {
         accentFill: themed("--c-accent-fill"), // solid-fill button/chip backgrounds (onAccent text)
         accentFillHover: themed("--c-accent-fill-hover"),
         danger: themed("--c-error"),
+        ai: themed("--c-ai"), // AI interpretation — kept visually apart from measured data
         muted: themed("--c-text-muted"),
         ink: themed("--c-text-primary"), // primary text
         inkSoft: themed("--c-text-secondary"), // secondary text

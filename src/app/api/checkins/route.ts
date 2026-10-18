@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { bearer, verifyToken } from "@/server/auth";
+import { getSessionUser } from "@/server/session";
 import { getPool } from "@/server/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function userFor(request: Request) {
-  const token = bearer(request);
-  return token ? verifyToken(token) : null;
-}
+const userFor = getSessionUser;
 
 export async function GET(request: Request) {
   const pool = getPool();

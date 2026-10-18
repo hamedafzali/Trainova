@@ -10,7 +10,10 @@ export function getRedisClient(): Redis {
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     
     client = new Redis(redisUrl, {
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: 1,
+      // Fail fast while disconnected so callers fall back instead of hanging.
+      enableOfflineQueue: false,
+      connectTimeout: 2000,
       retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
         return delay;
@@ -18,8 +21,13 @@ export function getRedisClient(): Redis {
       enableReadyCheck: true,
     });
 
+    let lastLog = 0;
     client.on('error', (error) => {
-      console.error('Redis Client Error:', error);
+      // A down Redis reconnects in a loop; log at most once a minute.
+      if (Date.now() - lastLog > 60_000) {
+        lastLog = Date.now();
+        console.error('Redis Client Error:', error.message);
+      }
     });
 
     client.on('connect', () => {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
-import { getToken } from "@/lib/auth";
+import { apiFetch } from "@/lib/auth";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import type { Device } from "@/domain/types";
 import { toast } from "@/lib/toast";
@@ -26,8 +26,7 @@ export default function AdminDevicesPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch("/api/admin/devices", {
-        headers: { authorization: `Bearer ${getToken()}` },
+      const r = await apiFetch("/api/admin/devices", {
       });
       if (r.ok) setDevices((await r.json()).devices ?? []);
       else setError("Couldn't load the device library.");
@@ -46,9 +45,8 @@ export default function AdminDevicesPage() {
 
   const save = async (d: Device) => {
     try {
-      const r = await fetch("/api/admin/devices", {
+      const r = await apiFetch("/api/admin/devices", {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${getToken()}` },
         body: JSON.stringify(d),
       });
       if (r.ok) {
@@ -143,9 +141,8 @@ function DeviceForm({
       const fd = new FormData();
       fd.append("deviceId", d.id);
       fd.append("file", file);
-      const r = await fetch("/api/admin/devices/image", {
+      const r = await apiFetch("/api/admin/devices/image", {
         method: "POST",
-        headers: { authorization: `Bearer ${getToken()}` },
         body: fd,
       });
       const j = await r.json().catch(() => ({}));

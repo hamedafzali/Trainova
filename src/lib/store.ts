@@ -20,7 +20,9 @@ import type {
   WorkoutSet,
   WorkoutTemplate,
 } from "@/domain/types";
-import { detectPrs, epley1rm, replayPrs } from "@/domain/progression";
+import { detectPrs, epley1rm } from "@/domain/progression";
+import { rebuildPrs } from "@/domain/records";
+import { stampChanges } from "@/domain/versioning";
 import type { LastPerformance } from "@/domain/progression";
 import { bestWeight, totalVolume } from "@/domain/volume";
 import { matchExercise } from "@/domain/exerciseMatch";
@@ -207,29 +209,8 @@ const now = () => new Date().toISOString();
 
 const isWarmup = (x: Pick<WorkoutSet, "kind">) => x.kind === "warmup";
 
-/**
- * Personal records for the given exercises, rebuilt from their logged sets.
- * Called whenever a logged set changes after the fact.
- */
-function withRebuiltPrs(
-  st: { prs: PersonalRecord[]; sets: WorkoutSet[]; exercises: Exercise[]; devices: Device[] },
-  exerciseIds: string[]
-): PersonalRecord[] {
-  const ids = new Set(exerciseIds);
-  const rebuilt: PersonalRecord[] = [];
-  for (const exerciseId of ids) {
-    const ex = st.exercises.find((e) => e.id === exerciseId);
-    const logged = st.sets
-      .filter((x) => x.exerciseId === exerciseId && x.completed && !isWarmup(x))
-      .flatMap((x) => {
-        const type = exerciseTypeOf(ex, st.devices.find((d) => d.id === x.deviceId));
-        if (type === "duration" || type === "cardio") return [];
-        return [{ ...x, completedAt: x.completedAt ?? now(), assisted: type === "assisted_bodyweight" }];
-      });
-    for (const pr of replayPrs(logged)) rebuilt.push({ exerciseId, ...pr });
-  }
-  return [...st.prs.filter((p) => !ids.has(p.exerciseId)), ...rebuilt];
-}
+/** Personal records for the given exercises, rebuilt from their logged sets. */
+const withRebuiltPrs = rebuildPrs;
 
 /** Append deletion markers for ids (keeps the most recent 10k). */
 function tomb(list: Tombstone[], ids: Iterable<string>): Tombstone[] {
@@ -270,7 +251,19 @@ function mergeLibrary<T extends { id: string; owner: string | null }>(
 
 export const useStore = create<TrainovaState>()(
   persist(
-    (set, get) => ({
+    (rawSet, get) => {
+    // Every internal update stamps edited definitions (templates, programs,
+    // custom exercises, profile) so sync can keep the newest edit. Snapshots
+    // applied from the server go through useStore.setState and keep theirs.
+    const set: typeof rawSet = ((partial: unknown, replace?: boolean) =>
+      (rawSet as (p: unknown, r?: boolean) => void)(
+        (state: TrainovaState) => {
+          const next = typeof partial === "function" ? (partial as (s: TrainovaState) => Partial<TrainovaState>)(state) : partial;
+          return stampChanges(state as unknown as Record<string, unknown>, next as Record<string, unknown>);
+        },
+        replace
+      )) as typeof rawSet;
+    return {
       session: null,
       units: "kg",
       profile: { displayName: null, role: "user", goal: null, experience: null, onboarded: false },
@@ -1160,7 +1153,8 @@ export const useStore = create<TrainovaState>()(
         }
         return out;
       },
-    }),
+    };
+    },
     {
       // New key = hard reset of all existing data (local-first has no server DB).
       // Old "trainova-v1" data is abandoned; the app starts from the seed below.

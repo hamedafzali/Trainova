@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useHydrated, useStore } from "@/lib/store";
-import { getToken } from "@/lib/auth";
+import { fetchMe } from "@/lib/auth";
 import { mergeRemote, pullState, pushState } from "@/lib/sync";
 import { fetchLibrary } from "@/lib/library";
 
@@ -21,7 +21,8 @@ export function SyncManager() {
     if (!hydrated) return;
     let cancelled = false;
     (async () => {
-      if (account && getToken()) {
+      // Confirms the cookie session (and migrates a legacy token) before syncing.
+      if (account && (await fetchMe())) {
         const blob = await pullState();
         // Merging touches the store, which schedules a push below — so
         // anything logged while offline is published right after.
@@ -42,7 +43,7 @@ export function SyncManager() {
     const unsub = useStore.subscribe(() => {
       if (timer.current) clearTimeout(timer.current);
       timer.current = window.setTimeout(() => {
-        if (getToken()) void pushState();
+        void pushState();
       }, 1500);
     });
     return () => {

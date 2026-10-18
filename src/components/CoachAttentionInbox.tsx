@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getToken } from "@/lib/auth";
+import { apiFetch } from "@/lib/auth";
 
 type AttentionItem = {
   clientId: string;
@@ -16,9 +16,7 @@ export function CoachAttentionInbox() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) return;
-    void fetch("/api/trainer/attention", { headers: { authorization: `Bearer ${token}` } })
+    void apiFetch("/api/trainer/attention")
       .then(async (response) => (response.ok ? response.json() : { attention: [] }))
       .catch(() => ({ attention: [] }))
       .then((body) => setItems(body.attention ?? []))

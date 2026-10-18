@@ -7,5 +7,15 @@ export async function register() {
     // verify) but must not take the whole local-first app down: exiting here
     // crash-looped the container on every deploy with a placeholder secret.
     if (!jwtSecretConfigured()) console.error(`[config] ${JWT_SECRET_ERROR}`);
+
+    // Bring the schema up to date before the first request. Next awaits
+    // register(), so routes never see a half-migrated database. A failure is
+    // logged (local-first logging keeps working without the server DB).
+    const { getPool } = await import("@/server/db");
+    const pool = getPool();
+    if (pool) {
+      const { ensureMigrated } = await import("@/server/migrations");
+      await ensureMigrated(pool).catch((e) => console.error(`[db] ${(e as Error).message}`));
+    }
   }
 }

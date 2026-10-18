@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { bearer, verifyToken } from "@/server/auth";
+import { getSessionUser } from "@/server/session";
 import { getPool } from "@/server/db";
 
 export const runtime = "nodejs";
@@ -11,9 +11,12 @@ export async function POST(request: Request) {
   const pool = getPool();
   if (!pool) return NextResponse.json({ ok: true, stored: false });
 
-  const token = bearer(request);
-  const user = token ? await verifyToken(token) : null;
+  const user = await getSessionUser(request);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Respect the account's analytics opt-out server-side too.
+  const opt = await pool.query("select analytics_opt_out from users where id = $1", [user.userId]);
+  if (opt.rows[0]?.analytics_opt_out) return NextResponse.json({ ok: true, stored: false });
 
   const body = await request.json().catch(() => null) as
     | { name?: unknown; properties?: unknown }

@@ -120,7 +120,7 @@ function Points({ title, items, icon }: { title: string; items: string[]; icon: 
 /** "Your status": local consistency numbers plus an AI review of training against the active plan. */
 export function StatusReview({ summary }: { summary?: TrainingSummary } = {}) {
   const ai = useAiStatus();
-  const ready = ai.available === true && ai.signedIn;
+  const ready = ai.available === true && ai.signedIn && ai.consented === true;
   // Re-derive when training data changes.
   const sessions = useStore((s) => s.sessions);
   const programs = useStore((s) => s.programs);

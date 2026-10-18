@@ -12,6 +12,8 @@ export function PromptDialog({
   confirmLabel = "Save",
   cancelLabel = "Cancel",
   minLength,
+  autoComplete = "new-password",
+  danger,
   onConfirm,
   onCancel,
 }: {
@@ -23,6 +25,8 @@ export function PromptDialog({
   confirmLabel?: string;
   cancelLabel?: string;
   minLength?: number;
+  autoComplete?: "new-password" | "current-password";
+  danger?: boolean;
   onConfirm: (value: string) => void;
   onCancel: () => void;
 }) {
@@ -42,7 +46,8 @@ export function PromptDialog({
 
   const submit = () => {
     if (!canSubmit) return;
-    onConfirm(trimmed);
+    // Passwords are taken verbatim; spaces can be part of them.
+    onConfirm(autoComplete === "current-password" ? value : trimmed);
   };
 
   return (
@@ -71,7 +76,7 @@ export function PromptDialog({
           <input
             id="prompt-dialog-input"
             type="password"
-            autoComplete="new-password"
+            autoComplete={autoComplete}
             className="input"
             placeholder={placeholder}
             value={value}
@@ -90,7 +95,7 @@ export function PromptDialog({
             {cancelLabel}
           </button>
           <button
-            className="btn-primary flex-1"
+            className={danger ? "btn-danger flex-1" : "btn-primary flex-1"}
             onClick={submit}
             disabled={!canSubmit}
             data-testid="prompt-dialog-confirm"

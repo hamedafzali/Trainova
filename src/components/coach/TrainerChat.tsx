@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Fragment, useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { AlertTriangle, ArrowUp, LogIn, RotateCcw, Sparkles, Trash2, X } from "lucide-react";
 import { postAi, useAiStatus } from "@/lib/ai";
+import { AiConsentCard } from "@/components/coach/AiConsentCard";
 import { useCoachChat, type ChatMessage } from "@/lib/coachChat";
 import { currentTrainerContext } from "@/lib/trainerContext";
 import type { PageFocus } from "@/lib/pageFocus";
@@ -209,7 +210,7 @@ export function TrainerChat({
   };
 
   // Prompts from the coach tools above the chat.
-  const ready = ai.available === true && ai.signedIn;
+  const ready = ai.available === true && ai.signedIn && ai.consented === true;
   useEffect(() => {
     if (panel || !queued || !ready || pending) return;
     const text = useCoachChat.getState().takeQueued();
@@ -252,6 +253,14 @@ export function TrainerChat({
         <Link href="/profile" className="btn-primary self-start">
           <LogIn className="h-4 w-4" aria-hidden /> Sign in
         </Link>
+      </Shell>
+    );
+  }
+
+  if (ai.consented === false) {
+    return (
+      <Shell {...shell}>
+        <AiConsentCard />
       </Shell>
     );
   }
