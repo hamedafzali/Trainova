@@ -108,7 +108,7 @@ export default function TemplateEditPage() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 pb-24">
       <Link href="/templates" className="-my-3 -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-medium text-muted hover:text-ink">
-        <ArrowLeft className="h-4 w-4" aria-hidden /> Plans
+        <ArrowLeft className="h-4 w-4" aria-hidden /> Workouts
       </Link>
 
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

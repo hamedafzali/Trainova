@@ -83,8 +83,8 @@ export function pageFocus(pathname: string): PageFocus {
     }
   }
   const pages: Record<string, PageFocus> = {
-    templates: { viewing: "their list of plans", label: "Train", suggestions: ["Build me a plan", "Improve my plan", ...GENERAL.slice(0, 1)] },
-    programs: { viewing: "the program library", label: "Programs", suggestions: ["Which program suits me?", "Build me a plan"] },
+    templates: { viewing: "their workouts", label: "Workouts", suggestions: ["Build me a workout for today", "Improve my plan", ...GENERAL.slice(0, 1)] },
+    programs: { viewing: "their plan and the program library", label: "Plan", suggestions: ["Which program suits me?", "Build me a plan"] },
     exercises: { viewing: "the exercise library", label: "Exercises", suggestions: ["Suggest exercises for a weak spot", "What's a good back exercise without a barbell?"] },
     history: { viewing: "their workout history", label: "History", suggestions: ["Review my last 4 weeks", "Am I training often enough?"] },
     calendar: { viewing: "their training calendar", label: "Calendar", suggestions: ["Am I training often enough?", "Plan my week"] },
