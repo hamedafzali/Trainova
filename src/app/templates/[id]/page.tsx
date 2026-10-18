@@ -279,6 +279,30 @@ export default function TemplateEditPage() {
                           onChange={(v) => updateTemplateExercise(template.id, te.id, { restSeconds: v })}
                         />
                       </div>
+                      {type === "weight_reps" && te.sets.length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="text-xs font-medium text-muted">
+                            Rep range top{" "}
+                            <span className="font-normal">
+                              {te.repMax && te.repMax > te.sets[0].targetReps
+                                ? `· ${te.sets[0].targetReps}–${te.repMax}: add reps, then load`
+                                : "· off: add load when reps are hit"}
+                            </span>
+                          </p>
+                          <Stepper
+                            label="Rep range top"
+                            value={Math.max(te.repMax ?? 0, te.sets[0].targetReps)}
+                            step={1}
+                            min={te.sets[0].targetReps}
+                            max={50}
+                            onChange={(v) =>
+                              updateTemplateExercise(template.id, te.id, {
+                                repMax: v > te.sets[0].targetReps ? v : null,
+                              })
+                            }
+                          />
+                        </div>
+                      )}
                       <label className="space-y-1.5">
                         <span className="block text-xs font-medium text-muted">Cue / note</span>
                         <input

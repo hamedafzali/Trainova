@@ -3,6 +3,7 @@ import {
   detectPrs,
   replayPrs,
   epley1rm,
+  loadIncrement,
   roundToIncrement,
   suggestNextLoad,
   type LastPerformance,
@@ -27,6 +28,9 @@ describe("roundToIncrement", () => {
   });
   it("rounds to 5 in lb", () => {
     expect(roundToIncrement(133, "lb")).toBe(135);
+  });
+  it("rounds to a custom step without float drift", () => {
+    expect(roundToIncrement(41.3, "kg", 1.25)).toBe(41.25);
   });
 });
 
@@ -70,11 +74,67 @@ describe("suggestNextLoad", () => {
     expect(s.action).toBe("hold");
   });
 
-  it("deloads 10% after repeated misses", () => {
+  it("holds when only the last session missed (the streak includes it)", () => {
     const last: LastPerformance = { targetReps: 5, sets: [hit(100, 3)] };
-    const s = suggestNextLoad(last, "kg", { isCompound: true, missStreak: 1 });
+    expect(suggestNextLoad(last, "kg", { isCompound: true, missStreak: 1 }).action).toBe("hold");
+  });
+
+  it("deloads 10% after two missed sessions running", () => {
+    const last: LastPerformance = { targetReps: 5, sets: [hit(100, 3)] };
+    const s = suggestNextLoad(last, "kg", { isCompound: true, missStreak: 2 });
     expect(s.action).toBe("deload");
     expect(s.weight).toBe(90);
+  });
+
+  it("treats a missing RPE as unknown: smallest jump, low confidence", () => {
+    const noRpe = { actualWeight: 100, actualReps: 5, rpe: null, completed: true };
+    const s = suggestNextLoad({ targetReps: 5, sets: [noRpe, noRpe] }, "kg", { isCompound: true });
+    expect(s.action).toBe("increase");
+    expect(s.weight).toBe(102.5);
+    expect(s.confidence).toBe("low");
+    expect(s.reason).toMatch(/RPE/);
+  });
+
+  it("adds reps before load inside a rep range", () => {
+    const last: LastPerformance = { targetReps: 8, sets: [hit(60, 10), hit(60, 9)] };
+    const s = suggestNextLoad(last, "kg", { isCompound: true, repRange: { min: 8, max: 12 } });
+    expect(s).toMatchObject({ action: "add_reps", weight: 60, reps: 10 });
+  });
+
+  it("adds load and resets reps once every set reaches the top of the range", () => {
+    const last: LastPerformance = { targetReps: 8, sets: [hit(60, 12), hit(60, 12)] };
+    const s = suggestNextLoad(last, "kg", { isCompound: true, repRange: { min: 8, max: 12 } });
+    expect(s).toMatchObject({ action: "increase", weight: 65, reps: 8 });
+  });
+
+  it("judges the sets at the working load, not lighter back-off sets", () => {
+    const last: LastPerformance = { targetReps: 5, sets: [hit(100, 5), hit(100, 5), hit(80, 3)] };
+    expect(suggestNextLoad(last, "kg", { isCompound: true }).action).toBe("increase");
+  });
+
+  it("uses the stack's plate on selectorized machines", () => {
+    const last: LastPerformance = { targetReps: 10, sets: [hit(45, 10)] };
+    expect(suggestNextLoad(last, "kg", { isCompound: false, loading: "stack" }).weight).toBe(50);
+    expect(suggestNextLoad(last, "lb", { isCompound: false, loading: "stack" }).weight).toBe(55);
+  });
+
+  it("respects an explicit increment (e.g. 1 kg microplates)", () => {
+    const last: LastPerformance = { targetReps: 5, sets: [hit(40, 5)] };
+    expect(suggestNextLoad(last, "kg", { isCompound: true, increment: 1 }).weight).toBe(41);
+  });
+
+  it("holds when any working set was near-maximal even if others weren't", () => {
+    const last: LastPerformance = { targetReps: 5, sets: [hit(100, 5, 8), hit(100, 5, 10)] };
+    expect(suggestNextLoad(last, "kg", { isCompound: true }).action).toBe("hold");
+  });
+});
+
+describe("loadIncrement", () => {
+  it("scales with equipment and unit", () => {
+    expect(loadIncrement("kg", { isCompound: true })).toBe(5);
+    expect(loadIncrement("kg", { isCompound: false })).toBe(2.5);
+    expect(loadIncrement("lb", { loading: "stack" })).toBe(10);
+    expect(loadIncrement("lb", { loading: "dumbbell", isCompound: true })).toBe(5);
   });
 });
 

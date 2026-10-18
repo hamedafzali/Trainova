@@ -42,6 +42,10 @@ export function stampChanges<S extends Record<string, unknown>>(
   }
   const profile = next.profile as Record<string, unknown> | undefined;
   if (profile && profile !== prev.profile) out = { ...out, profile: { ...profile, updatedAt: at } };
+  // Units sync with the profile copy that wins, so a units change is a profile edit.
+  else if ("units" in next && next.units !== prev.units && prev.profile) {
+    out = { ...out, profile: { ...(prev.profile as Record<string, unknown>), updatedAt: at } };
+  }
   return out;
 }
 

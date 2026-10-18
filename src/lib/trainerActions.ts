@@ -1,9 +1,11 @@
 "use client";
 
-import type { PlanItem, TrainerAction } from "@/domain/trainer";
+import { describeAction, type PlanItem, type TrainerAction } from "@/domain/trainer";
+import { capturePlan, createdIds, stampsOf } from "@/domain/planChanges";
 import { useStore } from "@/lib/store";
+import { uid } from "@/lib/id";
 
-export type ApplyResult = { ok: true; href: string } | { ok: false; error: string };
+export type ApplyResult = { ok: true; href: string; changeId: string } | { ok: false; error: string };
 
 type Store = ReturnType<typeof useStore.getState>;
 
@@ -21,10 +23,43 @@ function fill(st: Store, templateId: string, items: (Omit<PlanItem, "restSeconds
 }
 
 /**
- * Applies a validated coach action to the local plan. Re-checks that the
- * workout and slot still exist — the plan may have changed since the reply.
+ * Applies a validated coach action to the local plan and records it in the
+ * plan-change history (what changed, from what), so it can be undone.
  */
 export function applyTrainerAction(a: TrainerAction): ApplyResult {
+  const before = useStore.getState();
+  const touched = "templateId" in a ? [a.templateId] : [];
+  const snapshot = capturePlan(before, touched, []);
+  const r = apply(a);
+  if (!r.ok) return r;
+  const after = useStore.getState();
+  const base = { before: snapshot, created: createdIds(before, after) };
+  const { title, detail } = describeAction(a);
+  const changeId = uid();
+  after.recordPlanChange({
+    id: changeId,
+    at: new Date().toISOString(),
+    source: "ai_coach",
+    actionType: a.type,
+    title,
+    detail,
+    ...base,
+    stamps: stampsOf(after, base),
+    undoneAt: null,
+  });
+  return { ...r, changeId };
+}
+
+/** Undo an applied coach action; refuses if the plan was edited since. */
+export function undoTrainerAction(changeId: string) {
+  return useStore.getState().undoPlanChange(changeId);
+}
+
+/**
+ * Re-checks that the workout and slot still exist — the plan may have changed
+ * since the reply.
+ */
+function apply(a: TrainerAction): { ok: true; href: string } | { ok: false; error: string } {
   const st = useStore.getState();
   if (a.type === "create_workout") {
     const id = st.createTemplate(a.name);

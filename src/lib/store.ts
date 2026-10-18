@@ -23,6 +23,7 @@ import type {
 import { detectPrs, epley1rm } from "@/domain/progression";
 import { rebuildPrs } from "@/domain/records";
 import { stampChanges } from "@/domain/versioning";
+import { MAX_PLAN_CHANGES, undoPlan, type PlanChange } from "@/domain/planChanges";
 import type { LastPerformance } from "@/domain/progression";
 import { bestWeight, totalVolume } from "@/domain/volume";
 import { matchExercise } from "@/domain/exerciseMatch";
@@ -81,6 +82,8 @@ export interface TrainovaState {
   units: Units;
   profile: UserProfile;
   audit: AuditEvent[];
+  /** AI-applied plan changes, newest first, with what's needed to undo them. */
+  planChanges: PlanChange[];
   devices: Device[];
   exercises: Exercise[];
   programs: Program[];
@@ -108,6 +111,8 @@ export interface TrainovaState {
   ) => void;
   revertSet: (setId: string) => void;
   auditForSet: (setId: string) => AuditEvent[];
+  recordPlanChange: (change: PlanChange) => void;
+  undoPlanChange: (id: string) => { ok: true } | { ok: false; error: string };
   addDevice: (input: Omit<Device, "id" | "owner">) => Device;
   addExercise: (input: Omit<Exercise, "id" | "owner">) => Exercise;
 
@@ -127,7 +132,7 @@ export interface TrainovaState {
   updateTemplateExercise: (
     templateId: string,
     templateExerciseId: string,
-    patch: Partial<Pick<TemplateExercise, "restSeconds" | "cue" | "deviceId" | "targetRpe">>
+    patch: Partial<Pick<TemplateExercise, "restSeconds" | "cue" | "deviceId" | "targetRpe" | "repMax">>
   ) => void;
   moveTemplateExercise: (templateId: string, templateExerciseId: string, delta: -1 | 1) => void;
   addTemplateExercise: (templateId: string, exerciseId: string) => void;
@@ -268,6 +273,7 @@ export const useStore = create<TrainovaState>()(
       units: "kg",
       profile: { displayName: null, role: "user", goal: null, experience: null, onboarded: false },
       audit: [],
+      planChanges: [],
       devices: SEED_DEVICES,
       exercises: SEED_EXERCISES,
       programs: [],
@@ -358,6 +364,25 @@ export const useStore = create<TrainovaState>()(
           );
           return { sets, audit: [event, ...s.audit], prs: withRebuiltPrs({ ...s, sets }, [target.exerciseId]) };
         });
+      },
+
+      recordPlanChange: (change) =>
+        set((s) => ({ planChanges: [change, ...s.planChanges].slice(0, MAX_PLAN_CHANGES) })),
+
+      undoPlanChange: (id) => {
+        const st = get();
+        const change = st.planChanges.find((c) => c.id === id);
+        if (!change) return { ok: false, error: "That change is no longer in the history." };
+        const at = now();
+        const r = undoPlan(st, change, at);
+        if (!r.ok) return r;
+        set((s) => ({
+          templates: r.templates,
+          programs: r.programs,
+          tombstones: r.deleted.length ? tomb(s.tombstones, r.deleted) : s.tombstones,
+          planChanges: s.planChanges.map((c) => (c.id === id ? { ...c, undoneAt: at, updatedAt: at } : c)),
+        }));
+        return { ok: true };
       },
 
       auditForSet: (setId) =>
@@ -875,6 +900,7 @@ export const useStore = create<TrainovaState>()(
             : [],
           profile: { displayName: null, role: "user", goal: null, experience: null, onboarded: false },
           audit: [],
+          planChanges: [],
           devices: s.devices.filter((d) => d.owner == null),
           exercises: s.exercises.filter((e) => e.owner == null),
           programs: [],
@@ -895,6 +921,7 @@ export const useStore = create<TrainovaState>()(
           units: d.units === "lb" ? "lb" : "kg",
           profile: d.profile && typeof d.profile === "object" ? { ...s.profile, ...d.profile } : s.profile,
           audit: list<AuditEvent>(d.audit),
+          planChanges: list<PlanChange>(d.planChanges),
           devices: mergeLibrary(SEED_DEVICES, s.devices.filter((x) => x.owner == null), list<Device>(d.devices)),
           exercises: mergeLibrary(
             SEED_EXERCISES,
@@ -1170,6 +1197,7 @@ export const useStore = create<TrainovaState>()(
         units: s.units,
         profile: s.profile,
         audit: s.audit,
+        planChanges: s.planChanges,
         devices: s.devices,
         exercises: s.exercises,
         programs: s.programs,

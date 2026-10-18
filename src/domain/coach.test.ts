@@ -120,6 +120,34 @@ describe("buildDeterministicInsights", () => {
     }
   });
 
+  it("rounds the stall back-off to plates in the summary's unit", () => {
+    const summary = buildTrainingSummary({
+      now: NOW,
+      trainedDayKeys: ["2026-08-15"],
+      sessionDatesLast60d: ["2026-08-15"],
+      volumeByDateLast60d: [],
+      exercises: [
+        {
+          exerciseId: "bench",
+          name: "Bench",
+          history: ["2026-08-01", "2026-08-05", "2026-08-10", "2026-08-15"].map((date) => ({
+            date,
+            topWeight: 185,
+            volume: 2775,
+          })),
+        },
+      ],
+      recentPRs: [],
+      units: "lb",
+      goal: "strength",
+      experience: "intermediate",
+    });
+    const stall = buildDeterministicInsights(summary).find((i) => i.kind === "stall")!;
+    // 185 × 0.9 = 166.5 → nearest 5 lb, not the 2.5 kg grid (167.5).
+    expect(stall.numbers).toContain(165);
+    expect(stall.message).toContain("165lb");
+  });
+
   it("produces no insights for a summary with nothing notable", () => {
     const summary = buildTrainingSummary({
       now: NOW,

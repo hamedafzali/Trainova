@@ -4,6 +4,7 @@
 // on top of what's computed here; it must never originate a figure.
 
 import type { PrKind, Units, UserProfile } from "./types";
+import { roundToIncrement } from "./progression";
 
 // ---------------------------------------------------------------------------
 // Training summary — a compact, aggregated picture of a user's training.
@@ -11,6 +12,7 @@ import type { PrKind, Units, UserProfile } from "./types";
 // (exerciseHistory, trainedDays, etc.) — see src/lib/useCoachData.ts.
 // ---------------------------------------------------------------------------
 
+/** Weights and volume are in the summary's display `units`, not stored kg. */
 export interface ExerciseHistoryPoint {
   date: string; // YYYY-MM-DD
   topWeight: number;
@@ -210,7 +212,7 @@ export function buildDeterministicInsights(summary: TrainingSummary): CoachInsig
 
   for (const ex of summary.exercises) {
     if (ex.stalledSessions >= 3) {
-      const backoff = Math.round((ex.lastTopWeight * 0.9) / 2.5) * 2.5;
+      const backoff = roundToIncrement(ex.lastTopWeight * 0.9, unit);
       insights.push({
         id: `stall-${ex.exerciseId}`,
         kind: "stall",

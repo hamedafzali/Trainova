@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Undo2 } from "lucide-react";
 import { describeAction, type TrainerAction } from "@/domain/trainer";
-import { applyTrainerAction } from "@/lib/trainerActions";
+import { applyTrainerAction, undoTrainerAction } from "@/lib/trainerActions";
 import { useStore } from "@/lib/store";
 
-/** One proposed plan change with an Apply button. */
+/** One proposed plan change with Apply, and Undo once applied. */
 export function ActionCard({
   action,
   applied,
@@ -19,7 +19,15 @@ export function ActionCard({
 }) {
   const [href, setHref] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [changeId, setChangeId] = useState<string | null>(null);
   const { title, detail } = describeAction(action);
+  // The recorded change behind this card (also found again after a reload).
+  const change = useStore((s) =>
+    applied
+      ? s.planChanges.find((c) => (changeId ? c.id === changeId : c.actionType === action.type && c.title === title))
+      : undefined,
+  );
+  const undone = Boolean(change?.undoneAt);
   // What the plan says today, so the change reads as before → after.
   const before = useStore((s) => {
     if (action.type !== "set_volume") return null;
@@ -37,16 +45,35 @@ export function ActionCard({
         </p>
         <p className={`truncate text-xs ${error ? "text-danger" : "text-muted"}`}>{error ?? detail}</p>
       </div>
-      {applied ? (
-        href ? (
-          <Link href={href} className="inline-flex shrink-0 animate-popIn items-center gap-1 text-sm font-semibold text-green">
-            <Check className="h-4 w-4" aria-hidden /> View
-          </Link>
-        ) : (
-          <span className="inline-flex shrink-0 animate-popIn items-center gap-1 text-sm font-semibold text-green">
-            <Check className="h-4 w-4" aria-hidden /> Applied
-          </span>
-        )
+      {undone ? (
+        <span className="shrink-0 text-sm text-muted">Undone</span>
+      ) : applied ? (
+        <span className="flex shrink-0 items-center gap-1">
+          {change && (
+            <button
+              type="button"
+              className="btn-ghost inline-flex min-h-11 items-center gap-1 px-3 text-sm"
+              onClick={() => {
+                const r = undoTrainerAction(change.id);
+                setError(r.ok ? null : r.error);
+              }}
+            >
+              <Undo2 className="h-4 w-4" aria-hidden /> Undo
+            </button>
+          )}
+          {href ? (
+            <Link
+              href={href}
+              className="inline-flex shrink-0 animate-popIn items-center gap-1 text-sm font-semibold text-green"
+            >
+              <Check className="h-4 w-4" aria-hidden /> View
+            </Link>
+          ) : (
+            <span className="inline-flex shrink-0 animate-popIn items-center gap-1 text-sm font-semibold text-green">
+              <Check className="h-4 w-4" aria-hidden /> Applied
+            </span>
+          )}
+        </span>
       ) : (
         <button
           type="button"
@@ -55,6 +82,7 @@ export function ActionCard({
             const r = applyTrainerAction(action);
             if (r.ok) {
               setHref(r.href);
+              setChangeId(r.changeId);
               onApplied();
             } else setError(r.error);
           }}

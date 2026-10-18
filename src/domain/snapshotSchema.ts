@@ -18,6 +18,7 @@ const RECORD_ARRAYS = {
   prs: 20_000,
   bodyLog: 20_000,
   audit: 50_000,
+  planChanges: 1_000,
 } as const;
 
 const ID_RE = /^[\w:.-]{1,128}$/;

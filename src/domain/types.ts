@@ -73,6 +73,8 @@ export interface TemplateExercise {
   restSeconds: number;
   tempo?: string | null;
   targetRpe?: number | null;
+  /** Top of the rep range for double progression; set targets are the bottom. */
+  repMax?: number | null;
   cue?: string | null;
   substitution?: string | null;
 }
@@ -202,6 +204,8 @@ export interface UserProfile {
   ageYears?: number | null;
   heightCm?: number | null;
   weightKg?: number | null;
+  /** Last local edit (ISO), including a units change; sync keeps the newer copy. */
+  updatedAt?: string | null;
 }
 
 export type PrKind = "e1rm" | "max_weight" | "max_reps";

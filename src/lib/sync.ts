@@ -11,6 +11,7 @@ const SYNC_KEYS = [
   "units",
   "profile",
   "audit",
+  "planChanges",
   "devices",
   "exercises",
   "programs",

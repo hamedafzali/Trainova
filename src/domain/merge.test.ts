@@ -76,3 +76,32 @@ describe("profile merge", () => {
     expect(merged.profile.goal).toBe("strength");
   });
 });
+
+describe("conflict policy", () => {
+  it("keeps the newer edit of a template from either side", () => {
+    const local = { templates: [{ id: "t", name: "Old", updatedAt: "2026-10-01T00:00:00.000Z" }] };
+    const remote = { templates: [{ id: "t", name: "New", updatedAt: "2026-10-02T00:00:00.000Z" }] };
+    const merged = mergeSnapshots(local, remote) as { templates: { name: string }[] };
+    expect(merged.templates).toEqual([expect.objectContaining({ name: "New" })]);
+  });
+
+  it("follows the units of the winning profile", () => {
+    const merged = mergeSnapshots(
+      { units: "kg", profile: { onboarded: true, updatedAt: "2026-10-01T00:00:00.000Z" } },
+      { units: "lb", profile: { onboarded: true, updatedAt: "2026-10-03T00:00:00.000Z" } }
+    );
+    expect(merged.units).toBe("lb");
+  });
+
+  it("keeps the more recently edited copy of a set and rebuilds PRs from it", () => {
+    const base = { id: "s1", exerciseId: "bench", completed: true, completedAt: "2026-10-01T10:00:00.000Z" };
+    const merged = mergeSnapshots(
+      { sets: [{ ...base, actualWeight: 350, actualReps: 8 }], prs: [] },
+      {
+        sets: [{ ...base, actualWeight: 35, actualReps: 8, editedAt: "2026-10-02T10:00:00.000Z" }],
+        prs: [{ exerciseId: "bench", kind: "max_weight", value: 350, achievedAt: "2026-10-01" }],
+      }
+    ) as { prs: { kind: string; value: number }[] };
+    expect(merged.prs.find((p) => p.kind === "max_weight")?.value).toBe(35);
+  });
+});

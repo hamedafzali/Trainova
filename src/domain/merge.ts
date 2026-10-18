@@ -13,6 +13,7 @@
 import type { Device, Exercise, PersonalRecord, WorkoutSet } from "./types";
 import { rebuildAllPrs } from "./records";
 import { newer } from "./versioning";
+import { MAX_PLAN_CHANGES } from "./planChanges";
 
 type Rec = Record<string, unknown>;
 export type Snapshot = Record<string, unknown>;
@@ -53,6 +54,7 @@ const ID_KEYS = [
   "sessions",
   "sets",
   "audit",
+  "planChanges",
   "feedback",
   "bodyLog",
 ] as const;
@@ -101,6 +103,10 @@ export function mergeSnapshots(local: Snapshot, remote: Snapshot | null): Snapsh
       Number(l.value) >= Number(r.value) ? l : r
     ),
     audit: mergeArr(arr(local.audit), arr(remote.audit), byId, preferLocal),
+    // An undo stamps the change, so the undone copy wins.
+    planChanges: mergeArr(arr(local.planChanges), arr(remote.planChanges), byId, newer)
+      .sort((a, b) => t(b.at).localeCompare(t(a.at)))
+      .slice(0, MAX_PLAN_CHANGES),
     feedback: mergeArr(arr(local.feedback), arr(remote.feedback), byId, newer),
     bodyLog: mergeArr(arr(local.bodyLog), arr(remote.bodyLog), byId, newer),
     // Keep the earliest marker per id (dedupe only).

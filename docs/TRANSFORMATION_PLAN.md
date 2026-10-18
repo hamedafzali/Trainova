@@ -34,11 +34,11 @@ build OK, `pnpm audit --prod` = 54 advisories (3 critical, 20 high).
 - [x] Account export (`/api/account/export`, no secrets) + password-confirmed self-service deletion
 
 ### M2 — Domain integrity & sync
-- [ ] Progression engine v2 (double progression, equipment increments, missing RPE ≠ easy)
-- [ ] Unit boundary fixes (stall insight kg/lb), tests
-- [ ] Merge: versioned templates/programs/exercises, PRs re-derived from sets
+- [x] Progression engine v2: double progression via template rep range (`repMax`), equipment increments (stack / plates / dumbbell / explicit), missing RPE → smallest jump + low confidence, judged on working-load sets; fixed premature deload (miss streak counted the last session, so one miss deloaded)
+- [x] Unit boundary fixes: coach summary/insights in display units (stall back-off was kg-grid, values were kg labelled lb), tests
+- [x] Merge: versioned templates/programs/exercises/profile (units change stamps the profile), PRs re-derived from sets; tests for stamps, merge policy, PR rebuild
 - [x] `PUT /api/state`: version compare-and-set (legacy `base` accepted), 5 MB cap, shape/range validation (422 surfaced via `syncError()`)
-- [ ] Undo + audit trail for AI-applied plan changes
+- [x] Undo + audit trail for AI-applied plan changes (`planChanges`, synced; undo refuses if the workout was edited since)
 
 ### M3 — Design system & core UX
 - [ ] Tokens (graphite/lime dark, full light theme, semantic + AI colours), Inter, radii, motion
@@ -82,4 +82,8 @@ After M1 (2026-10-18): typecheck, lint, 254/254 tests (incl. PGlite route integr
 - **Behaviour changes on deploy.** Existing trainer→client links become *pending*; clients must accept them in Profile → Coaches. Every account must allow AI data sharing once before AI features work again. Both are deliberate (consent), but worth announcing.
 - **Proxy setting.** Set `TRUST_PROXY=1` only if the app sits behind a reverse proxy that overwrites `X-Forwarded-For`; otherwise IP limits apply per server, not per client.
 - **Not yet rendered/inspected:** Profile → Privacy/Coaches/Account data and the AI consent card (needs a signed-in session against a database) — scheduled with the M3 Playwright review.
+After M2 (2026-10-18): typecheck, lint, 284/284 tests, build — all pass.
+
+- **Progression behaviour change.** A single missed session now repeats the load (previously it deloaded 10%); deload needs two misses in a row. Users who never log RPE get +2.5 kg / +5 lb jumps instead of +5 / +10 on compounds.
+- **Rep range UI** (template editor stepper) and the Undo button are not yet rendered/inspected — part of the M3 review.
 - **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.

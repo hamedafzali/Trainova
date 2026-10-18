@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { apiFetch, isSignedIn } from "@/lib/auth";
 import { useAiStatus } from "@/lib/ai";
 import { stableHash } from "@/lib/hash";
+import { displayWeight, toDisplay } from "@/lib/units";
 import {
   buildDeterministicInsights,
   buildTrainingSummary,
@@ -101,7 +102,12 @@ export function useCoachData() {
       return {
         exerciseId: id,
         name: ex?.name ?? "Exercise",
-        history: history.map((h) => ({ date: h.date, topWeight: h.topWeight, volume: h.volume })),
+        // The summary (and every number the coach may cite) is in display units.
+        history: history.map((h) => ({
+          date: h.date,
+          topWeight: displayWeight(h.topWeight, units),
+          volume: Math.round(toDisplay(h.volume, units)),
+        })),
       };
     });
 
@@ -120,7 +126,7 @@ export function useCoachData() {
         exerciseId: p.exerciseId,
         name: exercises.find((e) => e.id === p.exerciseId)?.name ?? "Exercise",
         kind: p.kind,
-        value: p.value,
+        value: p.kind === "max_reps" ? p.value : displayWeight(p.value, units),
         achievedAt: p.achievedAt,
       }));
 

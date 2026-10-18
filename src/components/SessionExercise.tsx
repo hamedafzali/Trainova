@@ -126,12 +126,20 @@ export function SessionExercise({
         actualWeight: s.actualWeight == null ? null : toDisplay(s.actualWeight, units),
       })),
     };
+    const repMax = templateExercise?.repMax;
     return suggestNextLoad(inDisplay, units, {
       isCompound,
       missStreak: missStreak(exerciseId, targetReps),
+      repRange: repMax && repMax > targetReps ? { min: targetReps, max: repMax } : null,
+      loading:
+        device?.loading === "stack"
+          ? "stack"
+          : ex?.equipment === "dumbbell" || ex?.equipment === "kettlebell"
+            ? "dumbbell"
+            : "plates",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [last, units, weighted, type, targetReps, isCompound, exerciseId]);
+  }, [last, units, weighted, type, targetReps, isCompound, exerciseId, device?.loading, templateExercise?.repMax]);
 
   const done = sets.filter((s) => s.completed);
   const activeSet = readOnly ? undefined : sets.find((s) => !s.completed);
@@ -183,7 +191,8 @@ export function SessionExercise({
   const applySuggestion = () => {
     if (!suggestion) return;
     const kg = fromDisplay(suggestion.weight, units);
-    for (const s of sets) if (!s.completed && s.kind !== "warmup") updateSet(s.id, { actualWeight: kg });
+    for (const s of sets)
+      if (!s.completed && s.kind !== "warmup") updateSet(s.id, { actualWeight: kg, actualReps: suggestion.reps });
     haptic("tick");
   };
 
@@ -287,7 +296,7 @@ export function SessionExercise({
               onClick={applySuggestion}
               title={suggestion.reason}
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${
-                suggestion.action === "increase"
+                suggestion.action === "increase" || suggestion.action === "add_reps"
                   ? "bg-successSoft text-green"
                   : suggestion.action === "deload"
                     ? "bg-warningSoft text-amber"
@@ -296,7 +305,8 @@ export function SessionExercise({
             >
               <TrendingUp className="h-3.5 w-3.5" aria-hidden />
               {suggestion.action === "increase" ? "Try" : suggestion.action === "deload" ? "Deload to" : "Repeat"}{" "}
-              {suggestion.weight} {units}?
+              {suggestion.weight} {units}
+              {suggestion.action === "add_reps" ? ` × ${suggestion.reps}` : ""}?
               <span className="ml-0.5 underline underline-offset-2">Apply</span>
             </button>
           )}

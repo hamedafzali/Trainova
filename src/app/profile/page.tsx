@@ -117,6 +117,7 @@ export default function ProfilePage() {
     units: state.units,
     profile: state.profile,
     audit: state.audit,
+    planChanges: state.planChanges,
     devices: state.devices.filter((d) => d.owner != null),
     exercises: state.exercises.filter((e) => e.owner != null),
     programs: state.programs,
