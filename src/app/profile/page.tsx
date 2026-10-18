@@ -8,6 +8,13 @@ import { useHydrated, useStore } from "@/lib/store";
 import { signOut } from "@/lib/auth";
 import { pushState } from "@/lib/sync";
 import type { UserProfile, Units } from "@/domain/types";
+import {
+  COACHING_LIMITS,
+  normalizeCoaching,
+  type EquipmentAccess,
+  type RpePreference,
+  type Weekday,
+} from "@/domain/coachingProfile";
 import { SCHEMA_VERSION } from "@/domain/legacy";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -37,22 +44,28 @@ function Segmented<T extends string>({
   options,
   value,
   onChange,
+  onClear,
+  compact,
 }: {
   label: string;
   options: { key: T; label: string }[];
   value: T | null;
   onChange: (v: T) => void;
+  /** When set, tapping the selected option clears it. */
+  onClear?: () => void;
+  /** Round 44 px buttons for short labels (numbers). */
+  compact?: boolean;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label={label} className={compact ? "grid max-w-[22rem] grid-cols-7 gap-1.5" : "flex flex-wrap gap-2"}>
       {options.map((o) => (
         <button
           key={o.key}
           type="button"
           role="radio"
           aria-checked={value === o.key}
-          onClick={() => onChange(o.key)}
-          className={`min-h-11 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+          onClick={() => (onClear && value === o.key ? onClear() : onChange(o.key))}
+          className={`min-h-11 rounded-full border text-sm font-semibold transition-colors ${compact ? "aspect-square" : "px-4 py-2"} ${
             value === o.key
               ? "border-accentFill bg-accentFill text-onAccent"
               : "border-border bg-surface2 text-inkSoft hover:text-ink"
@@ -83,6 +96,152 @@ function Section({ title, id, children }: { title: string; id?: string; children
       <h2 className="section-label px-1">{title}</h2>
       <div className="divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">{children}</div>
     </section>
+  );
+}
+
+const DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ key: String(n), label: String(n) }));
+const WEEKDAYS: { day: Weekday; label: string; name: string }[] = [
+  { day: 1, label: "M", name: "Monday" },
+  { day: 2, label: "T", name: "Tuesday" },
+  { day: 3, label: "W", name: "Wednesday" },
+  { day: 4, label: "T", name: "Thursday" },
+  { day: 5, label: "F", name: "Friday" },
+  { day: 6, label: "S", name: "Saturday" },
+  { day: 0, label: "S", name: "Sunday" },
+];
+const MINUTES = [30, 45, 60, 75, 90].map((n) => ({ key: String(n), label: `${n} min` }));
+const EQUIPMENT_OPTIONS: { key: EquipmentAccess; label: string }[] = [
+  { key: "gym", label: "Full gym" },
+  { key: "machines", label: "Mostly machines" },
+  { key: "dumbbells", label: "Dumbbells" },
+  { key: "bodyweight", label: "No equipment" },
+];
+const RPE_OPTIONS: { key: RpePreference; label: string }[] = [
+  { key: "always", label: "Every set" },
+  { key: "sometimes", label: "Sometimes" },
+  { key: "never", label: "Never" },
+];
+
+function NoteField({
+  label,
+  value,
+  max,
+  placeholder,
+  onSave,
+}: {
+  label: string;
+  value: string | null;
+  max: number;
+  placeholder: string;
+  onSave: (v: string | null) => void;
+}) {
+  return (
+    <textarea
+      className="input min-h-[5.5rem] resize-y py-3 leading-relaxed"
+      aria-label={label}
+      maxLength={max}
+      placeholder={placeholder}
+      defaultValue={value ?? ""}
+      onBlur={(e) => {
+        const v = e.target.value.trim() || null;
+        if (v !== value) {
+          onSave(v);
+          toast("Saved");
+        }
+      }}
+    />
+  );
+}
+
+/** Schedule, equipment, limitations and preferences the coach plans around. */
+function TrainingSetup() {
+  const coaching = useStore((s) => normalizeCoaching(s.profile.coaching));
+  const update = useStore((s) => s.updateCoaching);
+  const toggleDay = (d: Weekday) =>
+    update({
+      trainingDays: coaching.trainingDays.includes(d)
+        ? coaching.trainingDays.filter((x) => x !== d)
+        : [...coaching.trainingDays, d],
+    });
+  return (
+    <Section title="Training setup" id="training">
+      <Row label="Days per week" hint="How often you can realistically train. Tap again to clear.">
+        <Segmented
+          label="Days per week"
+          options={DAY_OPTIONS}
+          compact
+          value={coaching.daysPerWeek ? String(coaching.daysPerWeek) : null}
+          onChange={(v) => update({ daysPerWeek: Number(v) })}
+          onClear={() => update({ daysPerWeek: null })}
+        />
+      </Row>
+      <Row label="Usual days" hint="Optional — leave empty if it changes week to week.">
+        <div role="group" aria-label="Usual training days" className="grid max-w-[22rem] grid-cols-7 gap-1.5">
+          {WEEKDAYS.map((w) => {
+            const on = coaching.trainingDays.includes(w.day);
+            return (
+              <button
+                key={w.day}
+                type="button"
+                aria-pressed={on}
+                aria-label={w.name}
+                onClick={() => toggleDay(w.day)}
+                className={`grid aspect-square min-h-11 place-items-center rounded-full border text-sm font-semibold transition-colors ${
+                  on ? "border-accentFill bg-accentFill text-onAccent" : "border-border bg-surface2 text-inkSoft hover:text-ink"
+                }`}
+              >
+                {w.label}
+              </button>
+            );
+          })}
+        </div>
+      </Row>
+      <Row label="Session length" hint="Plans and AI suggestions are sized to fit.">
+        <Segmented
+          label="Session length"
+          options={MINUTES}
+          value={coaching.sessionMinutes ? String(coaching.sessionMinutes) : null}
+          onChange={(v) => update({ sessionMinutes: Number(v) })}
+          onClear={() => update({ sessionMinutes: null })}
+        />
+      </Row>
+      <Row label="Equipment">
+        <Segmented
+          label="Equipment"
+          options={EQUIPMENT_OPTIONS}
+          value={coaching.equipment}
+          onChange={(equipment) => update({ equipment })}
+          onClear={() => update({ equipment: null })}
+        />
+      </Row>
+      <Row label="Effort rating (RPE)" hint="Choose Never to hide the RPE picker while logging. Progression then uses smaller, safer jumps.">
+        <Segmented
+          label="Effort rating"
+          options={RPE_OPTIONS}
+          value={coaching.rpe}
+          onChange={(rpe) => update({ rpe })}
+          onClear={() => update({ rpe: null })}
+        />
+      </Row>
+      <Row label="Injuries and limitations" hint="Pain, injuries or movements to avoid. The coach won't program them. Not medical advice — see a clinician for pain.">
+        <NoteField
+          label="Injuries and limitations"
+          value={coaching.limitations}
+          max={COACHING_LIMITS.limitationsChars}
+          placeholder="e.g. left knee hurts on deep squats; no overhead pressing"
+          onSave={(limitations) => update({ limitations })}
+        />
+      </Row>
+      <Row label="Notes for your coach" hint="Likes, dislikes, context — anything that helps.">
+        <NoteField
+          label="Notes for your coach"
+          value={coaching.coachNotes}
+          max={COACHING_LIMITS.notesChars}
+          placeholder="e.g. I enjoy deadlifts, hate lunges; training for a hike in spring"
+          onSave={(coachNotes) => update({ coachNotes })}
+        />
+      </Row>
+    </Section>
   );
 }
 
@@ -182,6 +341,8 @@ export default function ProfilePage() {
           />
         </Row>
       </Section>
+
+      <TrainingSetup />
 
       <Section title="Bodyweight" id="bodyweight">
         <Row label="Log your weight" hint="Used for bodyweight exercises and your progress chart.">

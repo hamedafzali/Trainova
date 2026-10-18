@@ -33,3 +33,11 @@ describe("validateSnapshot", () => {
     expect(validateSnapshot({ sets: Array.from({ length: 100 }, () => ({})) }).length).toBeLessThanOrEqual(20);
   });
 });
+
+describe("coaching profile validation", () => {
+  it("accepts a valid profile and rejects out-of-range values", () => {
+    expect(validateSnapshot({ profile: { coaching: { daysPerWeek: 3, sessionMinutes: 45, limitations: "knee" } } })).toEqual([]);
+    const issues = validateSnapshot({ profile: { coaching: { daysPerWeek: 9, coachNotes: "x".repeat(3000) } } });
+    expect(issues.map((i) => i.path)).toEqual(["profile.coaching.daysPerWeek", "profile.coaching.coachNotes"]);
+  });
+});

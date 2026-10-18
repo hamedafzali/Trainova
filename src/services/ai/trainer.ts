@@ -1,6 +1,7 @@
 // AI trainer chat: one model call per user message, grounded in a snapshot of
 // the client's plans and training, returning text plus validated plan actions.
 
+import { normalizeCoaching } from "@/domain/coachingProfile";
 import {
   LIMITS,
   parseTrainerReview,
@@ -69,6 +70,7 @@ export function parseTrainerContext(raw: unknown): TrainerContext | null {
       sex: pick(p.sex, ["male", "female"] as const),
       ageYears: nn(p.ageYears),
       weightKg: nn(p.weightKg),
+      coaching: normalizeCoaching(p.coaching),
     },
     nextWorkout: typeof r.nextWorkout === "string" ? s(r.nextWorkout, 4) : null,
     consistency: parseConsistency(r.consistency),

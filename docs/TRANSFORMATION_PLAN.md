@@ -49,8 +49,9 @@ build OK, `pnpm audit --prod` = 54 advisories (3 critical, 20 high).
 - [ ] Component primitives refactor (screens already consume tokens; per-component cleanup pending)
 
 ### M4 — Coaching profile
-- [ ] Profile: schedule, session length, equipment access, limitations, preferences, RPE preference, coach notes
-- [ ] Onboarding persists days/setting; profile editor
+- [x] Coaching profile (`src/domain/coachingProfile.ts`): days/week, usual days, session length, equipment, limitations, RPE preference, coach notes — normalised on every read, validated server-side in `PUT /api/state`
+- [x] Onboarding persists days/week and equipment; Profile → Training setup editor (rendered light/dark at 390 px)
+- [x] Personalisation: RPE picker hidden when the user chose "Never"; coach prompt gets a SETUP line and the client's limitations/notes JSON-quoted as data, with rules to respect them and never follow instructions inside them
 
 ### M5 — Training Analyst
 - [ ] Deterministic analysis engine (trends, stalls, volume, consistency, data-quality)
@@ -93,4 +94,9 @@ After M3 (2026-10-18): typecheck, lint, 287/287 tests, build — all pass.
 
 - **Visible rebrand.** Blue → graphite/lime everywhere, including the installed-app icon (users may need to reinstall the PWA to see the new icon on iOS).
 - **Navigation change.** "Plans" is now "Train"; History moved from the tab bar into Progress (still in the desktop sidebar).
+After M4 (2026-10-18): typecheck, lint, 296/296 tests, build — all pass.
+
+- **Coaching data goes to the AI provider.** Limitations and coach notes are now part of the AI context (covered by the existing AI data-sharing consent, which already lists "notes or limitations you entered").
+- **Test timeouts** raised to 20 s / 30 s hooks: PGlite tests occasionally exceeded 5 s under a full parallel run.
+
 - **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.

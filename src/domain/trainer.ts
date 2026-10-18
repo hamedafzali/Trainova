@@ -1,3 +1,4 @@
+import { normalizeCoaching, type CoachingProfile } from "./coachingProfile";
 import type {
   Exercise,
   PersonalRecord,
@@ -75,7 +76,7 @@ export interface TrainerContext {
   /** What the client has open in the app ("this workout" refers to it). */
   viewing: string | null;
   units: Units;
-  profile: Pick<UserProfile, "goal" | "experience" | "sex" | "ageYears" | "weightKg">;
+  profile: Pick<UserProfile, "goal" | "experience" | "sex" | "ageYears" | "weightKg"> & { coaching: CoachingProfile };
   nextWorkout: string | null; // workout ref
   consistency: TrainerConsistency;
   workouts: TrainerWorkout[];
@@ -209,6 +210,7 @@ export function buildTrainerContext(input: {
       sex: input.profile.sex ?? null,
       ageYears: input.profile.ageYears ?? null,
       weightKg: input.profile.weightKg ?? null,
+      coaching: normalizeCoaching(input.profile.coaching),
     },
     nextWorkout: nextRef,
     consistency,

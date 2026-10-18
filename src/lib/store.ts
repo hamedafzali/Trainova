@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeCoaching, type CoachingProfile } from "@/domain/coachingProfile";
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage, type StateStorage } from "zustand/middleware";
@@ -104,6 +105,8 @@ export interface TrainovaState {
   setLibrary: (devices: Device[], exercises: Exercise[]) => void;
   completeOnboarding: (p: Partial<UserProfile>) => void;
   updateProfile: (p: Partial<UserProfile>) => void;
+  /** Merges into the coaching profile (validated). */
+  updateCoaching: (p: Partial<CoachingProfile>) => void;
   editSet: (
     setId: string,
     patch: { actualWeight?: number | null; actualReps?: number | null },
@@ -306,6 +309,9 @@ export const useStore = create<TrainovaState>()(
         set((s) => ({ profile: { ...s.profile, ...p, onboarded: true } })),
 
       updateProfile: (p) => set((s) => ({ profile: { ...s.profile, ...p } })),
+
+      updateCoaching: (p) =>
+        set((s) => ({ profile: { ...s.profile, coaching: normalizeCoaching({ ...normalizeCoaching(s.profile.coaching), ...p }) } })),
 
       editSet: (setId, patch, reason) => {
         const st = get();

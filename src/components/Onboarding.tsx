@@ -21,6 +21,7 @@ import {
 import { useStore } from "@/lib/store";
 import { PROGRAM_BLUEPRINTS, recommendBlueprint, type ProgramBlueprint, type ProgramSetting } from "@/data/programs";
 import { label } from "@/domain/taxonomy";
+import { normalizeCoaching } from "@/domain/coachingProfile";
 import type { UserProfile, Units } from "@/domain/types";
 
 type Option<T extends string> = { key: T; label: string; blurb: string; icon: LucideIcon };
@@ -63,7 +64,12 @@ export function Onboarding() {
   const next = () => setStep((s) => Math.min(STEPS.length - 1, s + 1));
   const finish = (blueprintId: string | null) => {
     if (blueprintId) installProgram(blueprintId);
-    completeOnboarding({ goal, experience, role: "user" });
+    completeOnboarding({
+      goal,
+      experience,
+      role: "user",
+      coaching: normalizeCoaching({ daysPerWeek: days, equipment: setting }),
+    });
   };
 
   return (

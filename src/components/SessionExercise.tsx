@@ -15,6 +15,7 @@ import { useRestTimer, defaultRest } from "@/lib/restTimer";
 import { formatWeight, fromDisplay, toDisplay, weightStep } from "@/lib/units";
 import { haptic } from "@/lib/haptics";
 import type { Device, Units, WorkoutSet } from "@/domain/types";
+import { showsRpe } from "@/domain/coachingProfile";
 
 const WARMUP_REST = 60;
 
@@ -68,6 +69,7 @@ export function SessionExercise({
   onPr: (kinds: string[]) => void;
 }) {
   const units = useStore((s) => s.units);
+  const rpeOn = useStore((s) => showsRpe(s.profile.coaching));
   const exerciseById = useStore((s) => s.exerciseById);
   const deviceById = useStore((s) => s.deviceById);
   const addSet = useStore((s) => s.addSet);
@@ -419,7 +421,7 @@ export function SessionExercise({
                   </Field>
                 )}
 
-                {counted && kind !== "warmup" && (
+                {counted && kind !== "warmup" && rpeOn && (
                   <Field label="Effort (RPE)" hint="Optional · 10 = nothing left, 8 = 2 in reserve">
                     <div className="grid grid-cols-5 gap-1.5">
                       {[6, 7, 8, 9, 10].map((rpe) => (

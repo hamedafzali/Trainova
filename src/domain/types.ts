@@ -4,6 +4,7 @@
 // WEIGHTS ARE ALWAYS STORED IN KILOGRAMS. `Units` is a display preference only;
 // convert at the UI boundary with src/lib/units.ts.
 
+import type { CoachingProfile } from "./coachingProfile";
 import type { Equipment, ExerciseType, Muscle, SetKind } from "./taxonomy";
 
 export type Units = "kg" | "lb";
@@ -204,6 +205,8 @@ export interface UserProfile {
   ageYears?: number | null;
   heightCm?: number | null;
   weightKg?: number | null;
+  /** Schedule, equipment, limitations and preferences for coaching. */
+  coaching?: CoachingProfile;
   /** Last local edit (ISO), including a units change; sync keeps the newer copy. */
   updatedAt?: string | null;
 }

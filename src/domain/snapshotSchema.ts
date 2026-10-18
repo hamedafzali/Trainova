@@ -41,6 +41,18 @@ export function validateSnapshot(data: unknown): SnapshotIssue[] {
 
   if (data.units !== undefined && data.units !== "kg" && data.units !== "lb") add("units", "must be kg or lb");
   if (data.profile !== undefined && data.profile !== null && !isObj(data.profile)) add("profile", "must be an object");
+  const coaching = isObj(data.profile) ? data.profile.coaching : undefined;
+  if (coaching !== undefined && coaching !== null) {
+    if (!isObj(coaching)) add("profile.coaching", "must be an object");
+    else {
+      if (!finiteIn(coaching.daysPerWeek, 1, 7)) add("profile.coaching.daysPerWeek", "must be 1–7");
+      if (!finiteIn(coaching.sessionMinutes, 15, 180)) add("profile.coaching.sessionMinutes", "must be 15–180");
+      for (const k of ["limitations", "coachNotes"] as const) {
+        const v = coaching[k];
+        if (v != null && (typeof v !== "string" || v.length > 2000)) add(`profile.coaching.${k}`, "must be text up to 2000 characters");
+      }
+    }
+  }
   if (data.schema !== undefined && (typeof data.schema !== "number" || !Number.isInteger(data.schema))) {
     add("schema", "must be an integer");
   }
