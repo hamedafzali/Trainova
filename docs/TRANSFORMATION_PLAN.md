@@ -59,6 +59,47 @@ build OK, `pnpm audit --prod` = 54 advisories (3 critical, 20 high).
 - [x] Server pipeline from synced document, cache by data version — `POST /api/ai/analyst`
 - [x] Analyst UI (evidence, periods, confidence, missing data) — Progress → Training analysis
 
+### M5b — UI rebuild to the reference design (added 2026-10-18)
+Reference: three mobile screens (Home, exercise detail with set logging, Progress overview) supplied by the owner.
+Built before M6, because M6's in-workout coach belongs in the new exercise/logging screen.
+
+Gap analysis, current → reference:
+- Home leads with workout in progress / muscle map; reference leads with greeting + headline, weekly progress (X / goal, M–S check dots, % ring), a Today's Workout hero card (duration, level, Start) and four quick actions. "This week" is at the bottom today.
+- Exercise detail is one long page; reference has Overview / Muscles / Instructions tabs, a hero visual, an attribute strip (compound, primary muscle, rep range), a working-sets table with Log Set / Add Set, and a tips card with a body figure.
+- Live logging shows one big stepper card per set; reference shows every set as a table row (weight, reps, RPE, rest, ✓) with the active set editable.
+- Progress is one list; reference has Overview / Strength / Body / Workouts tabs, a period picker with ‹ ›, a summary strip (workouts, total time, calories, PRs), a muscle-focus donut and a strength chart with an exercise picker and a delta.
+- Tab bar: reference active state is a lime icon + label with no pill; tabs are Home / Plan / Workouts / Progress / Profile, with no AI Coach tab.
+
+Primitives (`src/components/ui/`):
+- [ ] `Tabs` (underline, keyboard + ARIA tablist, URL `?tab=` deep link), `PeriodPicker` (week / month / 3 months + prev/next)
+- [ ] `ProgressRing` (from Home's GoalRing), `Donut` (accessible: legend + values, not colour alone), `StatStrip`, `DayDots`
+- [ ] `SetTable` (logging + read-only modes, 44 px rows, tabular numerals), `QuickAction` tile, `MediaHero`
+- [ ] Tab bar restyle (lime icon + label active state, no pill)
+
+Domain modules:
+- [ ] `periodStats` — workouts, total time (startedAt→completedAt), volume, PRs, muscle share of hard sets for any {from, to}, plus the previous-period delta; generalise the analyst period to arbitrary ranges (reused by Progress → Overview)
+- [ ] `estimateDuration(template)` — sets × (work + rest) for the hero card's "45 min"; level from the program blueprint
+- [ ] Exercise favourites (bookmark) — `profile.favoriteExerciseIds`, snapshot-schema validated
+- [ ] Exercise tips — our own short cue per catalogue exercise (`tips?: string[]`)
+- [ ] Inbox for the bell — trainer invites, assignments, AI plan changes (undo); no new server tables
+
+Screens:
+- [ ] Home: greeting + headline, streak tile, weekly progress card, Today's Workout hero (or Resume when live), quick actions (Workouts, Exercises, Programs, Nutrition), recent workouts; muscle readiness moves to Progress → Body
+- [ ] Exercise detail: tabs; Overview = hero + attributes + today's / last working sets + tips; Muscles = body map primary/secondary; Instructions = steps + movement guide
+- [ ] Live workout: per-exercise `SetTable`, active row opens the existing large steppers (keeps gym usability), Log Set / Add Set footer, rest column from the template
+- [ ] Progress: Overview (summary strip, muscle donut, strength chart + picker, Training analysis card), Strength (per-exercise list), Body (bodyweight + readiness map), Workouts (history + calendar); `/history` and `/calendar` stay as deep links into the tab
+- [ ] Nav restructure (decision pending, see below)
+- [ ] Rendered check at 390 / 820 / 1440 in light and dark against the reference; contrast, 44 px targets, no horizontal scroll
+
+Deliberate deviations from the reference:
+- **No photos of people.** Third-party human models are ruled out and nothing is bought. Hero visuals are stills from our own sculpted-body movement guide, or abstract equipment art on the lime gradient.
+- **Volume instead of calories.** We don't measure energy use, and lifting calorie estimates are unreliable. An optional labelled estimate (MET × time × bodyweight) can be added later.
+- **Own copy**, not the reference's slogans.
+- **Accent stays `#A7F36B`.** The reference is slightly more yellow; retune only on request.
+
+Open decisions:
+- Tab set: (a) Home · Plan · Coach · Progress · Profile, with history in Progress → Workouts (recommended: keeps the AI coach first-class); (b) the reference exactly, Home · Plan · Workouts · Progress · Profile, with Coach as a Home quick action plus a floating button.
+
 ### M6 — Exercise & Equipment Coach
 - [ ] Context builder (exercise metadata, device, targets, today's sets, history, limitations)
 - [ ] Deterministic set assessment + substitutions; model explains, never invents machine settings
