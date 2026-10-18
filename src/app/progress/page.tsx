@@ -7,6 +7,7 @@ import { LineChart } from "@/components/LineChart";
 import { Sparkline } from "@/components/Sparkline";
 import { StatSkeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { TrainingAnalyst } from "@/components/TrainingAnalyst";
 import { exerciseTypeOf } from "@/domain/exerciseType";
 import { MUSCLE_GROUPS, muscleGroupOf, type MuscleGroup } from "@/domain/taxonomy";
 import { useHydrated, useStore } from "@/lib/store";
@@ -142,6 +143,8 @@ export default function ProgressPage() {
             <Stat label="This month" value={String(thisMonth)} />
             <Stat label="Records" value={String(prs.length)} />
           </section>
+
+          <TrainingAnalyst />
 
           {recentPrs.length > 0 && (
             <section className="card space-y-3 p-4 sm:p-6">

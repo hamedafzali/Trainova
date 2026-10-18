@@ -54,10 +54,10 @@ build OK, `pnpm audit --prod` = 54 advisories (3 critical, 20 high).
 - [x] Personalisation: RPE picker hidden when the user chose "Never"; coach prompt gets a SETUP line and the client's limitations/notes JSON-quoted as data, with rules to respect them and never follow instructions inside them
 
 ### M5 — Training Analyst
-- [ ] Deterministic analysis engine (trends, stalls, volume, consistency, data-quality)
-- [ ] Evidence package + versioned schema + numeric-claim validator
-- [ ] Server pipeline from synced document, cache by data version
-- [ ] Analyst UI (evidence, periods, confidence, missing data)
+- [x] Deterministic analysis engine (trends, stalls, volume, consistency, data-quality) — `src/domain/analyst.ts`
+- [x] Evidence package + versioned schema (`analyst-evidence/1`) + numeric-claim validator
+- [x] Server pipeline from synced document, cache by data version — `POST /api/ai/analyst`
+- [x] Analyst UI (evidence, periods, confidence, missing data) — Progress → Training analysis
 
 ### M6 — Exercise & Equipment Coach
 - [ ] Context builder (exercise metadata, device, targets, today's sets, history, limitations)
@@ -98,5 +98,12 @@ After M4 (2026-10-18): typecheck, lint, 296/296 tests, build — all pass.
 
 - **Coaching data goes to the AI provider.** Limitations and coach notes are now part of the AI context (covered by the existing AI data-sharing consent, which already lists "notes or limitations you entered").
 - **Test timeouts** raised to 20 s / 30 s hooks: PGlite tests occasionally exceeded 5 s under a full parallel run.
+
+After M5 (2026-10-18): typecheck, lint, 314/314 tests, build — all pass.
+
+- **AI reads the synced copy.** The analyst route builds evidence from `user_state`, so unsynced local workouts aren't in the AI reading; the UI labels it "From your last synced data". The on-screen measurements are computed locally and always current.
+- **Strict validator.** Any number in the AI reply that isn't a fact (or its whole-number rounding / absolute value) rejects the whole reply and the rule-based reading is shown. Expect some fallbacks with weaker models; fallback rate should be tracked once `ai_runs` lands (M7).
+- **Analysis cache is in-process** (500 entries, keyed by user, data version, period, day). Fine for one instance; move to Redis if the app is scaled out.
+- **Signed-in AI path not rendered locally** (no DB/key in the preview); covered by PGlite integration tests with the model mocked.
 
 - **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.
