@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Check, ChevronRight, Clock, Play, Plus, Sparkles } from "lucide-react";
+import { Check, ChevronRight, Clock, ListChecks, Play, Plus, Sparkles } from "lucide-react";
 import { useHydrated, useStore } from "@/lib/store";
 import { AssignmentsInbox } from "@/components/AssignmentsInbox";
 import { ListSkeleton } from "@/components/Skeleton";
@@ -63,7 +63,7 @@ export default function PlansPage() {
   if (!hydrated)
     return (
       <main className="mx-auto max-w-3xl space-y-6">
-        <h1 className="page-title">Plans</h1>
+        <h1 className="page-title">Train</h1>
         <ListSkeleton />
       </main>
     );
@@ -115,10 +115,13 @@ export default function PlansPage() {
     <main className="mx-auto max-w-3xl space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">Plans</h1>
+          <h1 className="page-title">Train</h1>
           <p className="page-subtitle">Your programs and routines, plus proven programs to start from.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link href="/exercises" className="btn-ghost px-4 py-2.5 text-sm">
+            <ListChecks className="h-4 w-4" aria-hidden /> Exercises
+          </Link>
           <button className="btn-secondary px-4 py-2.5 text-sm" onClick={() => setCreating(creating === "plan" ? null : "plan")}>
             <Plus className="h-4 w-4" aria-hidden /> Workout
           </button>

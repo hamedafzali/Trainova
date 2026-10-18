@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoMark } from "./Logo";
-import { isActive, sidebarItems } from "./nav";
+import { activeHref, sidebarItems } from "./nav";
 
 export function SidebarNav() {
   const path = usePathname();
   const items = sidebarItems();
+  const current = activeHref(items, path);
 
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 md:left-0 md:bg-elevated/70 md:backdrop-blur-xl md:border-r md:border-border md:px-5 md:py-7">
@@ -21,16 +22,16 @@ export function SidebarNav() {
 
       <nav className="flex-1 space-y-0.5" aria-label="Primary">
         {items.map((item) => {
-          const active = isActive(item, path);
+          const active = item.href === current;
           return (
             <Link
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              data-testid={`nav-${item.label.toLowerCase()}`}
+              data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
               className={`relative flex min-h-11 items-center gap-3 px-3 py-2.5 rounded-control text-sm font-medium transition-colors ${
                 active
-                  ? "bg-accent/[0.12] font-semibold text-ink before:absolute before:-left-5 before:top-2 before:bottom-2 before:w-1 before:rounded-r-full before:bg-accent"
+                  ? "bg-accentFill/[0.16] font-semibold text-ink before:absolute before:-left-5 before:top-2 before:bottom-2 before:w-1 before:rounded-r-full before:bg-accent"
                   : "text-inkSoft hover:bg-surface2 hover:text-ink"
               }`}
             >

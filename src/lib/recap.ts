@@ -22,14 +22,14 @@ export const RECAP_W = 1080;
 export const RECAP_H = 1350;
 
 const C = {
-  bg: "#0B0F1A",
-  glow: "#4F7FFF",
-  ink: "#FFFFFF",
-  soft: "#C9D1E0",
-  muted: "#8E98AC",
-  accent: "#7FA2FF",
-  gold: "#F5C25B",
-  tile: "#2F5FE0",
+  bg: "#101310",
+  glow: "#A7F36B",
+  ink: "#F4F6F2",
+  soft: "#D2D7CF",
+  muted: "#A6ADA5",
+  accent: "#A7F36B",
+  gold: "#F5D06B",
+  tile: "#A7F36B",
 };
 const FONT = `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`;
 
@@ -51,13 +51,13 @@ export function recapSvg(d: RecapData): string {
   const out: string[] = [];
   out.push(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${RECAP_W}" height="${RECAP_H}" viewBox="0 0 ${RECAP_W} ${RECAP_H}" font-family="${FONT}">`,
-    `<defs><radialGradient id="g" cx="0.85" cy="0.05" r="0.9"><stop offset="0" stop-color="${C.glow}" stop-opacity="0.45"/><stop offset="0.6" stop-color="${C.glow}" stop-opacity="0"/></radialGradient></defs>`,
+    `<defs><radialGradient id="g" cx="0.85" cy="0.05" r="0.9"><stop offset="0" stop-color="${C.glow}" stop-opacity="0.22"/><stop offset="0.6" stop-color="${C.glow}" stop-opacity="0"/></radialGradient></defs>`,
     `<rect width="${RECAP_W}" height="${RECAP_H}" fill="${C.bg}"/><rect width="${RECAP_W}" height="${RECAP_H}" fill="url(#g)"/>`,
   );
 
   // Brand row
   out.push(
-    `<g transform="translate(72 72) scale(0.125)"><rect width="512" height="512" rx="112" fill="${C.tile}"/><g fill="#fff" transform="translate(20.5 20.5) scale(0.92)"><rect x="78" y="112" width="44" height="124" rx="14"/><rect x="130" y="134" width="30" height="80" rx="10"/><rect x="352" y="134" width="30" height="80" rx="10"/><rect x="390" y="112" width="44" height="124" rx="14"/><rect x="150" y="154" width="212" height="40" rx="10"/><rect x="224" y="174" width="64" height="230" rx="32"/></g></g>`,
+    `<g transform="translate(72 72) scale(0.125)"><rect width="512" height="512" rx="112" fill="${C.tile}"/><g fill="#101310" transform="translate(20.5 20.5) scale(0.92)"><rect x="78" y="112" width="44" height="124" rx="14"/><rect x="130" y="134" width="30" height="80" rx="10"/><rect x="352" y="134" width="30" height="80" rx="10"/><rect x="390" y="112" width="44" height="124" rx="14"/><rect x="150" y="154" width="212" height="40" rx="10"/><rect x="224" y="174" width="64" height="230" rx="32"/></g></g>`,
     text(152, 117, 34, C.ink, "Trainova", `font-weight="700"`),
     text(1008, 117, 28, C.muted, d.dateLabel, `text-anchor="end"`),
   );

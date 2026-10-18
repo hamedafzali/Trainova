@@ -41,9 +41,12 @@ build OK, `pnpm audit --prod` = 54 advisories (3 critical, 20 high).
 - [x] Undo + audit trail for AI-applied plan changes (`planChanges`, synced; undo refuses if the workout was edited since)
 
 ### M3 — Design system & core UX
-- [ ] Tokens (graphite/lime dark, full light theme, semantic + AI colours), Inter, radii, motion
-- [ ] Component primitives refactor; screens moved onto tokens
-- [ ] Rendered review (desktop/tablet/mobile, light/dark) with Playwright screenshots
+- [x] Tokens (graphite/lime dark, full light theme, semantic + info + AI colours, every text pairing ≥ 4.5:1), Inter only (Archivo removed), tabular numerals
+- [x] Brand assets on the new palette (icons, PNGs regenerated, lockups, manifest, recap image)
+- [x] Navigation: Today / Train / Progress / AI Coach / Profile (one active item, sub-pages mapped, tested); History linked from Progress, Exercises from Train
+- [x] Active-workout focus mode (no sidebar or tab bar during a live workout)
+- [~] Rendered review: guest screens (Today, Train, template, Progress, AI Coach, Profile, History, Exercises, live workout) at 390/820/1440 in light + dark, no page errors. Signed-in screens (Privacy, Coaches, consent card) and AI Undo still need a database-backed session
+- [ ] Component primitives refactor (screens already consume tokens; per-component cleanup pending)
 
 ### M4 — Coaching profile
 - [ ] Profile: schedule, session length, equipment access, limitations, preferences, RPE preference, coach notes
@@ -86,4 +89,8 @@ After M2 (2026-10-18): typecheck, lint, 284/284 tests, build — all pass.
 
 - **Progression behaviour change.** A single missed session now repeats the load (previously it deloaded 10%); deload needs two misses in a row. Users who never log RPE get +2.5 kg / +5 lb jumps instead of +5 / +10 on compounds.
 - **Rep range UI** (template editor stepper) and the Undo button are not yet rendered/inspected — part of the M3 review.
+After M3 (2026-10-18): typecheck, lint, 287/287 tests, build — all pass.
+
+- **Visible rebrand.** Blue → graphite/lime everywhere, including the installed-app icon (users may need to reinstall the PWA to see the new icon on iOS).
+- **Navigation change.** "Plans" is now "Train"; History moved from the tab bar into Progress (still in the desktop sidebar).
 - **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.

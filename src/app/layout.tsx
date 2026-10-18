@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter";
-import "@fontsource-variable/archivo/wdth.css";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 import { CoachAssistant } from "@/components/coach/CoachAssistant";
@@ -30,8 +29,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f7f9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0d" },
+    { media: "(prefers-color-scheme: light)", color: "#F5F6F2" },
+    { media: "(prefers-color-scheme: dark)", color: "#101310" },
   ],
   width: "device-width",
   initialScale: 1,

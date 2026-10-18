@@ -21,7 +21,7 @@ export default function CoachPage() {
   return (
     <main className="mx-auto max-w-6xl space-y-6">
       <header>
-        <h1 className="page-title">Coach</h1>
+        <h1 className="page-title">AI Coach</h1>
         <p className="page-subtitle">Where you stand against your plan, and a coach you can ask.</p>
       </header>
 

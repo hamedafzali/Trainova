@@ -26,6 +26,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const needsGate = !session || !onboarded;
+  // Focus mode: a live workout gets the whole screen on every device.
+  const liveId = pathname.startsWith("/session/") ? pathname.split("/")[2] : null;
+  const focus = useStore((s) => (liveId ? s.sessions.some((x) => x.id === liveId && x.status === "active") : false));
 
   useEffect(() => {
     if (hydrated && needsGate && pathname !== "/") {
@@ -48,8 +51,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex">
-      <SidebarNav />
-      <main className="flex-1 min-w-0 md:ml-64 min-h-screen">
+      {!focus && <SidebarNav />}
+      <main className={`flex-1 min-w-0 min-h-screen ${focus ? "" : "md:ml-64"}`}>
         <div
           key={pathname}
           className="enter-fade max-w-6xl mx-auto px-4 md:px-8 lg:px-10 py-6 md:py-10 pb-32 md:pb-10"

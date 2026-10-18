@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MOBILE_TABS, isActive } from "./nav";
+import { MOBILE_TABS, activeHref } from "./nav";
 
 /**
  * Floating dock (phones): a frosted pill above the home indicator, with an
@@ -12,7 +12,8 @@ export function BottomNav() {
   const path = usePathname();
   // A live workout owns the whole screen; its own header handles navigation.
   if (path.startsWith("/session/")) return null;
-  const activeIdx = MOBILE_TABS.findIndex((t) => isActive(t, path));
+  const current = activeHref(MOBILE_TABS, path);
+  const activeIdx = MOBILE_TABS.findIndex((t) => t.href === current);
   return (
     <nav
       className="md:hidden fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pointer-events-none"
@@ -22,18 +23,18 @@ export function BottomNav() {
         {activeIdx >= 0 && (
           <span
             aria-hidden
-            className="absolute inset-y-1.5 left-1.5 rounded-[1.375rem] bg-accent/[0.12] transition-transform duration-300 ease-standard motion-reduce:transition-none"
+            className="absolute inset-y-1.5 left-1.5 rounded-[1.375rem] bg-accentFill/[0.16] transition-transform duration-300 ease-standard motion-reduce:transition-none"
             style={{ width: `calc((100% - 0.75rem) / 5)`, transform: `translateX(${activeIdx * 100}%)` }}
           />
         )}
         {MOBILE_TABS.map((t) => {
-          const active = isActive(t, path);
+          const active = t.href === current;
           return (
             <li key={t.href} className="relative">
               <Link
                 href={t.href}
                 aria-current={active ? "page" : undefined}
-                data-testid={`nav-${t.label.toLowerCase()}`}
+                data-testid={`nav-${t.label.toLowerCase().replace(/\s+/g, "-")}`}
                 className={`flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors ${
                   active ? "text-accent" : "text-muted hover:text-inkSoft"
                 }`}

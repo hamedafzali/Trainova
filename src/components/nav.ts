@@ -1,30 +1,53 @@
-import { Brain, ClipboardList, Dumbbell, History, Home, TrendingUp, User, type LucideIcon } from "lucide-react";
+import { Brain, Dumbbell, History, Home, ListChecks, TrendingUp, User, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** Other path prefixes that belong to this destination. */
+  also?: string[];
 }
 
 export const HOME: NavItem = { href: "/", label: "Today", icon: Home };
-export const PLANS: NavItem = { href: "/templates", label: "Plans", icon: ClipboardList };
-export const EXERCISES: NavItem = { href: "/exercises", label: "Exercises", icon: Dumbbell };
-export const HISTORY: NavItem = { href: "/history", label: "History", icon: History };
-export const PROGRESS: NavItem = { href: "/progress", label: "Progress", icon: TrendingUp };
-export const COACH: NavItem = { href: "/coach", label: "Coach", icon: Brain };
+export const TRAIN: NavItem = {
+  href: "/templates",
+  label: "Train",
+  icon: Dumbbell,
+  also: ["/programs", "/exercises", "/session"],
+};
+export const EXERCISES: NavItem = { href: "/exercises", label: "Exercises", icon: ListChecks };
+export const PROGRESS: NavItem = { href: "/progress", label: "Progress", icon: TrendingUp, also: ["/history", "/calendar"] };
+export const HISTORY: NavItem = { href: "/history", label: "History", icon: History, also: ["/calendar"] };
+export const COACH: NavItem = { href: "/coach", label: "AI Coach", icon: Brain };
 export const PROFILE: NavItem = { href: "/profile", label: "Profile", icon: User };
 
-/** Bottom tab bar (phones): five destinations, everything else one tap away. */
-export const MOBILE_TABS: NavItem[] = [HOME, PLANS, HISTORY, PROGRESS, PROFILE];
+/** Bottom tab bar (phones): the five top-level destinations. */
+export const MOBILE_TABS: NavItem[] = [HOME, TRAIN, PROGRESS, COACH, PROFILE];
 
+/** Sidebar (tablet/desktop): the same destinations, with their main sub-pages. */
 export function sidebarItems(): NavItem[] {
-  return [HOME, PLANS, EXERCISES, HISTORY, PROGRESS, COACH, PROFILE];
+  return [HOME, TRAIN, EXERCISES, PROGRESS, HISTORY, COACH, PROFILE];
 }
 
-/** Which nav item a path belongs to (calendar lives under History, etc.). */
-export function isActive(item: NavItem, path: string): boolean {
-  if (item.href === "/") return path === "/";
-  if (item.href === "/history") return path.startsWith("/history") || path.startsWith("/calendar");
-  if (item.href === "/templates") return path.startsWith("/templates") || path.startsWith("/programs");
-  return path.startsWith(item.href);
+function matchLength(item: NavItem, path: string): number {
+  if (item.href === "/") return path === "/" ? 1 : 0;
+  const hit = [item.href, ...(item.also ?? [])].filter((p) => path === p || path.startsWith(p + "/"));
+  // The item's own href beats a borrowed prefix of the same length.
+  return Math.max(0, ...hit.map((p) => p.length * 2 + (p === item.href ? 1 : 0)));
+}
+
+/**
+ * href of the item a path belongs to — the most specific match, so only one
+ * item is highlighted. On a tie the narrower item (fewer prefixes) wins.
+ */
+export function activeHref(items: NavItem[], path: string): string | null {
+  let best: NavItem | null = null;
+  let score = 0;
+  for (const it of items) {
+    const m = matchLength(it, path);
+    if (m > score || (m === score && m > 0 && best && (it.also?.length ?? 0) < (best.also?.length ?? 0))) {
+      [best, score] = [it, m];
+    }
+  }
+  return best?.href ?? null;
 }

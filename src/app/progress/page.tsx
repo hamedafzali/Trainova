@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BarChart3, ChevronRight, Dumbbell, Trophy } from "lucide-react";
+import { BarChart3, ChevronRight, History, Trophy } from "lucide-react";
 import { LineChart } from "@/components/LineChart";
 import { Sparkline } from "@/components/Sparkline";
 import { StatSkeleton } from "@/components/Skeleton";
@@ -113,8 +113,8 @@ export default function ProgressPage() {
           <h1 className="page-title">Progress</h1>
           <p className="page-subtitle">How your strength is moving, exercise by exercise.</p>
         </div>
-        <Link href="/exercises" className="btn-ghost px-4 py-2.5">
-          <Dumbbell className="h-4 w-4" aria-hidden /> Exercise library
+        <Link href="/history" className="btn-ghost px-4 py-2.5">
+          <History className="h-4 w-4" aria-hidden /> Workout history
         </Link>
       </header>
 

@@ -25,15 +25,17 @@ const config: Config = {
         accent: themed("--c-accent"), // primary / active
         accentHover: themed("--c-accent-hover"),
         accentPressed: themed("--c-accent-pressed"),
-        accentDim: themed("--c-accent-dim"), // muted slate-blue — rest / secondary
+        accentDim: themed("--c-accent-dim"), // active lime — rest / secondary
         accentFill: themed("--c-accent-fill"), // solid-fill button/chip backgrounds (onAccent text)
         accentFillHover: themed("--c-accent-fill-hover"),
         danger: themed("--c-error"),
+        info: themed("--c-info"), // informational notes, neutral facts
+        accentSoft: themed("--c-accent-soft"),
         ai: themed("--c-ai"), // AI interpretation — kept visually apart from measured data
         muted: themed("--c-text-muted"),
         ink: themed("--c-text-primary"), // primary text
         inkSoft: themed("--c-text-secondary"), // secondary text
-        // Informational state channel — distinct from `accent` (blue, reserved
+        // Informational state channel — distinct from `accent` (lime, reserved
         // for interactive/primary actions). Each hue has exactly one meaning,
         // applied identically wherever that state appears:
         green: themed("--c-success"), // positive momentum — volume trending up, exercise improving
@@ -46,8 +48,8 @@ const config: Config = {
         warningSoft: themed("--c-warning-soft"), // opaque badge fill for text-amber — same reasoning
         goldSoft: themed("--c-gold-soft"), // opaque badge fill for text-gold — same reasoning
         clayDeep: themed("--c-accent-pressed"), // pressed accent (alias, kept for callers)
-        // Signature hero palette — fixed in both themes. "night" is the deep
-        // navy of hero cards; "volt" is the one high-energy highlight, used
+        // Signature hero palette — fixed in both themes. "night" is the
+        // graphite of hero cards; "volt" is the lime highlight, used
         // only on night surfaces (dark text on volt, volt on night: both >10:1).
         night: themed("--c-night"),
         nightSoft: themed("--c-night-soft"),
@@ -94,6 +96,7 @@ const config: Config = {
         hero: ["4.25rem", { lineHeight: "0.95", letterSpacing: "-0.03em", fontWeight: "700" }], // 68px
       },
       borderRadius: {
+        chip: "8px",
         // Semantic aliases over the existing scale (control/card match the
         // xl/2xl already in use — named so intent is explicit going forward).
         control: "12px", // buttons, inputs

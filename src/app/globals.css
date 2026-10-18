@@ -16,138 +16,134 @@
 :root {
   color-scheme: light;
 
-  /* Background layers — base (canvas) < elevated (nav/sticky) < card, each a
-     deliberate step, not an alpha overlay. In light mode the card pops as
-     pure white against an off-white base; in dark mode each layer gets
-     incrementally lighter than the near-black base. */
-  --c-bg-base: 247 247 249; /* #F7F7F9 */
-  --c-bg-elevated: 255 255 255; /* #FFFFFF */
+  /* Graphite/lime design system (docs/DESIGN_SYSTEM.md). Every text pairing
+     below was checked for WCAG AA (≥4.5:1) against base, card and well. */
+  --c-bg-base: 245 246 242; /* #F5F6F2 */
+  --c-bg-elevated: 255 255 255; /* #FFFFFF — nav, sticky headers */
   --c-bg-card: 255 255 255; /* #FFFFFF */
-  --c-bg-well: 240 241 245; /* #F0F1F5 — inputs, steppers, wells */
+  --c-bg-well: 233 237 229; /* #E9EDE5 — inputs, steppers, wells */
 
-  --c-border: 228 229 234; /* #E4E5EA */
+  --c-border: 221 225 216; /* #DDE1D8 */
 
-  --c-text-primary: 20 21 26; /* #14151A */
-  --c-text-secondary: 85 88 106; /* #55586A */
-  --c-text-muted: 100 102 112; /* #646670 — darkened from #8B8E9C, that value read at 2.9-3.3:1 against surfaces, below WCAG AA's 4.5:1 for normal text */
+  --c-text-primary: 32 37 30; /* #20251E */
+  --c-text-secondary: 98 104 95; /* #62685F — 4.8:1 on wells */
+  --c-text-muted: 92 98 89; /* #5C6259 — 5.3:1 on wells */
 
-  --c-accent: 47 95 224; /* #2F5FE0 */
-  --c-accent-hover: 38 80 190; /* #2650BE */
-  --c-accent-pressed: 31 69 160; /* #1F45A0 */
-  --c-accent-dim: 91 107 140; /* #5B6B8C — muted accent fill (rest/secondary state) */
-  --c-accent-fill: 47 95 224; /* same as --c-accent in light: solid-fill buttons/chips already clear 4.5:1 for white text here */
-  --c-accent-fill-hover: 38 80 190; /* same as --c-accent-hover in light, for the same reason */
-  --c-on-accent: 255 255 255;
+  /* Lime is a fill colour; on light surfaces text/icons use the deep green. */
+  --c-accent: 63 115 20; /* #3F7314 — 4.8:1 on wells */
+  --c-accent-hover: 52 96 16; /* #346010 */
+  --c-accent-pressed: 43 80 13; /* #2B500D */
+  --c-accent-dim: 128 216 75; /* #80D84B */
+  --c-accent-fill: 167 243 107; /* #A7F36B */
+  --c-accent-fill-hover: 128 216 75; /* #80D84B */
+  --c-accent-soft: 217 255 184; /* #D9FFB8 */
+  --c-on-accent: 32 37 30; /* dark text on lime: 11.7:1 */
 
-  --c-success: 24 126 75; /* #187E4B — darkened from #1FA160 (3.1:1 against bg, below AA) */
-  --c-ai: 110 79 216; /* #6E4FD8 — AI interpretation, AA on light surfaces */
-  --c-error: 175 57 44; /* #AF392C — darkened from #D64536 (4.1:1 against bg, below AA) */
-  --c-warning: 153 98 8; /* #996208 — darkened from #C77F0A (3.0:1 against bg, below AA) */
-  --c-gold: 143 104 8; /* #8F6808 — darkened from #B3820A (3.2:1 against bg, below AA) */
-  --c-flame: 190 70 20; /* #BE4614 — streak momentum. Calibrated to the same ~0.155 relative luminance as --c-warning/--c-gold so it clears 4.5:1 the same way; hue shifted toward red-orange to read distinctly from amber/gold at a glance */
-  --c-on-status: 255 255 255; /* text on solid green/amber/danger/gold/flame fills — white clears 4.5:1 against these darkened light-mode tones */
+  --c-success: 29 122 68; /* #1D7A44 */
+  --c-info: 31 103 166; /* #1F67A6 */
+  --c-ai: 110 79 216; /* #6E4FD8 */
+  --c-error: 180 47 47; /* #B42F2F */
+  --c-warning: 138 90 0; /* #8A5A00 */
+  --c-gold: 135 100 0; /* #876400 — PRs */
+  --c-flame: 178 64 18; /* #B24012 — streaks */
+  --c-on-status: 255 255 255;
 
-  /* Opaque (not alpha-blended) soft-fill tokens for status text badges (trend
-     pills, .badge-success/.badge-warning). Baked-in solid colors rather than
-     bg-green/[x%] so contrast is guaranteed regardless of what panel the
-     badge sits on — an alpha-blended fill measures differently depending on
-     the backdrop behind it (e.g. inside an accent-tinted hero vs. plain
-     surface), which is exactly what let a trend badge fail AA contrast at
-     3.87:1 even though the raw text-green/white pairing clears 5:1. These
-     pre-mix the status color into white/black at ~5% so the badge always
-     renders the same, verified-AA color no matter what it's placed on. */
-  --c-success-soft: 243 249 246; /* #F3F9F6 — text-green clears 4.77:1 here */
-  --c-warning-soft: 250 247 243; /* #FAF7F3 — text-amber clears 4.79:1 here */
-  --c-gold-soft: 250 246 238; /* #FAF6EE — text-gold clears 4.61:1 here */
+  --c-success-soft: 236 246 239; /* opaque badge fills; status text clears AA on them */
+  --c-warning-soft: 248 242 228;
+  --c-gold-soft: 248 243 226;
 
-  --shadow-card: 0 1px 2px 0 rgb(15 15 20 / 0.04), 0 4px 16px -8px rgb(15 15 20 / 0.08);
-  --shadow-elevated: 0 12px 32px -8px rgb(15 15 20 / 0.18), 0 4px 12px -4px rgb(15 15 20 / 0.08);
+  --shadow-card: 0 1px 2px 0 rgb(32 37 30 / 0.05), 0 4px 16px -8px rgb(32 37 30 / 0.08);
+  --shadow-elevated: 0 12px 32px -8px rgb(32 37 30 / 0.18), 0 4px 12px -4px rgb(32 37 30 / 0.08);
   --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.9);
 
-  /* Signature hero palette — identical in both themes (see tailwind.config.ts). */
-  --c-night: 11 15 31; /* #0B0F1F */
-  --c-night-soft: 22 29 56; /* #161D38 */
-  --c-volt: 205 245 66; /* #CDF542 */
+  /* Hero surface — graphite in both themes, lime highlight. */
+  --c-night: 16 19 16; /* #101310 */
+  --c-night-soft: 36 41 34; /* #242922 */
+  --c-volt: 167 243 107; /* #A7F36B */
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --c-bg-base: 10 10 13; /* #0A0A0D */
-    --c-bg-elevated: 19 19 24; /* #131318 */
-    --c-bg-card: 23 24 29; /* #17181D */
-    --c-bg-well: 30 31 38; /* #1E1F26 */
+    --c-bg-base: 16 19 16; /* #101310 */
+    --c-bg-elevated: 25 29 24; /* #191D18 */
+    --c-bg-card: 25 29 24; /* #191D18 */
+    --c-bg-well: 36 41 34; /* #242922 */
 
-    --c-border: 42 43 51; /* #2A2B33 */
+    --c-border: 51 56 49; /* #333831 */
 
-    --c-text-primary: 245 245 247; /* #F5F5F7 */
-    --c-text-secondary: 168 172 184; /* #A8ACB8 */
-    --c-text-muted: 137 140 151; /* #898C97 — lightened from #6F7380, that value read at 3.5-4.2:1 against surfaces, below WCAG AA's 4.5:1 for normal text */
+    --c-text-primary: 244 246 242; /* #F4F6F2 */
+    --c-text-secondary: 166 173 165; /* #A6ADA5 */
+    --c-text-muted: 142 149 141; /* #8E958D — 4.8:1 on wells */
 
-    --c-accent: 79 127 255; /* #4F7FFF */
-    --c-accent-hover: 102 144 255; /* #6690FF */
-    --c-accent-pressed: 47 90 209; /* #2F5AD1 */
-    --c-accent-dim: 58 74 99; /* #3A4A63 */
-    --c-accent-fill: 66 107 214; /* #426BD6 — darker than --c-accent; solid-fill buttons need white text at >=4.5:1, which #4F7FFF only clears at 3.6:1 */
-    --c-accent-fill-hover: 78 109 194; /* #4E6DC2 — same reasoning for the hover fill */
-    --c-on-accent: 255 255 255;
+    --c-accent: 167 243 107; /* #A7F36B */
+    --c-accent-hover: 128 216 75; /* #80D84B */
+    --c-accent-pressed: 128 216 75;
+    --c-accent-dim: 128 216 75;
+    --c-accent-fill: 167 243 107;
+    --c-accent-fill-hover: 128 216 75;
+    --c-accent-soft: 217 255 184; /* #D9FFB8 */
+    --c-on-accent: 16 19 16; /* 14:1 on lime */
 
-    --c-success: 52 199 123; /* #34C77B */
+    --c-success: 73 199 122; /* #49C77A */
+    --c-info: 112 184 245; /* #70B8F5 */
     --c-ai: 185 160 255; /* #B9A0FF */
-    --c-error: 242 86 75; /* #F2564B */
-    --c-warning: 245 166 35; /* #F5A623 */
-    --c-gold: 255 201 74; /* #FFC94A */
-    --c-flame: 255 138 61; /* #FF8A3D */
-    --c-on-status: 10 10 13; /* text on solid green/amber/danger/gold/flame fills — dark-mode tones are bright, white text fails; near-black clears >9:1 */
+    --c-error: 241 108 108; /* #F16C6C */
+    --c-warning: 242 184 75; /* #F2B84B */
+    --c-gold: 245 208 107; /* #F5D06B */
+    --c-flame: 255 154 87; /* #FF9A57 */
+    --c-on-status: 16 19 16;
 
-    --c-success-soft: 12 19 19; /* #0C1313 — text-green clears 8.6:1 here */
-    --c-warning-soft: 22 18 14; /* #16120E — text-amber clears 9.2:1 here */
-    --c-gold-soft: 24 20 11; /* #18140B — text-gold clears 9.4:1 here */
+    --c-success-soft: 22 36 27;
+    --c-warning-soft: 38 33 21;
+    --c-gold-soft: 38 35 21;
 
     --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.3);
-    --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
+    --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.5), 0 2px 8px -2px rgb(0 0 0 / 0.3);
+    --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --c-bg-base: 10 10 13;
-  --c-bg-elevated: 19 19 24;
-  --c-bg-card: 23 24 29;
-  --c-bg-well: 30 31 38;
+  --c-bg-base: 16 19 16; /* #101310 */
+  --c-bg-elevated: 25 29 24; /* #191D18 */
+  --c-bg-card: 25 29 24; /* #191D18 */
+  --c-bg-well: 36 41 34; /* #242922 */
 
-  --c-border: 42 43 51;
+  --c-border: 51 56 49; /* #333831 */
 
-  --c-text-primary: 245 245 247;
-  --c-text-secondary: 168 172 184;
-  --c-text-muted: 137 140 151;
+  --c-text-primary: 244 246 242; /* #F4F6F2 */
+  --c-text-secondary: 166 173 165; /* #A6ADA5 */
+  --c-text-muted: 142 149 141; /* #8E958D — 4.8:1 on wells */
 
-  --c-accent: 79 127 255;
-  --c-accent-hover: 102 144 255;
-  --c-accent-pressed: 47 90 209;
-  --c-accent-dim: 58 74 99;
-  --c-accent-fill: 66 107 214;
-  --c-accent-fill-hover: 78 109 194;
-  --c-on-accent: 255 255 255;
+  --c-accent: 167 243 107; /* #A7F36B */
+  --c-accent-hover: 128 216 75; /* #80D84B */
+  --c-accent-pressed: 128 216 75;
+  --c-accent-dim: 128 216 75;
+  --c-accent-fill: 167 243 107;
+  --c-accent-fill-hover: 128 216 75;
+  --c-accent-soft: 217 255 184; /* #D9FFB8 */
+  --c-on-accent: 16 19 16; /* 14:1 on lime */
 
-  --c-success: 52 199 123;
+  --c-success: 73 199 122; /* #49C77A */
+  --c-info: 112 184 245; /* #70B8F5 */
   --c-ai: 185 160 255; /* #B9A0FF */
-  --c-error: 242 86 75;
-  --c-warning: 245 166 35;
-  --c-gold: 255 201 74;
-  --c-flame: 255 138 61;
-  --c-on-status: 10 10 13;
+  --c-error: 241 108 108; /* #F16C6C */
+  --c-warning: 242 184 75; /* #F2B84B */
+  --c-gold: 245 208 107; /* #F5D06B */
+  --c-flame: 255 154 87; /* #FF9A57 */
+  --c-on-status: 16 19 16;
 
-  --c-success-soft: 12 19 19;
-  --c-warning-soft: 22 18 14;
-  --c-gold-soft: 24 20 11;
+  --c-success-soft: 22 36 27;
+  --c-warning-soft: 38 33 21;
+  --c-gold-soft: 38 35 21;
 
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.45), 0 2px 8px -2px rgb(0 0 0 / 0.3);
-  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.5), 0 2px 8px -2px rgb(0 0 0 / 0.3);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 
 /* Canvas colour lives on <html> only, so body::before (the aurora) can sit
@@ -161,7 +157,7 @@ body {
   font-family:
     "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  font-feature-settings: "cv11", "ss01"; /* Inter: single-storey a, open digits */
+  font-feature-settings: "cv11", "ss01", "tnum"; /* Inter: single-storey a, open digits, tabular numerals */
 }
 
 /* Atmosphere: a soft accent aurora fixed behind every page. A fixed layer
@@ -183,13 +179,13 @@ body::before {
     box-shadow: var(--shadow-card), var(--card-highlight);
   }
 
-  /* Signature hero surface: deep navy with an accent glow, same in both
+  /* Signature hero surface: graphite with a lime glow, same in both
      themes. Text on it uses white/white-alpha and volt, never theme tokens. */
   .night-card {
     @apply relative isolate overflow-hidden rounded-card bg-night text-white;
     background-image:
-      radial-gradient(28rem 16rem at 100% 0%, rgb(var(--c-accent) / 0.55), transparent 70%),
-      radial-gradient(20rem 14rem at 0% 100%, rgb(var(--c-volt) / 0.10), transparent 70%),
+      radial-gradient(28rem 16rem at 100% 0%, rgb(var(--c-volt) / 0.16), transparent 70%),
+      radial-gradient(20rem 14rem at 0% 100%, rgb(var(--c-volt) / 0.06), transparent 70%),
       linear-gradient(160deg, rgb(var(--c-night-soft)), rgb(var(--c-night)) 60%);
     box-shadow: 0 24px 48px -24px rgb(var(--c-night) / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.08);
   }
@@ -197,10 +193,10 @@ body::before {
     @apply btn bg-volt text-night hover:brightness-105 shadow-[0_10px_30px_-10px_rgb(var(--c-volt)/0.7)];
   }
 
-  /* Display voice: Archivo set wide. Titles, hero numbers, stat readouts. */
+  /* Display voice: Inter, heavy and tight, tabular numerals. Titles, hero numbers, stats. */
   .font-display {
-    font-family: "Archivo Variable", "Inter Variable", -apple-system, Arial, sans-serif;
-    font-stretch: 118%;
+    font-family: "Inter Variable", -apple-system, Arial, sans-serif;
+    letter-spacing: -0.025em;
     font-variant-numeric: tabular-nums;
   }
 
@@ -208,7 +204,7 @@ body::before {
     @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-control px-6 py-3 text-sm font-semibold transition-colors duration-150 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
   }
   .btn-primary {
-    @apply btn bg-accentFill text-onAccent hover:bg-accentFillHover shadow-[0_8px_20px_-10px_rgb(var(--c-accent)/0.8),inset_0_1px_0_rgb(255_255_255/0.18)];
+    @apply btn bg-accentFill text-onAccent hover:bg-accentFillHover shadow-[0_8px_20px_-12px_rgb(var(--c-accent-fill)/0.9),inset_0_1px_0_rgb(255_255_255/0.25)];
   }
   .btn-secondary {
     @apply btn border border-accent/30 bg-accent/[0.06] text-accent hover:bg-accent/[0.14];
