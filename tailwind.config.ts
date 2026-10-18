@@ -54,6 +54,12 @@ const config: Config = {
         night: themed("--c-night"),
         nightSoft: themed("--c-night-soft"),
         volt: themed("--c-volt"),
+        // Muscle-focus donut series — the reference's lime/olive/grey ramp, same in both themes.
+        chart1: "#C3E201",
+        chart2: "#8AA313",
+        chart3: "#818591",
+        chart4: "#E5C63A",
+        chart5: "#4A4F52",
       },
       fontFamily: {
         // Inter for UI text (self-hosted via @fontsource, no network at runtime);
@@ -100,7 +106,7 @@ const config: Config = {
         // Semantic aliases over the existing scale (control/card match the
         // xl/2xl already in use — named so intent is explicit going forward).
         control: "12px", // buttons, inputs
-        card: "20px",
+        card: "16px",
         sheet: "24px", // modals, bottom sheets
       },
       boxShadow: {

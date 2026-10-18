@@ -58,12 +58,14 @@ export default function CoachPage() {
               </div>
             )}
           </section>
-          <CoachNutritionCard
-            hasBodyStats={hasBodyStats}
-            targets={nutritionTargets}
-            mealIdeas={mealIdeas}
-            mealsLoading={mealsLoading}
-          />
+          <div id="nutrition" className="scroll-mt-6">
+            <CoachNutritionCard
+              hasBodyStats={hasBodyStats}
+              targets={nutritionTargets}
+              mealIdeas={mealIdeas}
+              mealsLoading={mealsLoading}
+            />
+          </div>
         </aside>
       </div>
     </main>

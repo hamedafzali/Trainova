@@ -70,35 +70,36 @@ Gap analysis, current → reference:
 - Progress is one list; reference has Overview / Strength / Body / Workouts tabs, a period picker with ‹ ›, a summary strip (workouts, total time, calories, PRs), a muscle-focus donut and a strength chart with an exercise picker and a delta.
 - Tab bar: reference active state is a lime icon + label with no pill; tabs are Home / Plan / Workouts / Progress / Profile, with no AI Coach tab.
 
+Owner decision (2026-10-18): match the reference exactly — tabs, accent, layouts and the calories tile.
+
 Primitives (`src/components/ui/`):
-- [ ] `Tabs` (underline, keyboard + ARIA tablist, URL `?tab=` deep link), `PeriodPicker` (week / month / 3 months + prev/next)
-- [ ] `ProgressRing` (from Home's GoalRing), `Donut` (accessible: legend + values, not colour alone), `StatStrip`, `DayDots`
-- [ ] `SetTable` (logging + read-only modes, 44 px rows, tabular numerals), `QuickAction` tile, `MediaHero`
-- [ ] Tab bar restyle (lime icon + label active state, no pill)
+- [x] `Tabs` (underline, ARIA tablist with arrow keys), `PeriodPicker` (This Week / This Month / Last 3 Months + ‹ ›)
+- [x] `ProgressRing`, `Donut` (legend carries the values, not colour alone), `DayDots`, `QuickAction`
+- [x] `SetTable` (read-only rows), `StrengthChart` (y axis, week labels, latest-value pill), `WorkoutArt` (our own hero art)
+- [x] Tab bar: flat full-width bar, lime icon + label active state, no pill
+- [ ] `?tab=` deep links for the tab sets
 
 Domain modules:
-- [ ] `periodStats` — workouts, total time (startedAt→completedAt), volume, PRs, muscle share of hard sets for any {from, to}, plus the previous-period delta; generalise the analyst period to arbitrary ranges (reused by Progress → Overview)
-- [ ] `estimateDuration(template)` — sets × (work + rest) for the hero card's "45 min"; level from the program blueprint
-- [ ] Exercise favourites (bookmark) — `profile.favoriteExerciseIds`, snapshot-schema validated
-- [ ] Exercise tips — our own short cue per catalogue exercise (`tips?: string[]`)
-- [ ] Inbox for the bell — trainer invites, assignments, AI plan changes (undo); no new server tables
+- [x] `periodStats` — workouts, time (clamped 1–240 min per session), estimated calories, PRs, muscle share of working sets (warm-ups/cardio excluded, "Other" bucket, shares sum to 100), weekly best e1RM
+- [x] `estimateDuration(template)` — sets × (40 s work + rest), rounded to 5 min
+- [x] Exercise favourites (bookmark) — `profile.favoriteExerciseIds`
+- [x] Exercise tips — `tipFor()`: template cue → our own pattern tips → first instruction → muscle-group tip
+- [ ] Inbox for the bell (the bell opens the coach for now)
 
 Screens:
-- [ ] Home: greeting + headline, streak tile, weekly progress card, Today's Workout hero (or Resume when live), quick actions (Workouts, Exercises, Programs, Nutrition), recent workouts; muscle readiness moves to Progress → Body
-- [ ] Exercise detail: tabs; Overview = hero + attributes + today's / last working sets + tips; Muscles = body map primary/secondary; Instructions = steps + movement guide
-- [ ] Live workout: per-exercise `SetTable`, active row opens the existing large steppers (keeps gym usability), Log Set / Add Set footer, rest column from the template
-- [ ] Progress: Overview (summary strip, muscle donut, strength chart + picker, Training analysis card), Strength (per-exercise list), Body (bodyweight + readiness map), Workouts (history + calendar); `/history` and `/calendar` stay as deep links into the tab
-- [ ] Nav restructure (decision pending, see below)
-- [ ] Rendered check at 390 / 820 / 1440 in light and dark against the reference; contrast, 44 px targets, no horizontal scroll
+- [x] Home: logo + bell, greeting + "Ready to forge greatness.", streak tile, weekly progress (X / goal, M–S dots, % ring), Today's Workout hero (Resume when live), quick actions (Workouts, Exercises, Programs, Nutrition), floating coach button
+- [x] Exercise detail: back / title / bookmark / ⋯; Overview / Muscles / Instructions tabs; 3D movement hero, attribute strip, Working Sets table with Edit, Log Set / Add Set, tips card with body figure; records and recent sessions below
+- [x] Progress: Overview (period picker, Workout Summary, Muscle Focus donut, Strength Progress chart + picker + delta), Strength (Training analysis + exercise list), Body (bodyweight + readiness map), Workouts (recent + full history)
+- [x] Nav: Home · Plan (/programs, /calendar) · Workouts (/templates, /session, /history, /exercises) · Progress · Profile; coach reached from Home (bell, floating button) and the desktop sidebar
+- [x] Accent retuned to `#C3E201` (light theme text accent `#546500` for contrast); charts, 3D scene and recap card follow
+- [x] Rendered check at 390 (light + dark) and 1280 against the reference; no horizontal scroll, no page errors
+- [ ] Live workout restyled to the per-set table (deferred: today it inherits the new tokens but keeps the stepper cards)
 
-Deliberate deviations from the reference:
-- **No photos of people.** Third-party human models are ruled out and nothing is bought. Hero visuals are stills from our own sculpted-body movement guide, or abstract equipment art on the lime gradient.
-- **Volume instead of calories.** We don't measure energy use, and lifting calorie estimates are unreliable. An optional labelled estimate (MET × time × bodyweight) can be added later.
-- **Own copy**, not the reference's slogans.
-- **Accent stays `#A7F36B`.** The reference is slightly more yellow; retune only on request.
-
-Open decisions:
-- Tab set: (a) Home · Plan · Coach · Progress · Profile, with history in Progress → Workouts (recommended: keeps the AI coach first-class); (b) the reference exactly, Home · Plan · Workouts · Progress · Profile, with Coach as a Home quick action plus a floating button.
+Where we differ from the reference, and why:
+- **No photos of people.** Third-party human models are ruled out and nothing is bought. Photo areas use our own art: the dumbbell/rack illustration on Home, the 3D movement guide on the exercise screen.
+- **Calories are labelled as an estimate**: 5 MET × bodyweight (75 kg when none is logged, and the card says so) × time trained.
+- **The streak counts weeks**, because that is how Trainova measures it; "7 days" would overstate it.
+- **Own copy** wherever the reference's text isn't a label.
 
 ### M6 — Exercise & Equipment Coach
 - [ ] Context builder (exercise metadata, device, targets, today's sets, history, limitations)

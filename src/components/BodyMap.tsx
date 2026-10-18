@@ -14,6 +14,7 @@ export function BodyMap({
   targets,
   selected,
   onSelect,
+  view = "both",
   className = "",
 }: {
   fillFor: (m: Muscle) => string;
@@ -23,6 +24,8 @@ export function BodyMap({
   targets?: Set<Muscle>;
   selected?: Muscle | null;
   onSelect?: (m: Muscle) => void;
+  /** One figure or both side by side. */
+  view?: "both" | "front" | "back";
   className?: string;
 }) {
   const shape = (s: BodyShape, i: number, dx: number) => {
@@ -46,9 +49,9 @@ export function BodyMap({
   };
 
   return (
-    <svg viewBox={BODY_VIEWBOX} className={className} aria-hidden>
-      <g>{FRONT.map((s, i) => shape(s, i, 0))}</g>
-      <g>{BACK.map((s, i) => shape(s, i, BACK_OFFSET))}</g>
+    <svg viewBox={view === "both" ? BODY_VIEWBOX : `${view === "back" ? BACK_OFFSET : 0} 0 100 200`} className={className} aria-hidden>
+      {view !== "back" && <g>{FRONT.map((s, i) => shape(s, i, 0))}</g>}
+      {view !== "front" && <g>{BACK.map((s, i) => shape(s, i, BACK_OFFSET))}</g>}
     </svg>
   );
 }

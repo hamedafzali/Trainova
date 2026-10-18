@@ -10,16 +10,16 @@ import { add, dist, mid, norm, rad, sub } from "@/motion/vec";
 // meshes, just transforms.
 
 export const PALETTE = {
-  body: "#C3C9DE",
-  face: "#0B0F1F",
-  primary: "#CDF542",
-  secondary: "#7E9A35",
-  frame: "#6874A6",
-  pad: "#3A4475",
-  metal: "#AEB6CE",
-  plate: "#2A3158",
+  body: "#C9CFD8",
+  face: "#0A1119",
+  primary: "#C3E201",
+  secondary: "#8AA313",
+  frame: "#4A5463",
+  pad: "#262E3A",
+  metal: "#AEB6C4",
+  plate: "#1E252F",
   band: "#FF6B57",
-  floor: "#121833",
+  floor: "#141B25",
 };
 
 const v = (p: V3) => new THREE.Vector3(p[0], p[1], p[2]);
@@ -36,7 +36,7 @@ const MAT = {
   metal: std(PALETTE.metal, { metalness: 0.85, roughness: 0.3 }),
   plate: std(PALETTE.plate, { metalness: 0.3, roughness: 0.55 }),
   band: std(PALETTE.band, { roughness: 0.7 }),
-  cable: std("#8A93B8", { metalness: 0.6, roughness: 0.4 }),
+  cable: std("#6B7585", { metalness: 0.6, roughness: 0.4 }),
 };
 
 const GEO = {

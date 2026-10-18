@@ -16,28 +16,28 @@
 :root {
   color-scheme: light;
 
-  /* Graphite/lime design system (docs/DESIGN_SYSTEM.md). Every text pairing
+  /* Navy/lime design system matching the reference screens (docs/DESIGN_SYSTEM.md). Every text pairing
      below was checked for WCAG AA (≥4.5:1) against base, card and well. */
-  --c-bg-base: 245 246 242; /* #F5F6F2 */
+  --c-bg-base: 243 245 248; /* #F3F5F8 */
   --c-bg-elevated: 255 255 255; /* #FFFFFF — nav, sticky headers */
   --c-bg-card: 255 255 255; /* #FFFFFF */
-  --c-bg-well: 233 237 229; /* #E9EDE5 — inputs, steppers, wells */
+  --c-bg-well: 232 236 241; /* #E8ECF1 — inputs, steppers, wells */
 
-  --c-border: 221 225 216; /* #DDE1D8 */
+  --c-border: 219 224 231; /* #DBE0E7 */
 
-  --c-text-primary: 32 37 30; /* #20251E */
-  --c-text-secondary: 98 104 95; /* #62685F — 4.8:1 on wells */
-  --c-text-muted: 92 98 89; /* #5C6259 — 5.3:1 on wells */
+  --c-text-primary: 14 21 30; /* #0E151E */
+  --c-text-secondary: 84 94 107; /* #545E6B — 5.6:1 on wells */
+  --c-text-muted: 88 98 111; /* #58626F — 5.3:1 on wells */
 
   /* Lime is a fill colour; on light surfaces text/icons use the deep green. */
-  --c-accent: 63 115 20; /* #3F7314 — 4.8:1 on wells */
-  --c-accent-hover: 52 96 16; /* #346010 */
-  --c-accent-pressed: 43 80 13; /* #2B500D */
-  --c-accent-dim: 128 216 75; /* #80D84B */
-  --c-accent-fill: 167 243 107; /* #A7F36B */
-  --c-accent-fill-hover: 128 216 75; /* #80D84B */
-  --c-accent-soft: 217 255 184; /* #D9FFB8 */
-  --c-on-accent: 32 37 30; /* dark text on lime: 11.7:1 */
+  --c-accent: 84 101 0; /* #546500 — 6:1 on white */
+  --c-accent-hover: 70 84 0; /* #465400 */
+  --c-accent-pressed: 58 70 0; /* #3A4600 */
+  --c-accent-dim: 176 205 0; /* #B0CD00 */
+  --c-accent-fill: 195 226 1; /* #C3E201 */
+  --c-accent-fill-hover: 176 205 0; /* #B0CD00 */
+  --c-accent-soft: 240 248 196; /* #F0F8C4 */
+  --c-on-accent: 10 17 25; /* dark text on lime: 13:1 */
 
   --c-success: 29 122 68; /* #1D7A44 */
   --c-info: 31 103 166; /* #1F67A6 */
@@ -56,35 +56,35 @@
   --shadow-elevated: 0 12px 32px -8px rgb(32 37 30 / 0.18), 0 4px 12px -4px rgb(32 37 30 / 0.08);
   --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.9);
 
-  /* Hero surface — graphite in both themes, lime highlight. */
-  --c-night: 16 19 16; /* #101310 */
-  --c-night-soft: 36 41 34; /* #242922 */
-  --c-volt: 167 243 107; /* #A7F36B */
+  /* Hero surface — navy card in both themes, lime highlight. */
+  --c-night: 20 27 37; /* #141B25 */
+  --c-night-soft: 30 37 47; /* #1E252F */
+  --c-volt: 195 226 1; /* #C3E201 */
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --c-bg-base: 16 19 16; /* #101310 */
-    --c-bg-elevated: 25 29 24; /* #191D18 */
-    --c-bg-card: 25 29 24; /* #191D18 */
-    --c-bg-well: 36 41 34; /* #242922 */
+    --c-bg-base: 10 17 25; /* #0A1119 — navy-black canvas */
+    --c-bg-elevated: 11 18 26; /* #0B121A — tab bar */
+    --c-bg-card: 20 27 37; /* #141B25 */
+    --c-bg-well: 30 37 47; /* #1E252F — selects, chips, inputs */
 
-    --c-border: 51 56 49; /* #333831 */
+    --c-border: 37 45 57; /* #252D39 */
 
-    --c-text-primary: 244 246 242; /* #F4F6F2 */
-    --c-text-secondary: 166 173 165; /* #A6ADA5 */
-    --c-text-muted: 142 149 141; /* #8E958D — 4.8:1 on wells */
+    --c-text-primary: 245 247 250; /* #F5F7FA */
+    --c-text-secondary: 166 175 186; /* #A6AFBA */
+    --c-text-muted: 143 152 164; /* #8F98A4 — 4.9:1 on wells */
 
-    --c-accent: 167 243 107; /* #A7F36B */
-    --c-accent-hover: 128 216 75; /* #80D84B */
-    --c-accent-pressed: 128 216 75;
-    --c-accent-dim: 128 216 75;
-    --c-accent-fill: 167 243 107;
-    --c-accent-fill-hover: 128 216 75;
-    --c-accent-soft: 217 255 184; /* #D9FFB8 */
-    --c-on-accent: 16 19 16; /* 14:1 on lime */
+    --c-accent: 195 226 1; /* #C3E201 */
+    --c-accent-hover: 176 205 0; /* #B0CD00 */
+    --c-accent-pressed: 160 186 0;
+    --c-accent-dim: 176 205 0;
+    --c-accent-fill: 195 226 1;
+    --c-accent-fill-hover: 176 205 0;
+    --c-accent-soft: 232 245 160; /* #E8F5A0 */
+    --c-on-accent: 10 17 25; /* 13:1 on lime */
 
     --c-success: 73 199 122; /* #49C77A */
     --c-info: 112 184 245; /* #70B8F5 */
@@ -93,40 +93,40 @@
     --c-warning: 242 184 75; /* #F2B84B */
     --c-gold: 245 208 107; /* #F5D06B */
     --c-flame: 255 154 87; /* #FF9A57 */
-    --c-on-status: 16 19 16;
+    --c-on-status: 10 17 25;
 
-    --c-success-soft: 22 36 27;
-    --c-warning-soft: 38 33 21;
-    --c-gold-soft: 38 35 21;
+    --c-success-soft: 19 38 33;
+    --c-warning-soft: 40 35 24;
+    --c-gold-soft: 40 37 24;
 
     --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.5), 0 2px 8px -2px rgb(0 0 0 / 0.3);
-    --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
+    --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.03);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --c-bg-base: 16 19 16; /* #101310 */
-  --c-bg-elevated: 25 29 24; /* #191D18 */
-  --c-bg-card: 25 29 24; /* #191D18 */
-  --c-bg-well: 36 41 34; /* #242922 */
+  --c-bg-base: 10 17 25; /* #0A1119 — navy-black canvas */
+  --c-bg-elevated: 11 18 26; /* #0B121A — tab bar */
+  --c-bg-card: 20 27 37; /* #141B25 */
+  --c-bg-well: 30 37 47; /* #1E252F — selects, chips, inputs */
 
-  --c-border: 51 56 49; /* #333831 */
+  --c-border: 37 45 57; /* #252D39 */
 
-  --c-text-primary: 244 246 242; /* #F4F6F2 */
-  --c-text-secondary: 166 173 165; /* #A6ADA5 */
-  --c-text-muted: 142 149 141; /* #8E958D — 4.8:1 on wells */
+  --c-text-primary: 245 247 250; /* #F5F7FA */
+  --c-text-secondary: 166 175 186; /* #A6AFBA */
+  --c-text-muted: 143 152 164; /* #8F98A4 — 4.9:1 on wells */
 
-  --c-accent: 167 243 107; /* #A7F36B */
-  --c-accent-hover: 128 216 75; /* #80D84B */
-  --c-accent-pressed: 128 216 75;
-  --c-accent-dim: 128 216 75;
-  --c-accent-fill: 167 243 107;
-  --c-accent-fill-hover: 128 216 75;
-  --c-accent-soft: 217 255 184; /* #D9FFB8 */
-  --c-on-accent: 16 19 16; /* 14:1 on lime */
+  --c-accent: 195 226 1; /* #C3E201 */
+  --c-accent-hover: 176 205 0; /* #B0CD00 */
+  --c-accent-pressed: 160 186 0;
+  --c-accent-dim: 176 205 0;
+  --c-accent-fill: 195 226 1;
+  --c-accent-fill-hover: 176 205 0;
+  --c-accent-soft: 232 245 160; /* #E8F5A0 */
+  --c-on-accent: 10 17 25; /* 13:1 on lime */
 
   --c-success: 73 199 122; /* #49C77A */
   --c-info: 112 184 245; /* #70B8F5 */
@@ -135,19 +135,18 @@
   --c-warning: 242 184 75; /* #F2B84B */
   --c-gold: 245 208 107; /* #F5D06B */
   --c-flame: 255 154 87; /* #FF9A57 */
-  --c-on-status: 16 19 16;
+  --c-on-status: 10 17 25;
 
-  --c-success-soft: 22 36 27;
-  --c-warning-soft: 38 33 21;
-  --c-gold-soft: 38 35 21;
+  --c-success-soft: 19 38 33;
+  --c-warning-soft: 40 35 24;
+  --c-gold-soft: 40 37 24;
 
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-elevated: 0 8px 24px -4px rgb(0 0 0 / 0.5), 0 2px 8px -2px rgb(0 0 0 / 0.3);
-  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --card-highlight: inset 0 1px 0 rgb(255 255 255 / 0.03);
 }
 
-/* Canvas colour lives on <html> only, so body::before (the aurora) can sit
-   between it and the page content. */
+/* Flat canvas, as in the reference screens. */
 html {
   background: rgb(var(--c-bg-base));
 }
@@ -160,37 +159,20 @@ body {
   font-feature-settings: "cv11", "ss01", "tnum"; /* Inter: single-storey a, open digits, tabular numerals */
 }
 
-/* Atmosphere: a soft accent aurora fixed behind every page. A fixed layer
-   rather than background-attachment: fixed, which iOS Safari ignores. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(60rem 28rem at 92% -8%, rgb(var(--c-accent) / 0.11), transparent 65%),
-    radial-gradient(40rem 22rem at -10% 4%, rgb(var(--c-accent) / 0.05), transparent 70%);
-}
-
 @layer components {
   .card {
     @apply rounded-card border border-border bg-surface p-6;
     box-shadow: var(--shadow-card), var(--card-highlight);
   }
 
-  /* Signature hero surface: graphite with a lime glow, same in both
-     themes. Text on it uses white/white-alpha and volt, never theme tokens. */
+  /* Hero surface: the navy card in both themes. Text on it uses
+     white/white-alpha and volt, never theme tokens. */
   .night-card {
     @apply relative isolate overflow-hidden rounded-card bg-night text-white;
-    background-image:
-      radial-gradient(28rem 16rem at 100% 0%, rgb(var(--c-volt) / 0.16), transparent 70%),
-      radial-gradient(20rem 14rem at 0% 100%, rgb(var(--c-volt) / 0.06), transparent 70%),
-      linear-gradient(160deg, rgb(var(--c-night-soft)), rgb(var(--c-night)) 60%);
-    box-shadow: 0 24px 48px -24px rgb(var(--c-night) / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.08);
+    box-shadow: 0 16px 32px -20px rgb(var(--c-night) / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.05);
   }
   .btn-volt {
-    @apply btn bg-volt text-night hover:brightness-105 shadow-[0_10px_30px_-10px_rgb(var(--c-volt)/0.7)];
+    @apply btn bg-volt text-night hover:brightness-105;
   }
 
   /* Display voice: Inter, heavy and tight, tabular numerals. Titles, hero numbers, stats. */

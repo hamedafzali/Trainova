@@ -24,6 +24,15 @@ class WebGLBoundary extends Component<{ children: ReactNode }, { failed: boolean
   }
 }
 
+/** The 3D figure alone, full-bleed, for the exercise screen's hero. */
+export function MovementHero({ exercise }: { exercise: Exercise }) {
+  return (
+    <WebGLBoundary>
+      <MotionViewer exercise={exercise} bare />
+    </WebGLBoundary>
+  );
+}
+
 export function MovementGuide({ exercise }: { exercise: Exercise }) {
   return (
     <section className="card space-y-3 p-4 sm:p-6">
@@ -39,7 +48,7 @@ export function MovementGuide({ exercise }: { exercise: Exercise }) {
           <span className="h-2.5 w-2.5 rounded-full bg-volt" aria-hidden /> Main muscle
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#7E9A35]" aria-hidden /> Helpers
+          <span className="h-2.5 w-2.5 rounded-full bg-chart2" aria-hidden /> Helpers
         </span>
       </p>
     </section>

@@ -207,6 +207,8 @@ export interface UserProfile {
   weightKg?: number | null;
   /** Schedule, equipment, limitations and preferences for coaching. */
   coaching?: CoachingProfile;
+  /** Exercises bookmarked on the exercise screen. */
+  favoriteExerciseIds?: string[];
   /** Last local edit (ISO), including a units change; sync keeps the newer copy. */
   updatedAt?: string | null;
 }

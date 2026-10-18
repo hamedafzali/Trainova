@@ -105,6 +105,7 @@ export interface TrainovaState {
   setLibrary: (devices: Device[], exercises: Exercise[]) => void;
   completeOnboarding: (p: Partial<UserProfile>) => void;
   updateProfile: (p: Partial<UserProfile>) => void;
+  toggleFavoriteExercise: (exerciseId: string) => void;
   /** Merges into the coaching profile (validated). */
   updateCoaching: (p: Partial<CoachingProfile>) => void;
   editSet: (
@@ -309,6 +310,13 @@ export const useStore = create<TrainovaState>()(
         set((s) => ({ profile: { ...s.profile, ...p, onboarded: true } })),
 
       updateProfile: (p) => set((s) => ({ profile: { ...s.profile, ...p } })),
+
+      toggleFavoriteExercise: (exerciseId) =>
+        set((s) => {
+          const ids = s.profile.favoriteExerciseIds ?? [];
+          const next = ids.includes(exerciseId) ? ids.filter((x) => x !== exerciseId) : [...ids, exerciseId];
+          return { profile: { ...s.profile, favoriteExerciseIds: next, updatedAt: now() } };
+        }),
 
       updateCoaching: (p) =>
         set((s) => ({ profile: { ...s.profile, coaching: normalizeCoaching({ ...normalizeCoaching(s.profile.coaching), ...p }) } })),

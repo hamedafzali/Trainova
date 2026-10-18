@@ -35,6 +35,8 @@ type Props = {
     Exercise,
     "id" | "name" | "equipment" | "primaryMuscle" | "secondaryMuscles"
   >;
+  /** Hero mode: no rounded frame or control bar, just the figure and a play/pause button. */
+  bare?: boolean;
 };
 
 /** Centre and radius that contain every key pose, for framing the camera. */
@@ -160,7 +162,7 @@ function Scene({
   );
 }
 
-export default function MotionViewer({ exercise }: Props) {
+export default function MotionViewer({ exercise, bare = false }: Props) {
   const spec = useMemo(() => motionSpecFor(exercise), [exercise]);
   const highlight = useMemo(
     () =>
@@ -244,10 +246,10 @@ export default function MotionViewer({ exercise }: Props) {
   return (
     <div
       ref={wrap}
-      className="select-none overflow-hidden rounded-card bg-night"
+      className={`select-none overflow-hidden bg-night ${bare ? "" : "rounded-card"}`}
     >
       <div
-        className="relative aspect-[4/3] w-full cursor-grab touch-pan-y active:cursor-grabbing sm:aspect-[16/10]"
+        className={`relative w-full cursor-grab touch-pan-y active:cursor-grabbing ${bare ? "aspect-[16/10]" : "aspect-[4/3] sm:aspect-[16/10]"}`}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -299,8 +301,23 @@ export default function MotionViewer({ exercise }: Props) {
             {repSeconds.toFixed(1)}s / rep
           </p>
         )}
+        {bare && (
+          <button
+            type="button"
+            onClick={() => {
+              setPlaying((p) => !p);
+              invalidate.current();
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={playing ? "Pause animation" : "Play animation"}
+            className="absolute bottom-3 right-3 grid h-11 w-11 place-items-center rounded-full bg-night/70 text-white backdrop-blur"
+          >
+            {playing ? <Pause className="h-4 w-4" aria-hidden /> : <Play className="h-4 w-4" aria-hidden />}
+          </button>
+        )}
       </div>
 
+      {!bare && (
       <div className="flex items-center justify-between gap-2 border-t border-white/10 p-2">
         <div className="flex gap-1">
           <button
@@ -350,6 +367,7 @@ export default function MotionViewer({ exercise }: Props) {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
