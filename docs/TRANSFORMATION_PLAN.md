@@ -46,7 +46,7 @@ build OK, `pnpm audit --prod` = 54 advisories (3 critical, 20 high).
 - [x] Navigation: Today / Train / Progress / AI Coach / Profile (one active item, sub-pages mapped, tested); History linked from Progress, Exercises from Train
 - [x] Active-workout focus mode (no sidebar or tab bar during a live workout)
 - [~] Rendered review: guest screens (Today, Train, template, Progress, AI Coach, Profile, History, Exercises, live workout) at 390/820/1440 in light + dark, no page errors. Signed-in screens (Privacy, Coaches, consent card) and AI Undo still need a database-backed session
-- [ ] Component primitives refactor (screens already consume tokens; per-component cleanup pending)
+- [x] Component primitives refactor: `ui/Segmented` replaces six hand-rolled radio groups (one tab stop, arrow keys; track / accent / choice / overlay variants), `.icon-btn` replaces the copied ghost icon buttons. Arbitrary font sizes (`text-[15px]` etc.) are left as they are: the semantic type tokens also set line height and weight, so swapping them would shift layouts
 
 ### M4 — Coaching profile
 - [x] Coaching profile (`src/domain/coachingProfile.ts`): days/week, usual days, session length, equipment, limitations, RPE preference, coach notes — normalised on every read, validated server-side in `PUT /api/state`

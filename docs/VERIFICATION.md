@@ -35,7 +35,7 @@ covered by integration tests with the model mocked, and by the eval set.
 |---|---|
 | M1 Security & data protection | done |
 | M2 Domain integrity & sync | done |
-| M3 Design system & core UX | done; per-component primitive cleanup left open |
+| M3 Design system & core UX | done |
 | M4 Coaching profile | done |
 | M5 Training Analyst | done |
 | M5b UI rebuild to the reference design | done; three items deferred (below) |
@@ -44,9 +44,7 @@ covered by integration tests with the model mocked, and by the eval set.
 | M8 Progress, recovery, nutrition | done |
 | M9 Docs, mobile plan, release readiness | done (this report) |
 
-Deferred items:
-
-- **M3:** component primitives refactor. Screens already use the tokens.
+Deferred items: none.
 
 ## Documentation
 

@@ -219,7 +219,7 @@ export default function SessionPage() {
           <Link
             href={isActive ? "/" : "/history"}
             aria-label="Back"
-            className="-ml-2 grid h-11 w-11 shrink-0 place-items-center rounded-control text-inkSoft hover:bg-surface2 hover:text-ink"
+            className="icon-btn -ml-2 text-inkSoft"
           >
             <ChevronLeft className="h-6 w-6" aria-hidden />
           </Link>
@@ -250,7 +250,7 @@ export default function SessionPage() {
               aria-haspopup="menu"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
-              className="grid h-11 w-11 place-items-center rounded-control text-inkSoft hover:bg-surface2 hover:text-ink"
+              className="icon-btn text-inkSoft"
             >
               <MoreVertical className="h-5 w-5" aria-hidden />
             </button>

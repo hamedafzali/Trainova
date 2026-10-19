@@ -76,6 +76,7 @@ reduced-motion rule in `globals.css` turns it off.
 | `.eyebrow`       | Uppercase label row, with an optional icon or dot.                |
 | `.badge-*`       | Status pills: neutral, accent, success, warning, danger, gold, flame. |
 | `.chip`          | Selectable tag (44px tall). Use a `.badge-*` instead for anything that isn't tappable. |
+| `.icon-btn`      | Borderless 44px icon button (back, close, overflow). Add a text or hover colour to tint it. The bordered one is the kit's `IconButton`. |
 
 **Card padding.** On phones, cards stacked in one column share the same
 inner side padding, so their content lines up: `card p-4 sm:p-5`. Keep the
@@ -101,6 +102,13 @@ check-in, for example, readiness shows the band but no score.
 | `CoachCard`     | Violet coach note with a link into the coach.                               |
 | `EmptySlot`     | Dashed placeholder for an empty list, with an optional action.              |
 | `Eyebrow`       | Standalone uppercase label.                                                 |
+
+**Single choice** (`src/components/ui/Segmented.tsx`): use `Segmented` for any
+pick-one control rather than writing a radio group by hand. It has one tab stop
+and moves with the arrow keys. Variants: `track` (neutral, selected raised;
+metric and set type), `accent` (lime pill; periods), `choice` (separate
+pills; settings, onboarding), `overlay` (on the dark 3D viewer). `className`
+replaces the layout, `itemClassName` the item padding.
 
 ## Page templates
 

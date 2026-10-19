@@ -97,7 +97,7 @@ export default function ProgramEditPage() {
               type="button"
               aria-label="Rename program"
               onClick={() => setEditingName(true)}
-              className="grid h-11 w-11 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink"
+              className="icon-btn"
             >
               <Pencil className="h-4 w-4" aria-hidden />
             </button>
@@ -135,7 +135,7 @@ export default function ProgramEditPage() {
                       {names.length ? names.join(" · ") : "No exercises yet — tap to add"}
                     </p>
                   </Link>
-                  <Link href={`/templates/${d.id}`} aria-label={`Edit ${d.name}`} className="hidden h-11 w-11 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink sm:grid">
+                  <Link href={`/templates/${d.id}`} aria-label={`Edit ${d.name}`} className="icon-btn hidden sm:grid">
                     <ChevronRight className="h-5 w-5" aria-hidden />
                   </Link>
                 </div>

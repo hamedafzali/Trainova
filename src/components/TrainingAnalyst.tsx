@@ -18,6 +18,7 @@ import {
   type LiftStatus,
 } from "@/domain/analyst";
 import { Skeleton } from "@/components/Skeleton";
+import { Segmented } from "@/components/ui/Segmented";
 import { AiConsentCard } from "@/components/coach/AiConsentCard";
 
 type AiResult = {
@@ -26,6 +27,8 @@ type AiResult = {
   fallback: "ai_off" | "no_data" | "invalid" | "unavailable" | null;
   dataVersion: number;
 };
+
+const PERIOD_OPTIONS = ANALYST_PERIODS.map((p) => ({ key: String(p), label: `${p} wk` }));
 
 const STATUS: Record<LiftStatus, { label: string; badge: string; Icon: typeof TrendingUp }> = {
   improving: { label: "Improving", badge: "badge-success", Icon: TrendingUp },
@@ -102,22 +105,13 @@ export function TrainingAnalyst() {
             {evidence.period.from} – {evidence.period.to}
           </p>
         </div>
-        <div role="radiogroup" aria-label="Analysis period" className="flex rounded-full border border-border bg-surface2 p-0.5">
-          {ANALYST_PERIODS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              role="radio"
-              aria-checked={weeks === p}
-              onClick={() => setWeeks(p)}
-              className={`min-h-11 rounded-full px-4 text-sm font-semibold tabular-nums transition-colors ${
-                weeks === p ? "bg-accentFill text-onAccent" : "text-inkSoft hover:text-ink"
-              }`}
-            >
-              {p} wk
-            </button>
-          ))}
-        </div>
+        <Segmented
+          variant="accent"
+          label="Analysis period"
+          options={PERIOD_OPTIONS}
+          value={String(weeks)}
+          onChange={(k) => setWeeks(Number(k) as AnalystPeriod)}
+        />
       </div>
 
       {/* Measured: computed on this device from the log. */}

@@ -137,7 +137,7 @@ export default function TemplateEditPage() {
                 type="button"
                 aria-label="Rename plan"
                 onClick={() => setEditingName(true)}
-                className="ml-1 inline-grid h-11 w-11 place-items-center rounded-control align-middle text-muted hover:bg-surface2 hover:text-ink"
+                className="icon-btn ml-1 inline-grid align-middle"
               >
                 <Pencil className="h-4 w-4" aria-hidden />
               </button>
@@ -424,7 +424,7 @@ function IconBtn({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="grid h-11 w-11 place-items-center rounded-control text-muted transition-colors hover:bg-surface2 hover:text-ink disabled:opacity-30"
+      className="icon-btn"
     >
       {children}
     </button>

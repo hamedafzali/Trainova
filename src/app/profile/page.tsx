@@ -22,6 +22,7 @@ import { AccountPrivacy } from "@/components/AccountPrivacy";
 import { Stepper } from "@/components/Stepper";
 import { CardSkeleton } from "@/components/Skeleton";
 import { PageHeader } from "@/components/kit";
+import { Segmented } from "@/components/ui/Segmented";
 import { buildBackup, buildSetsCsv, download } from "@/lib/backup";
 import { localDayKey } from "@/domain/streak";
 import { formatWeight, fromDisplay, toDisplay } from "@/lib/units";
@@ -40,7 +41,8 @@ const LEVELS: { key: NonNullable<UserProfile["experience"]>; label: string }[] =
   { key: "advanced", label: "Advanced" },
 ];
 
-function Segmented<T extends string>({
+/** Settings choices: lime pills. `onClear` lets a tap on the selected one clear it. */
+function Choices<T extends string>({
   label,
   options,
   value,
@@ -58,24 +60,15 @@ function Segmented<T extends string>({
   compact?: boolean;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={compact ? "grid max-w-[22rem] grid-cols-7 gap-1.5" : "flex flex-wrap gap-2"}>
-      {options.map((o) => (
-        <button
-          key={o.key}
-          type="button"
-          role="radio"
-          aria-checked={value === o.key}
-          onClick={() => (onClear && value === o.key ? onClear() : onChange(o.key))}
-          className={`min-h-11 rounded-full border text-sm font-semibold transition-colors ${compact ? "aspect-square" : "px-4 py-2"} ${
-            value === o.key
-              ? "border-accentFill bg-accentFill text-onAccent"
-              : "border-border bg-surface2 text-inkSoft hover:text-ink"
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
+    <Segmented
+      variant="choice"
+      label={label}
+      options={options}
+      value={value}
+      onChange={(k) => (onClear && value === k ? onClear() : onChange(k))}
+      className={compact ? "grid max-w-[22rem] grid-cols-7 gap-1.5" : undefined}
+      itemClassName={compact ? "aspect-square" : undefined}
+    />
   );
 }
 
@@ -167,7 +160,7 @@ function TrainingSetup() {
   return (
     <Section title="Training setup" id="training">
       <Row label="Days per week" hint="How often you can realistically train. Tap again to clear.">
-        <Segmented
+        <Choices
           label="Days per week"
           options={DAY_OPTIONS}
           compact
@@ -198,7 +191,7 @@ function TrainingSetup() {
         </div>
       </Row>
       <Row label="Session length" hint="Plans and AI suggestions are sized to fit.">
-        <Segmented
+        <Choices
           label="Session length"
           options={MINUTES}
           value={coaching.sessionMinutes ? String(coaching.sessionMinutes) : null}
@@ -207,7 +200,7 @@ function TrainingSetup() {
         />
       </Row>
       <Row label="Equipment">
-        <Segmented
+        <Choices
           label="Equipment"
           options={EQUIPMENT_OPTIONS}
           value={coaching.equipment}
@@ -216,7 +209,7 @@ function TrainingSetup() {
         />
       </Row>
       <Row label="Effort rating (RPE)" hint="Choose Never to hide the RPE picker while logging. Progression then uses smaller, safer jumps.">
-        <Segmented
+        <Choices
           label="Effort rating"
           options={RPE_OPTIONS}
           value={coaching.rpe}
@@ -340,10 +333,10 @@ export default function ProfilePage() {
           />
         </Row>
         <Row label="Goal" hint="Shapes program recommendations and coaching.">
-          <Segmented label="Goal" options={GOALS} value={profile.goal} onChange={(goal) => state.updateProfile({ goal })} />
+          <Choices label="Goal" options={GOALS} value={profile.goal} onChange={(goal) => state.updateProfile({ goal })} />
         </Row>
         <Row label="Experience">
-          <Segmented
+          <Choices
             label="Experience"
             options={LEVELS}
             value={profile.experience}
@@ -392,7 +385,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   aria-label={`Delete entry for ${b.date}`}
-                  className="grid h-11 w-11 place-items-center rounded-control text-muted hover:bg-danger/10 hover:text-danger"
+                  className="icon-btn hover:bg-danger/10 hover:text-danger"
                   onClick={() => state.removeBodyweight(b.id)}
                 >
                   <X className="h-4 w-4" aria-hidden />
@@ -405,7 +398,7 @@ export default function ProfilePage() {
 
       <Section title="Preferences">
         <Row label="Weight unit" hint="Everything is stored precisely; switching only changes how weights are shown.">
-          <Segmented<Units>
+          <Choices<Units>
             label="Weight unit"
             options={[
               { key: "kg", label: "Kilograms (kg)" },

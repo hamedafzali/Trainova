@@ -7,6 +7,7 @@ import { CompleteButton } from "@/components/CompleteButton";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { ExerciseCoachSheet } from "@/components/ExerciseCoachSheet";
 import { PlateLoader } from "@/components/PlateLoader";
+import { Segmented } from "@/components/ui/Segmented";
 import { barWeight } from "@/domain/plates";
 import { suggestNextLoad } from "@/domain/progression";
 import { exerciseTypeOf, usesReps, usesWeight } from "@/domain/exerciseType";
@@ -19,6 +20,11 @@ import type { Device, Units, WorkoutSet } from "@/domain/types";
 import { showsRpe } from "@/domain/coachingProfile";
 
 const WARMUP_REST = 60;
+// Short labels so the four fit side by side on a phone.
+const KIND_OPTIONS = SET_KINDS.map((k) => ({
+  key: k.key,
+  label: k.key === "normal" ? "Working" : k.key === "warmup" ? "Warm-up" : k.key === "drop" ? "Drop" : "Failure",
+}));
 
 /** Display value for the weight stepper: exact conversion, 2 decimals. */
 const stepperValue = (kg: number, units: Units) => Math.round(toDisplay(kg, units) * 100) / 100;
@@ -468,22 +474,14 @@ export function SessionExercise({
                   </div>
 
                   {counted && (
-                    <div role="radiogroup" aria-label="Set type" className="grid grid-cols-4 gap-1 rounded-control bg-surface2 p-1">
-                      {SET_KINDS.map((k) => (
-                        <button
-                          key={k.key}
-                          type="button"
-                          role="radio"
-                          aria-checked={kind === k.key}
-                          onClick={() => updateSet(s.id, { kind: k.key === "normal" ? undefined : k.key })}
-                          className={`min-h-10 rounded-md py-2 text-xs font-semibold transition-colors ${
-                            kind === k.key ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-inkSoft"
-                          }`}
-                        >
-                          {k.key === "normal" ? "Working" : k.key === "warmup" ? "Warm-up" : k.key === "drop" ? "Drop" : "Failure"}
-                        </button>
-                      ))}
-                    </div>
+                    <Segmented
+                      label="Set type"
+                      options={KIND_OPTIONS}
+                      value={kind}
+                      onChange={(k) => updateSet(s.id, { kind: k === "normal" ? undefined : k })}
+                      className="grid grid-cols-4 gap-1"
+                      itemClassName="py-2"
+                    />
                   )}
 
                   {type === "duration" && (
