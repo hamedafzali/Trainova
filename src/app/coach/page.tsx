@@ -12,7 +12,7 @@ import { CoachTools } from "@/components/coach/CoachTools";
 
 export default function CoachPage() {
   const hydrated = useHydrated();
-  const { enabled, summary, insights, intro, introLoading, nutritionTargets, hasBodyStats, mealIdeas, mealsLoading } =
+  const { enabled, summary, insights, intro, introLoading, nutrition, mealIdeas, mealsLoading } =
     useCoachData();
 
   if (!hydrated) return <main className="min-h-screen" />;
@@ -58,8 +58,7 @@ export default function CoachPage() {
           </section>
           <div id="nutrition" className="scroll-mt-6">
             <CoachNutritionCard
-              hasBodyStats={hasBodyStats}
-              targets={nutritionTargets}
+              plan={nutrition}
               mealIdeas={mealIdeas}
               mealsLoading={mealsLoading}
             />

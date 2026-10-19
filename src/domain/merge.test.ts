@@ -105,3 +105,18 @@ describe("conflict policy", () => {
     expect(merged.prs.find((p) => p.kind === "max_weight")?.value).toBe(35);
   });
 });
+
+describe("mergeSnapshots: recovery check-ins", () => {
+  it("unions check-ins by id and keeps the newer edit", () => {
+    const local = { checkIns: [{ id: "c1", date: "2026-10-18", sleep: 4, updatedAt: "2026-10-18T09:00:00Z" }] };
+    const remote = {
+      checkIns: [
+        { id: "c1", date: "2026-10-18", sleep: 2, updatedAt: "2026-10-18T07:00:00Z" },
+        { id: "c2", date: "2026-10-17", sleep: 3, updatedAt: "2026-10-17T07:00:00Z" },
+      ],
+    };
+    const merged = mergeSnapshots(local, remote) as { checkIns: { id: string; sleep: number }[] };
+    expect(merged.checkIns.map((c) => c.id).sort()).toEqual(["c1", "c2"]);
+    expect(merged.checkIns.find((c) => c.id === "c1")!.sleep).toBe(4);
+  });
+});

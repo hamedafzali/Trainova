@@ -41,3 +41,23 @@ describe("coaching profile validation", () => {
     expect(issues.map((i) => i.path)).toEqual(["profile.coaching.daysPerWeek", "profile.coaching.coachNotes"]);
   });
 });
+
+describe("validateSnapshot: check-ins and nutrition settings", () => {
+  it("accepts valid check-ins and boolean nutrition flags", () => {
+    expect(
+      validateSnapshot({
+        profile: { nutrition: { optOut: false, pregnancy: true } },
+        checkIns: [{ id: "c1", date: "2026-10-18", sleep: 1, energy: 5, soreness: 3, stress: 2 }],
+      })
+    ).toEqual([]);
+  });
+
+  it("rejects out-of-scale check-ins and non-boolean flags", () => {
+    const paths = validateSnapshot({
+      profile: { nutrition: { medical: "yes" } },
+      checkIns: [{ id: "c1", date: "2026-10-18", sleep: 6, energy: 2.5, soreness: 0, stress: 3 }],
+    }).map((i) => i.path);
+    expect(paths).toEqual(expect.arrayContaining(["checkIns[0].sleep", "checkIns[0].energy", "checkIns[0].soreness"]));
+    expect(paths.some((p) => p.startsWith("profile.nutrition"))).toBe(true);
+  });
+});

@@ -21,6 +21,7 @@ const SYNC_KEYS = [
   "feedback",
   "prs",
   "bodyLog",
+  "checkIns",
   "tombstones",
 ] as const;
 

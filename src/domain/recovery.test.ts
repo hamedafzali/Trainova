@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { hoursUntilReady, muscleReadiness, musclesWorked, readinessOf, sessionMuscleLoad } from "./recovery";
+import {
+  consecutiveTrainingDays,
+  hoursUntilReady,
+  MAP_MUSCLES,
+  muscleReadiness,
+  musclesWorked,
+  readinessEstimate,
+  readinessOf,
+  sessionMuscleLoad,
+} from "./recovery";
 import type { Exercise, WorkoutSession, WorkoutSet } from "./types";
 
 const bench: Exercise = {
@@ -71,4 +80,46 @@ it("readinessOf thresholds", () => {
 it("hoursUntilReady counts down to the worked threshold", () => {
   expect(hoursUntilReady(1)).toBe(0);
   expect(hoursUntilReady(4)).toBe(25);
+});
+
+describe("readinessEstimate", () => {
+  const today = "2026-08-20";
+  const now = new Date("2026-08-20T09:00:00Z");
+  const fresh = new Map(MAP_MUSCLES.map((m) => [m, { muscle: m, load: 0, readiness: "fresh" as const, lastTrained: null }]));
+  const base = { checkIn: null, feedback: [], trainedDates: [], muscles: fresh, today, now };
+
+  it("is a low-confidence estimate without a check-in", () => {
+    const r = readinessEstimate(base);
+    expect(r.confidence).toBe("low");
+    expect(r.band).toBe("ready");
+  });
+
+  it("drops with a poor check-in and lists why", () => {
+    const r = readinessEstimate({ ...base, checkIn: { sleep: 1, energy: 1, soreness: 5, stress: 5 } });
+    expect(r.band).toBe("low");
+    expect(r.confidence).toBe("normal");
+    expect(r.factors.map((f) => f.key)).toEqual(expect.arrayContaining(["sleep", "energy", "soreness", "stress"]));
+  });
+
+  it("counts consecutive training days and a hard last session", () => {
+    expect(consecutiveTrainingDays(["2026-08-17", "2026-08-18", "2026-08-19"], today)).toBe(3);
+    const r = readinessEstimate({
+      ...base,
+      checkIn: { sleep: 3, energy: 3, soreness: 3, stress: 3 },
+      trainedDates: ["2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19"],
+      feedback: [{ difficulty: "hard", energy: 2, pain: null, createdAt: "2026-08-19T18:00:00Z" }],
+    });
+    expect(r.factors.map((f) => f.key)).toEqual(expect.arrayContaining(["streak", "hard_session"]));
+    expect(r.band).not.toBe("ready");
+  });
+
+  it("never says 'train as planned' after reported pain", () => {
+    const r = readinessEstimate({
+      ...base,
+      checkIn: { sleep: 5, energy: 5, soreness: 1, stress: 1 },
+      feedback: [{ difficulty: "right", energy: 4, pain: "left knee", createdAt: "2026-08-18T18:00:00Z" }],
+    });
+    expect(r.painReported).toBe(true);
+    expect(r.band).toBe("moderate");
+  });
 });

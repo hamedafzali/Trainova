@@ -114,8 +114,8 @@ Where we differ from the reference, and why:
 - [x] Admin AI observability view — `/admin/ai` (+ `GET /api/admin/ai-runs?days=1|7|30`): runs, success, fallback and user counts, per-task success/rejections/p50/p95/tokens, per-day chart, models, error codes, prompt versions
 
 ### M8 — Progress, recovery, nutrition
-- [ ] Recovery: feedback + check-ins, labelled estimate
-- [ ] Nutrition: calorie floor, protein/fat floors, carb floor, minors/pregnancy gating, opt-out
+- [x] Recovery: feedback + check-ins, labelled estimate — daily check-in (sleep, energy, soreness, stress, 1–5; one per day, synced as `checkIns`) and `readinessEstimate` in `src/domain/recovery.ts`: training load (muscles still recovering, consecutive training days, hard/low-energy feedback in the last 48 h) blended 40/60 with the check-in. Shown on Progress → Body as an "Estimate" with every factor listed; no score without a check-in (band only, low confidence). Pain noted in the last 7 days caps it at "ease off" and says to get it checked
+- [x] Nutrition: calorie floor, protein/fat floors, carb floor, minors/pregnancy gating, opt-out — `src/domain/nutrition.ts`: Mifflin-St Jeor, deficit ≤ 300 kcal, surplus 250 kcal; calories ≥ max(BMR, 1500 m / 1200 f); protein 1.8 g/kg of reference weight (BMI ≤ 27), ≤ 220 g; fat ≥ max(0.6 g/kg, 20% kcal); carbs ≥ 130 g (fat trimmed first, then calories raised). No targets under 18, while pregnant/breastfeeding, or with a diet-related medical condition / disordered-eating history — the card points to a professional. Opt-out clears sex/age/height. The meals route recomputes targets server-side and takes the stricter of client and synced flags; gated or opted-out users never reach the model
 
 ### M9 — Docs, mobile plan, release readiness
 - [ ] ARCHITECTURE / OPERATIONS (env, migrations, backup+restore, rollback) / AI / DESIGN_SYSTEM / MOBILE
@@ -148,5 +148,11 @@ After M5 (2026-10-18): typecheck, lint, 314/314 tests, build — all pass.
 - **Strict validator.** Any number in the AI reply that isn't a fact (or its whole-number rounding / absolute value) rejects the whole reply and the rule-based reading is shown. Expect some fallbacks with weaker models; fallback rate is tracked per task on `/admin/ai`.
 - **Analysis cache is in-process** (500 entries, keyed by user, data version, period, day). Fine for one instance; move to Redis if the app is scaled out.
 - **Signed-in AI path not rendered locally** (no DB/key in the preview); covered by PGlite integration tests with the model mocked.
+
+After M8 (2026-10-19): typecheck, lint, 408/408 tests, build — all pass. Recovery and nutrition cards checked at 390 px in dark and light.
+
+- **Readiness is rule-based**, not validated against any outcome. It's labelled as an estimate and never blocks training; it isn't fed to the AI coaches yet (follow-up).
+- **Nutrition gates rely on self-report.** Age, pregnancy and medical flags are what the user tells us; the server uses the stricter of client and synced values but can't verify them.
+- **Legacy `/api/checkins` + `daily_checkins`** remain (export only); the new check-ins live in the synced document.
 
 - **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.

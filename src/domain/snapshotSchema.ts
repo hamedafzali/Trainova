@@ -17,6 +17,7 @@ const RECORD_ARRAYS = {
   feedback: 20_000,
   prs: 20_000,
   bodyLog: 20_000,
+  checkIns: 5_000,
   audit: 50_000,
   planChanges: 1_000,
 } as const;
@@ -53,6 +54,18 @@ export function validateSnapshot(data: unknown): SnapshotIssue[] {
       }
     }
   }
+  const profile = isObj(data.profile) ? data.profile : null;
+  if (profile) {
+    // Body stats aren't range-checked here (older copies may hold anything);
+    // nutritionPlan ignores implausible values instead.
+    const n = profile.nutrition;
+    if (n !== undefined && n !== null) {
+      if (!isObj(n)) add("profile.nutrition", "must be an object");
+      else for (const k of ["optOut", "pregnancy", "medical"] as const) {
+        if (n[k] !== undefined && typeof n[k] !== "boolean") add(`profile.nutrition.${k}`, "must be true or false");
+      }
+    }
+  }
   if (data.schema !== undefined && (typeof data.schema !== "number" || !Number.isInteger(data.schema))) {
     add("schema", "must be an integer");
   }
@@ -84,6 +97,11 @@ export function validateSnapshot(data: unknown): SnapshotIssue[] {
         if (!finiteIn(rec.durationMin, 0, 1_440)) add(`sets[${i}].durationMin`, "out of range");
       }
       if (key === "bodyLog" && !finiteIn(rec.weightKg, 20, 400)) add(`bodyLog[${i}].weightKg`, "out of range");
+      if (key === "checkIns") {
+        for (const k of ["sleep", "energy", "soreness", "stress"] as const) {
+          if (!(Number.isInteger(rec[k]) && finiteIn(rec[k], 1, 5))) add(`checkIns[${i}].${k}`, "must be 1–5");
+        }
+      }
     });
   }
 

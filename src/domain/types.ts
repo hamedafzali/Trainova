@@ -5,6 +5,7 @@
 // convert at the UI boundary with src/lib/units.ts.
 
 import type { CoachingProfile } from "./coachingProfile";
+import type { NutritionSettings } from "./nutrition";
 import type { Equipment, ExerciseType, Muscle, SetKind } from "./taxonomy";
 
 export type Units = "kg" | "lb";
@@ -157,6 +158,21 @@ export interface BodyweightEntry {
   weightKg: number;
 }
 
+/** A daily recovery check-in. Scales run 1–5; one entry per day. */
+export interface RecoveryCheckIn {
+  id: string;
+  date: string; // YYYY-MM-DD
+  /** 5 = slept well. */
+  sleep: 1 | 2 | 3 | 4 | 5;
+  /** 5 = full of energy. */
+  energy: 1 | 2 | 3 | 4 | 5;
+  /** 5 = very sore. */
+  soreness: 1 | 2 | 3 | 4 | 5;
+  /** 5 = very stressed. */
+  stress: 1 | 2 | 3 | 4 | 5;
+  updatedAt: string;
+}
+
 /** A deletion marker so synced devices don't resurrect removed records. */
 export interface Tombstone {
   id: string;
@@ -205,6 +221,8 @@ export interface UserProfile {
   ageYears?: number | null;
   heightCm?: number | null;
   weightKg?: number | null;
+  /** Nutrition opt-out and the health flags that stop target calculation. */
+  nutrition?: NutritionSettings;
   /** Schedule, equipment, limitations and preferences for coaching. */
   coaching?: CoachingProfile;
   /** Exercises bookmarked on the exercise screen. */

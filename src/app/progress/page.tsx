@@ -6,6 +6,7 @@ import { BarChart3, CalendarDays, ChevronDown, ChevronRight, Clock, Dumbbell, Fl
 import { LineChart } from "@/components/LineChart";
 import { IconButton, ListCard, ListRow, PageHeader, StatBand } from "@/components/kit";
 import { MuscleReadinessCard } from "@/components/MuscleReadinessCard";
+import { RecoveryCard } from "@/components/RecoveryCard";
 import { Donut, DONUT_COLORS } from "@/components/ui/Donut";
 import { PeriodPicker } from "@/components/ui/PeriodPicker";
 import { StrengthChart } from "@/components/ui/StrengthChart";
@@ -405,6 +406,7 @@ export default function ProgressPage() {
                     <p className="py-4 text-center text-sm text-muted">Log your weight twice to see a trend.</p>
                   )}
                 </section>
+                <RecoveryCard />
                 <MuscleReadinessCard targets={new Set()} />
               </div>
             </TabPanel>

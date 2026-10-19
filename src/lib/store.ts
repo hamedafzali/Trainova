@@ -12,6 +12,7 @@ import type {
   PersonalRecord,
   Program,
   SessionFeedback,
+  RecoveryCheckIn,
   TemplateExercise,
   TemplateSet,
   Tombstone,
@@ -94,6 +95,8 @@ export interface TrainovaState {
   feedback: SessionFeedback[];
   prs: PersonalRecord[];
   bodyLog: BodyweightEntry[];
+  /** Daily recovery check-ins, oldest first. */
+  checkIns: RecoveryCheckIn[];
   /** Deletion markers so sync never resurrects removed records. */
   tombstones: Tombstone[];
 
@@ -171,6 +174,8 @@ export interface TrainovaState {
   setSessionNotes: (sessionId: string, notes: string) => void;
   addBodyweight: (date: string, weightKg: number) => void;
   removeBodyweight: (id: string) => void;
+  /** Record today's (or `date`'s) check-in; re-checking in replaces it. */
+  recordCheckIn: (date: string, values: Pick<RecoveryCheckIn, "sleep" | "energy" | "soreness" | "stress">) => void;
   /** Wipe personal data (sign-out / reset); keeps the shared library. */
   /**
    * Clear personal data. With `forget`, deletions are tombstoned so a synced
@@ -221,6 +226,8 @@ export interface TrainovaState {
 }
 
 const now = () => new Date().toISOString();
+/** About a year of daily check-ins. */
+const MAX_CHECK_INS = 400;
 
 const isWarmup = (x: Pick<WorkoutSet, "kind">) => x.kind === "warmup";
 
@@ -293,6 +300,7 @@ export const useStore = create<TrainovaState>()(
       feedback: [],
       prs: [],
       bodyLog: [],
+      checkIns: [],
       tombstones: [],
 
       enterGuest: () => set({ session: { mode: "guest", email: null } }),
@@ -904,6 +912,17 @@ export const useStore = create<TrainovaState>()(
           tombstones: tomb(s.tombstones, [id]),
         })),
 
+      recordCheckIn: (date, values) =>
+        set((s) => {
+          const existing = s.checkIns.find((c) => c.date === date);
+          const entry: RecoveryCheckIn = { id: existing?.id ?? uid(), date, ...values, updatedAt: now() };
+          return {
+            checkIns: [...s.checkIns.filter((c) => c.date !== date), entry]
+              .sort((a, b) => a.date.localeCompare(b.date))
+              .slice(-MAX_CHECK_INS),
+          };
+        }),
+
       resetUserData: (opts) => {
         clearCoachChat();
         set((s) => ({
@@ -914,6 +933,7 @@ export const useStore = create<TrainovaState>()(
                 ...s.sessions.map((x) => x.id),
                 ...s.sets.map((x) => x.id),
                 ...s.bodyLog.map((x) => x.id),
+                ...s.checkIns.map((x) => x.id),
                 ...s.exercises.filter((e) => e.owner != null).map((x) => x.id),
                 ...s.devices.filter((d) => d.owner != null).map((x) => x.id),
               ])
@@ -930,6 +950,7 @@ export const useStore = create<TrainovaState>()(
           feedback: [],
           prs: [],
           bodyLog: [],
+          checkIns: [],
         }));
       },
 
@@ -955,6 +976,7 @@ export const useStore = create<TrainovaState>()(
           feedback: list<SessionFeedback>(d.feedback),
           prs: list<PersonalRecord>(d.prs),
           bodyLog: list<BodyweightEntry>(d.bodyLog),
+          checkIns: list<RecoveryCheckIn>(d.checkIns),
           tombstones: list<Tombstone>(d.tombstones),
         }));
         return true;
@@ -1249,6 +1271,7 @@ export const useStore = create<TrainovaState>()(
         feedback: s.feedback,
         prs: s.prs,
         bodyLog: s.bodyLog,
+        checkIns: s.checkIns,
         tombstones: s.tombstones,
       }),
     }
@@ -1279,6 +1302,7 @@ function migrateV3(s: Record<string, any>): TrainovaState {
     devices: mergeLibrary(SEED_DEVICES, [], (s.devices ?? []) as Device[]),
     exercises: mergeLibrary(SEED_EXERCISES, [], (s.exercises ?? []) as Exercise[]),
     bodyLog: s.bodyLog ?? [],
+    checkIns: s.checkIns ?? [],
     tombstones: s.tombstones ?? [],
   } as unknown as TrainovaState;
 }

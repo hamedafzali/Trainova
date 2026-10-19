@@ -57,6 +57,7 @@ const ID_KEYS = [
   "planChanges",
   "feedback",
   "bodyLog",
+  "checkIns",
 ] as const;
 
 /** Drop every record whose id has a deletion marker (tombstone). */
@@ -109,6 +110,7 @@ export function mergeSnapshots(local: Snapshot, remote: Snapshot | null): Snapsh
       .slice(0, MAX_PLAN_CHANGES),
     feedback: mergeArr(arr(local.feedback), arr(remote.feedback), byId, newer),
     bodyLog: mergeArr(arr(local.bodyLog), arr(remote.bodyLog), byId, newer),
+    checkIns: mergeArr(arr(local.checkIns), arr(remote.checkIns), byId, newer),
     // Keep the earliest marker per id (dedupe only).
     tombstones: mergeArr(arr(local.tombstones), arr(remote.tombstones), byId, preferLocal),
   });

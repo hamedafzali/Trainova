@@ -14,6 +14,7 @@ import { chatComplete } from "./mistralClient";
 import { performSafetyCheck } from "./safety";
 import { currentRun, notePromptVersion, noteRejected } from "./runMeter";
 import { promptVersion } from "./tasks";
+import { nutritionPlan, type NutritionPlan, type NutritionSettings } from "@/domain/nutrition";
 import {
   createCoachIntroPrompt,
   createMealIdeasPrompt,
@@ -71,6 +72,34 @@ const STATIC_MEAL_IDEAS: Record<string, { meal: string; idea: string }[]> = {
     { meal: "Snack", idea: "Greek yogurt or a piece of fruit with nut butter" },
   ],
 };
+
+/**
+ * Meal-idea input rebuilt on the server from the body stats the client sent,
+ * through the same floors and gates as the app. Targets the client computed
+ * are never trusted. Health flags and the opt-out are honoured from either
+ * the request or the synced profile, whichever is stricter.
+ */
+export function mealIdeasInputFor(
+  data: unknown,
+  synced: NutritionSettings | null | undefined,
+): { ok: true; input: MealIdeasInput } | { ok: false; status: Exclude<NutritionPlan["status"], "ok"> } {
+  const d = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
+  const sent = (d.nutrition && typeof d.nutrition === "object" ? d.nutrition : {}) as NutritionSettings;
+  const settings: NutritionSettings = {
+    optOut: sent.optOut === true || synced?.optOut === true,
+    pregnancy: sent.pregnancy === true || synced?.pregnancy === true,
+    medical: sent.medical === true || synced?.medical === true,
+  };
+  const goals = ["strength", "hypertrophy", "fat_loss", "health"] as const;
+  const goal = goals.find((g) => g === d.goal) ?? null;
+  const plan = nutritionPlan(d, settings, { sessionsPerWeek: Number(d.sessionsPerWeek) || 0, goal });
+  if (plan.status !== "ok") return { ok: false, status: plan.status };
+  const t = plan.targets;
+  return {
+    ok: true,
+    input: { goal, targetCalories: t.targetCalories, proteinG: t.proteinG, fatG: t.fatG, carbG: t.carbG, approach: t.approach },
+  };
+}
 
 export function staticMealIdeas(goal: string | null): MealIdeasResponse {
   return { mealIdeas: STATIC_MEAL_IDEAS[goal ?? "default"] ?? STATIC_MEAL_IDEAS.default };

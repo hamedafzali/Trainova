@@ -1,5 +1,6 @@
 "use client";
 
+import { nutritionPlan, type NutritionPlan } from "@/domain/nutrition";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { apiFetch, isSignedIn } from "@/lib/auth";
@@ -9,7 +10,6 @@ import { displayWeight, toDisplay } from "@/lib/units";
 import {
   buildDeterministicInsights,
   buildTrainingSummary,
-  calcNutritionTargets,
   type CoachInsight,
   type NutritionTargets,
   type TrainingSummary,
@@ -146,23 +146,14 @@ export function useCoachData() {
 
   const insights = useMemo(() => buildDeterministicInsights(summary), [summary]);
 
-  const nutritionInput =
-    profile.sex && profile.ageYears && profile.heightCm && profile.weightKg
-      ? {
-          sex: profile.sex,
-          ageYears: profile.ageYears,
-          heightCm: profile.heightCm,
-          weightKg: profile.weightKg,
-          sessionsPerWeek: summary.sessionsLast30d / 4.3,
-          goal: profile.goal,
-        }
-      : null;
-
-  const nutritionTargets: NutritionTargets | null = useMemo(
-    () => (nutritionInput ? calcNutritionTargets(nutritionInput) : null),
+  const sessionsPerWeek = summary.sessionsLast30d / 4.3;
+  const body = { sex: profile.sex, ageYears: profile.ageYears, heightCm: profile.heightCm, weightKg: profile.weightKg };
+  const nutrition: NutritionPlan = useMemo(
+    () => nutritionPlan(body, profile.nutrition, { sessionsPerWeek, goal: profile.goal }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nutritionInput?.sex, nutritionInput?.ageYears, nutritionInput?.heightCm, nutritionInput?.weightKg, nutritionInput?.sessionsPerWeek, nutritionInput?.goal]
+    [body.sex, body.ageYears, body.heightCm, body.weightKg, profile.nutrition?.optOut, profile.nutrition?.pregnancy, profile.nutrition?.medical, sessionsPerWeek, profile.goal]
   );
+  const nutritionTargets: NutritionTargets | null = nutrition.status === "ok" ? nutrition.targets : null;
 
   const introHash = useMemo(
     () => stableHash({ goal: profile.goal, experience: profile.experience, kinds: insights.map((i) => i.kind).sort() }),
@@ -222,14 +213,8 @@ export function useCoachData() {
     setMealsLoading(true);
     postCoach<MealIdeasResponse>(
       "meals",
-      {
-        goal: profile.goal,
-        targetCalories: nutritionTargets.targetCalories,
-        proteinG: nutritionTargets.proteinG,
-        fatG: nutritionTargets.fatG,
-        carbG: nutritionTargets.carbG,
-        approach: nutritionTargets.approach,
-      },
+      // Body stats, not targets: the server recomputes them through the same floors and gates.
+      { goal: profile.goal, ...body, sessionsPerWeek, nutrition: profile.nutrition ?? {} },
       mealsHash
     ).then((res) => {
       if (cancelled) return;
@@ -250,8 +235,7 @@ export function useCoachData() {
     insights,
     intro,
     introLoading,
-    nutritionTargets,
-    hasBodyStats: !!nutritionInput,
+    nutrition,
     mealIdeas,
     mealsLoading,
   };
