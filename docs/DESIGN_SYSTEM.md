@@ -138,4 +138,9 @@ How the tabs use it:
   specific to that page.
 
 The live workout screen (`/session/[id]`) is full-screen and has its own
-header. It doesn't use the tab template.
+header. It doesn't use the tab template. Each exercise card is a per-set
+table (SET · PREVIOUS · value columns). The active set has a lime border and
+expands in place to show the steppers. Tap a logged row to fix it.
+
+The inbox (`/inbox`) is one `.card` list. Each row has a tone tile: accent for
+something to do, amber for a warning, green for a win, surface2 for info.

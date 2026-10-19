@@ -47,10 +47,6 @@ covered by integration tests with the model mocked, and by the eval set.
 Deferred items:
 
 - **M3:** component primitives refactor. Screens already use the tokens.
-- **M5b `?tab=` links:** deep links into the tab sets.
-- **M5b bell inbox:** the bell opens the coach for now.
-- **M5b live workout:** the per-set table layout. The live workout uses the
-  new tokens but keeps the stepper cards.
 
 ## Documentation
 
