@@ -6,6 +6,7 @@ import { CalendarDays, ChevronRight, Clock, Dumbbell, TrendingUp, Trophy } from 
 import { useHydrated, useStore } from "@/lib/store";
 import { VolumeHeatmap } from "@/components/VolumeHeatmap";
 import { ListSkeleton } from "@/components/Skeleton";
+import { IconButton, PageHeader } from "@/components/kit";
 import { EmptyState } from "@/components/EmptyState";
 import { totalVolume } from "@/domain/volume";
 import { formatVolume } from "@/lib/units";
@@ -70,15 +71,11 @@ export default function HistoryPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="page-title">History</h1>
-          <p className="page-subtitle">Every workout you&apos;ve logged.</p>
-        </div>
-        <Link href="/calendar" className="btn-ghost px-4 py-2.5">
-          <CalendarDays className="h-4 w-4" aria-hidden /> Calendar
-        </Link>
-      </header>
+      <PageHeader
+        title="History"
+        subtitle="Every workout you've logged."
+        actions={<IconButton href="/calendar" icon={CalendarDays} label="Calendar" />}
+      />
 
       {!hydrated ? (
         <ListSkeleton />

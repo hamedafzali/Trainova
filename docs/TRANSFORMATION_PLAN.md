@@ -94,6 +94,7 @@ Screens:
 - [x] Accent retuned to `#C3E201` (light theme text accent `#546500` for contrast); charts, 3D scene and recap card follow
 - [x] Rendered check at 390 (light + dark) and 1280 against the reference; no horizontal scroll, no page errors
 - [ ] Live workout restyled to the per-set table (deferred: today it inherits the new tokens but keeps the stepper cards)
+- [x] Home redesigned from the AIDesigner ultradesign run (373a5132); its palette and building blocks extracted into `src/components/kit.tsx` + `docs/DESIGN_SYSTEM.md` and applied to Plan, Workouts, Progress, Profile, History, Calendar, Exercises and Coach (390 px light + dark checked, no page errors)
 
 Where we differ from the reference, and why:
 - **No photos of people.** Third-party human models are ruled out and nothing is bought. Photo areas use our own art: the dumbbell/rack illustration on Home, the 3D movement guide on the exercise screen.

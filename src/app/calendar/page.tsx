@@ -7,6 +7,7 @@ import { startOfWeek, weekDays, weekStreak } from "@/domain/streak";
 import { useMemo, useState } from "react";
 import { useHydrated, useStore } from "@/lib/store";
 import { CalendarSkeleton } from "@/components/Skeleton";
+import { PageHeader } from "@/components/kit";
 
 const DOW = ["M", "T", "W", "T", "F", "S", "S"];
 const MONTHS = [
@@ -83,10 +84,7 @@ export default function CalendarPage() {
 
   return (
     <main className="mx-auto max-w-2xl space-y-6">
-      <header>
-        <h1 className="page-title">Calendar</h1>
-        <p className="page-subtitle">Every day you trained. Pick a past day to log a workout you forgot.</p>
-      </header>
+      <PageHeader title="Calendar" subtitle="Every day you trained. Pick a past day to log a workout you forgot." />
 
       {!hydrated ? (
         <CalendarSkeleton />

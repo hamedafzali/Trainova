@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ChevronRight, ClipboardList, History, ListChecks, Plus, Sparkles } from "lucide-react";
+import { ClipboardList, Dumbbell, History, ListChecks, Play, Plus } from "lucide-react";
+import { CoachCard, EmptySlot, HeroCard, IconButton, ListCard, ListRow, PageHeader, SectionHeader } from "@/components/kit";
 import { useHydrated, useStore } from "@/lib/store";
 import { ListSkeleton } from "@/components/Skeleton";
 import { ProgramList, WorkoutRows } from "@/components/plan/PlanSections";
@@ -41,23 +42,17 @@ export default function WorkoutsPage() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-8 pb-20 md:pb-0">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="page-title">Workouts</h1>
-          <p className="page-subtitle">Start a workout from your program or one of your own.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/exercises" className="btn-ghost px-4 py-2.5 text-sm">
-            <ListChecks className="h-4 w-4" aria-hidden /> Exercises
-          </Link>
-          <Link href="/history" className="btn-ghost px-4 py-2.5 text-sm">
-            <History className="h-4 w-4" aria-hidden /> History
-          </Link>
-          <button className="btn-secondary px-4 py-2.5 text-sm" onClick={() => setCreating(!creating)}>
-            <Plus className="h-4 w-4" aria-hidden /> Workout
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title="Workouts"
+        subtitle="Start a workout from your program or one of your own."
+        actions={
+          <>
+            <IconButton href="/exercises" icon={ListChecks} label="Exercises" />
+            <IconButton href="/history" icon={History} label="History" />
+            <IconButton icon={Plus} label="New workout" onClick={() => setCreating(!creating)} pressed={creating} />
+          </>
+        }
+      />
 
       {creating && (
         <form
@@ -91,63 +86,57 @@ export default function WorkoutsPage() {
       )}
 
       {active && (
-        <Link
-          href={`/session/${active.id}`}
-          className="card flex items-center gap-4 border-accent/30 bg-accent/[0.06] p-4 transition-colors hover:bg-accent/[0.1] sm:p-5"
+        <HeroCard
+          title={active.title}
+          watermark={Dumbbell}
+          eyebrow={
+            <>
+              <span className="h-2 w-2 rounded-full bg-volt motion-safe:animate-pulse" aria-hidden /> In progress
+            </>
+          }
         >
-          <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-accent" aria-hidden />
-          <div className="min-w-0 flex-1">
-            <p className="section-label text-accent">In progress</p>
-            <p className="truncate font-semibold text-ink">{active.title}</p>
-          </div>
-          <span className="btn-primary px-4 py-2 text-sm">Resume</span>
-        </Link>
+          <p className="mb-6 text-sm text-white/60">Pick up where you left off.</p>
+          <Link href={`/session/${active.id}`} className="btn-volt-glow">
+            <Play className="h-[18px] w-[18px] fill-current" aria-hidden /> Resume workout
+          </Link>
+        </HeroCard>
       )}
 
       {programs.length > 0 && (
         <section className="space-y-3" aria-labelledby="from-programs">
-          <h2 id="from-programs" className="text-h2 text-ink">
-            From your programs
-          </h2>
+          <SectionHeader id="from-programs" title="From your programs" />
           <ProgramList />
         </section>
       )}
 
-      <section className="space-y-3" aria-labelledby="single-workouts">
-        <h2 id="single-workouts" className="text-h2 text-ink">
-          Single workouts
-        </h2>
+      <section aria-labelledby="single-workouts">
+        <SectionHeader id="single-workouts" title="Single workouts" />
         {standalone.length === 0 ? (
-          <button
-            type="button"
-            onClick={() => setCreating(true)}
-            className="flex w-full items-center justify-center gap-1.5 rounded-card border border-dashed border-border py-5 text-sm font-semibold text-accent hover:bg-accent/[0.05]"
+          <EmptySlot
+            action={
+              <button type="button" onClick={() => setCreating(true)} className="btn-secondary px-4 py-2.5 text-sm">
+                <Plus className="h-4 w-4" aria-hidden /> Create a workout
+              </button>
+            }
           >
-            <Plus className="h-4 w-4" aria-hidden /> Create a workout
-          </button>
+            Workouts outside a program live here.
+          </EmptySlot>
         ) : (
-          <div className="overflow-hidden rounded-card border border-border bg-surface">
+          <div className="card overflow-hidden p-0">
             <WorkoutRows templates={standalone} />
           </div>
         )}
-        <Link
-          href={`/coach?ask=${encodeURIComponent("Build me a workout for today")}`}
-          className="-ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-control px-2 text-sm font-semibold text-accent hover:underline"
-        >
-          <Sparkles className="h-4 w-4" aria-hidden /> Ask your coach to build one
-        </Link>
       </section>
 
-      <Link href="/programs" className="card flex items-center gap-4 p-4 transition-colors hover:bg-surface2/60 sm:p-5">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent/15 text-accent">
-          <ClipboardList className="h-5 w-5" aria-hidden />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-ink">Browse programs</span>
-          <span className="block text-sm text-muted">Ready-made programs in your Plan tab.</span>
-        </span>
-        <ChevronRight className="h-4 w-4 text-muted" aria-hidden />
-      </Link>
+      <CoachCard
+        text="Tell your coach how long you have and what equipment is free, and it builds today's workout."
+        href={`/coach?ask=${encodeURIComponent("Build me a workout for today")}`}
+        cta="Build me a workout"
+      />
+
+      <ListCard>
+        <ListRow href="/programs" icon={ClipboardList} tone="accent" title="Browse programs" meta="Ready-made programs in your Plan tab." />
+      </ListCard>
     </main>
   );
 }

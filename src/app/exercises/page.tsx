@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { ExerciseBrowser } from "@/components/ExerciseBrowser";
 import { ListSkeleton } from "@/components/Skeleton";
+import { PageHeader } from "@/components/kit";
 import { useHydrated } from "@/lib/store";
 
 export default function ExercisesPage() {
@@ -10,10 +11,7 @@ export default function ExercisesPage() {
   const router = useRouter();
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-6">
-      <header>
-        <h1 className="page-title">Exercises</h1>
-        <p className="page-subtitle">Every movement in your library, with how-tos and your history.</p>
-      </header>
+      <PageHeader title="Exercises" subtitle="Every movement in your library, with how-tos and your history." />
       {hydrated ? (
         <ExerciseBrowser
           hrefFor={(id) => `/exercises/${id}`}

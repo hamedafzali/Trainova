@@ -107,7 +107,7 @@ export function ProgramList() {
       {programs.map((p) => {
         const days = daysForProgram(p.id);
         return (
-          <div key={p.id} className="overflow-hidden rounded-card border border-border bg-surface">
+          <div key={p.id} className="card overflow-hidden p-0">
             <Link
               href={`/programs/${p.id}`}
               className="flex items-center gap-3 border-b border-border px-4 py-3.5 transition-colors hover:bg-surface2/60 sm:px-5"
@@ -145,8 +145,8 @@ export function ProgramLibrary() {
   const installed = new Set(programs.map((p) => p.blueprintId).filter(Boolean));
   return (
     <section className="space-y-3" aria-labelledby="program-library">
-      <div>
-        <h2 id="program-library" className="text-h2 text-ink">
+      <div className="px-1">
+        <h2 id="program-library" className="text-lg font-semibold tracking-tight text-ink">
           Program library
         </h2>
         <p className="text-sm text-muted">Evidence-based programs with sets, reps and rest already set up. Edit anything after adding.</p>
@@ -155,7 +155,7 @@ export function ProgramLibrary() {
         {PROGRAM_BLUEPRINTS.map((bp) => {
           const has = installed.has(bp.id);
           return (
-            <li key={bp.id} className="card flex flex-col gap-3 p-4 sm:p-5">
+            <li key={bp.id} className="card flex flex-col gap-3 p-5">
               <div>
                 <p className="font-semibold text-ink">{bp.name}</p>
                 <p className="mt-1 text-sm text-inkSoft">{bp.summary}</p>

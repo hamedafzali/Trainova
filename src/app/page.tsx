@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { Bell, Check, ChevronRight, Dumbbell, Flame, MessageSquareText, Play, Plus, Sparkles } from "lucide-react";
+import { Bell, Check, Dumbbell, Flame, Play, Plus } from "lucide-react";
+import { CoachCard, HeroCard, IconButton, ListCard, ListRow, SectionHeader, StatBand, type Stat } from "@/components/kit";
 import { Onboarding } from "@/components/Onboarding";
 import { Welcome } from "@/components/Welcome";
 import { recommendToday } from "@/domain/adaptive";
@@ -123,24 +124,15 @@ export default function HomePage() {
             {firstName ? `, ${firstName}` : ""}
           </h1>
         </div>
-        <Link
-          href="/coach"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-control border border-border bg-surface text-inkSoft transition-colors hover:text-ink active:scale-95"
-          aria-label="Coach updates"
-        >
-          <Bell className="h-5 w-5" aria-hidden />
-        </Link>
+        <IconButton href="/coach" icon={Bell} label="Coach updates" />
       </header>
 
       {/* Today's workout */}
-      <section className="hero-card rise group" aria-labelledby="todays-workout">
-        <Dumbbell
-          className="pointer-events-none absolute -right-6 -top-4 -z-10 h-36 w-36 -rotate-12 text-white/[0.03]"
-          strokeWidth={1.5}
-          aria-hidden
-        />
-        <p className="eyebrow mb-3 text-white/60">
-          {active ? (
+      <HeroCard
+        titleId="todays-workout"
+        watermark={Dumbbell}
+        eyebrow={
+          active ? (
             <>
               <span className="h-2 w-2 rounded-full bg-volt motion-safe:animate-pulse" aria-hidden /> In progress
             </>
@@ -148,13 +140,12 @@ export default function HomePage() {
             <>
               <Dumbbell className="h-3.5 w-3.5" aria-hidden /> {stats.trained.has(todayKey) ? "Up next" : "Today's plan"}
             </>
-          )}
-        </p>
+          )
+        }
+        title={active ? active.title : next ? next.name : "Pick a plan to get started"}
+      >
         {active ? (
           <>
-            <h2 id="todays-workout" className="font-display mb-2 text-[2rem] font-bold leading-tight text-white">
-              {active.title}
-            </h2>
             <p className="mb-6 text-sm text-white/60">
               {activeSets.length > 0 ? `${activeDone} of ${activeSets.length} sets done` : "Started"}
             </p>
@@ -164,9 +155,6 @@ export default function HomePage() {
           </>
         ) : next ? (
           <>
-            <h2 id="todays-workout" className="font-display mb-2 text-[2rem] font-bold leading-tight text-white">
-              {next.name}
-            </h2>
             <div className="mb-6 space-y-1.5 text-sm text-white/60">
               <p>
                 {next.exercises.length} exercise{next.exercises.length === 1 ? "" : "s"} · {estimateDuration(next)} min
@@ -180,9 +168,6 @@ export default function HomePage() {
           </>
         ) : (
           <>
-            <h2 id="todays-workout" className="font-display mb-2 text-[1.75rem] font-bold leading-tight text-white">
-              Pick a plan to get started
-            </h2>
             <p className="mb-6 text-sm text-white/60">Choose a ready-made program or start an empty workout.</p>
             <div className="flex gap-2">
               <Link href="/programs" className="btn-volt-glow flex-1">
@@ -194,110 +179,72 @@ export default function HomePage() {
             </div>
           </>
         )}
-      </section>
+      </HeroCard>
 
       <WeekStrip days={week} trained={stats.weekDone} today={todayKey} />
 
       {/* Key stats */}
-      <section
-        className="card rise grid grid-cols-[1.2fr_1fr_1fr] divide-x divide-border p-0 [animation-delay:0.2s]"
-        aria-label="Key stats"
-      >
-        <VolumeStat volume={stats.volume} units={units} />
-        <div className="flex flex-col justify-between p-4">
-          <div>
-            <h3 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">Streak</h3>
-            <p className="flex items-baseline gap-1">
-              <span className="font-display text-2xl font-bold text-ink">{stats.streak}</span>
-              <span className="text-xs text-muted">{stats.streak === 1 ? "week" : "weeks"}</span>
-            </p>
-          </div>
-          <p className={`mt-3 flex items-center gap-1 text-[10px] font-medium ${stats.streak > 0 ? "text-flame" : "text-muted"}`}>
-            <Flame className="h-3 w-3 shrink-0 fill-current" aria-hidden />
-            {stats.streak > 0 ? "Keep it going" : "Train this week"}
-          </p>
-        </div>
-        <div className="flex min-w-0 flex-col justify-between p-4">
-          <div className="min-w-0">
-            <h3 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">Recent PR</h3>
-            {latestPr ? (
-              <>
-                <p className="mb-1 truncate text-[11px] leading-tight text-inkSoft">
-                  {exerciseById.get(latestPr.exerciseId)?.name ?? "Exercise"}
-                </p>
-                <p className="flex items-baseline gap-1">
-                  <span className="font-display text-2xl font-bold text-ink">
-                    {latestPr.kind === "max_reps" ? latestPr.value : formatWeight(latestPr.value, units, false)}
-                  </span>
-                  <span className="text-xs text-muted">{latestPr.kind === "max_reps" ? "reps" : units}</span>
-                </p>
-              </>
-            ) : (
-              <p className="font-display text-2xl font-bold text-muted">—</p>
-            )}
-          </div>
-          <p className="mt-3 text-[10px] text-muted">
-            {latestPr
-              ? new Date(latestPr.achievedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-              : "Log a set"}
-          </p>
-        </div>
-      </section>
+      <StatBand
+        label="Key stats"
+        columns="1.2fr 1fr 1fr"
+        className="rise [animation-delay:0.2s]"
+        stats={[
+          volumeStat(stats.volume, units),
+          {
+            label: "Streak",
+            value: stats.streak,
+            unit: stats.streak === 1 ? "week" : "weeks",
+            foot: (
+              <span className="flex items-center gap-1">
+                <Flame className="h-3 w-3 shrink-0 fill-current" aria-hidden />
+                {stats.streak > 0 ? "Keep it going" : "Train this week"}
+              </span>
+            ),
+            footClass: stats.streak > 0 ? "text-flame" : "text-muted",
+          },
+          latestPr
+            ? {
+                label: "Recent PR",
+                value: latestPr.kind === "max_reps" ? latestPr.value : formatWeight(latestPr.value, units, false),
+                unit: latestPr.kind === "max_reps" ? "reps" : units,
+                kicker: exerciseById.get(latestPr.exerciseId)?.name ?? "Exercise",
+                foot: new Date(latestPr.achievedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+              }
+            : { label: "Recent PR", value: <span className="text-muted">—</span>, foot: "Log a set" },
+        ]}
+      />
 
-      {/* Coach */}
-      <section className="ai-card rise [animation-delay:0.3s]" aria-labelledby="coach-tip">
-        <Sparkles className="pointer-events-none absolute -bottom-4 -right-4 -z-10 h-24 w-24 text-ai/10" aria-hidden />
-        <p id="coach-tip" className="eyebrow mb-3 text-ai">
-          <Sparkles className="h-3.5 w-3.5 fill-current" aria-hidden /> Coach
-        </p>
-        <p className="mb-5 max-w-[90%] text-[15px] font-medium leading-snug text-ink">
-          {rec?.reason ?? "Add a program and your coach will plan each session and adapt it to how you train."}
-        </p>
-        <Link
-          href="/coach"
-          className="group flex min-h-11 w-full items-center justify-between border-t border-ai/20 pt-3 text-ai transition-colors hover:text-ink"
-        >
-          <span className="flex items-center gap-2 text-sm font-medium">
-            <MessageSquareText className="h-[18px] w-[18px]" aria-hidden /> Ask coach
-          </span>
-          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
-        </Link>
-      </section>
+      <CoachCard
+        className="[animation-delay:0.3s]"
+        text={rec?.reason ?? "Add a program and your coach will plan each session and adapt it to how you train."}
+      />
 
       {/* Recent workouts */}
       {stats.recent.length > 0 && (
         <section className="rise [animation-delay:0.4s]" aria-labelledby="recent-workouts">
-          <div className="mb-4 flex items-center justify-between px-1">
-            <h2 id="recent-workouts" className="text-lg font-semibold tracking-tight text-ink">
-              Recent workouts
-            </h2>
-            <Link href="/history" className="text-sm font-medium text-accent">
-              View all
-            </Link>
-          </div>
-          <ul className="card divide-y divide-border p-0">
+          <SectionHeader id="recent-workouts" title="Recent workouts" action={{ label: "View all", href: "/history" }} />
+          <ListCard>
             {stats.recent.map((s) => (
-              <li key={s.id}>
-                <Link href="/history" className="group flex items-center gap-4 p-4 transition-colors active:bg-surface2">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-surface2 text-inkSoft transition-colors group-hover:text-ink">
-                    <Dumbbell className="h-5 w-5" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[15px] font-semibold text-ink">{s.title}</span>
-                    <span className="mt-0.5 block truncate text-xs text-muted">
-                      {shortDate(s.date)}
-                      {s.exerciseCount > 0 && ` · ${s.exerciseCount} exercise${s.exerciseCount === 1 ? "" : "s"}`}
-                      {s.minutes > 0 && ` · ${s.minutes} min`}
-                    </span>
-                  </span>
+              <ListRow
+                key={s.id}
+                href="/history"
+                icon={Dumbbell}
+                title={s.title}
+                meta={
+                  <>
+                    {shortDate(s.date)}
+                    {s.exerciseCount > 0 && ` · ${s.exerciseCount} exercise${s.exerciseCount === 1 ? "" : "s"}`}
+                    {s.minutes > 0 && ` · ${s.minutes} min`}
+                  </>
+                }
+                trailing={
                   <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-accent/30 bg-accent/10 text-accent">
                     <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
                   </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                </Link>
-              </li>
+                }
+              />
             ))}
-          </ul>
+          </ListCard>
         </section>
       )}
     </main>
@@ -348,19 +295,17 @@ function WeekStrip({ days, trained, today }: { days: string[]; trained: Set<stri
 }
 
 /** This week's working-set volume, a six-week sparkline, and the change against last week. */
-function VolumeStat({ volume, units }: { volume: number[]; units: Units }) {
+function volumeStat(volume: number[], units: Units): Stat {
   const now = volume[volume.length - 1];
   const prev = volume[volume.length - 2];
   const max = Math.max(...volume, 1);
   const change = prev > 0 ? Math.round(((now - prev) / prev) * 100) : null;
-  return (
-    <div className="p-4 pl-5">
-      <h3 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted">Weekly volume</h3>
-      <p className="mb-2 flex items-baseline gap-1">
-        <span className="font-display text-2xl font-bold text-ink">{fmt(toDisplay(now, units))}</span>
-        <span className="text-xs text-muted">{units}</span>
-      </p>
-      <div className="mb-2 flex h-6 w-full items-end gap-1" aria-hidden>
+  return {
+    label: "Weekly volume",
+    value: fmt(toDisplay(now, units)),
+    unit: units,
+    extra: (
+      <div className="mt-2 flex h-6 w-full items-end gap-1" aria-hidden>
         {volume.map((v, i) => (
           <span
             key={i}
@@ -369,9 +314,8 @@ function VolumeStat({ volume, units }: { volume: number[]; units: Units }) {
           />
         ))}
       </div>
-      <p className={`text-[10px] font-medium ${change == null ? "text-muted" : change >= 0 ? "text-accent" : "text-amber"}`}>
-        {change == null ? "First week tracked" : `${change >= 0 ? "+" : ""}${change}% vs last week`}
-      </p>
-    </div>
-  );
+    ),
+    foot: change == null ? "First week tracked" : `${change >= 0 ? "+" : ""}${change}% vs last week`,
+    footClass: change == null ? "text-muted" : change >= 0 ? "text-accent" : "text-amber",
+  };
 }

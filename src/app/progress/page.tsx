@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BarChart3, CalendarDays, ChevronDown, ChevronRight, Clock, Dumbbell, Flame, Trophy } from "lucide-react";
 import { LineChart } from "@/components/LineChart";
+import { IconButton, ListCard, ListRow, PageHeader, StatBand } from "@/components/kit";
 import { MuscleReadinessCard } from "@/components/MuscleReadinessCard";
 import { Donut, DONUT_COLORS } from "@/components/ui/Donut";
 import { PeriodPicker } from "@/components/ui/PeriodPicker";
@@ -158,16 +159,13 @@ export default function ProgressPage() {
 
   return (
     <main className="mx-auto max-w-3xl">
-      <header className="relative flex items-center justify-center pb-2">
-        <h1 className="text-[20px] font-medium text-ink">Progress</h1>
-        <Link
-          href="/calendar"
-          className="absolute -right-2 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full text-ink hover:bg-surface"
-          aria-label="Calendar"
-        >
-          <CalendarDays className="h-6 w-6" strokeWidth={1.7} aria-hidden />
-        </Link>
-      </header>
+      <div className="mb-4">
+        <PageHeader
+          title="Progress"
+          subtitle="What you've done and how you're getting stronger."
+          actions={<IconButton href="/calendar" icon={CalendarDays} label="Calendar" />}
+        />
+      </div>
 
       <Tabs tabs={TABS} value={tab} onChange={setTab} label="Progress sections" idPrefix="pr" />
 
@@ -193,29 +191,27 @@ export default function ProgressPage() {
                   onOffset={setOffset}
                 />
 
-                <section className="card p-4" aria-labelledby="summary-title">
-                  <h2 id="summary-title" className="text-[16px] text-ink">
-                    Workout Summary
-                  </h2>
-                  <dl className="mt-4 grid grid-cols-4 divide-x divide-border">
-                    <SummaryTile icon={Dumbbell} value={String(summary.workouts)} label="Workouts" rotate />
-                    <SummaryTile icon={Clock} value={formatMinutes(summary.minutes)} label="Total Time" />
-                    <SummaryTile
-                      icon={Flame}
-                      value={summary.calories.toLocaleString()}
-                      label="Calories"
-                      title={`Estimated: about 5 MET × ${summary.bodyweightAssumed ? "75 kg (no bodyweight logged)" : "your bodyweight"} × time trained`}
-                      estimate
-                    />
-                    <SummaryTile icon={Trophy} value={String(summary.prs)} label="PRs" />
-                  </dl>
-                  <p className="mt-3 text-[11px] text-muted">
-                    *Estimated from time trained{summary.bodyweightAssumed ? " and a 75 kg default — log your weight for a closer figure" : " and your bodyweight"}.
-                  </p>
-                </section>
+                <StatBand
+                  label="Workout summary"
+                  columns="1.3fr 1fr 1fr 0.8fr"
+                  className="rise"
+                  stats={[
+                    { label: "Workouts", value: summary.workouts },
+                    { label: "Time", value: formatMinutes(summary.minutes) },
+                    {
+                      label: "Kcal*",
+                      value: summary.calories.toLocaleString(),
+                      title: `Estimated: about 5 MET × ${summary.bodyweightAssumed ? "75 kg (no bodyweight logged)" : "your bodyweight"} × time trained`,
+                    },
+                    { label: "PRs", value: summary.prs, footClass: "text-gold", foot: summary.prs > 0 ? "New records" : undefined },
+                  ]}
+                />
+                <p className="px-1 text-[11px] text-muted">
+                  *Estimated from time trained{summary.bodyweightAssumed ? " and a 75 kg default — log your weight for a closer figure" : " and your bodyweight"}.
+                </p>
 
                 <section className="card p-4" aria-labelledby="focus-title">
-                  <h2 id="focus-title" className="text-[16px] text-ink">
+                  <h2 id="focus-title" className="text-[17px] font-semibold tracking-tight text-ink">
                     Muscle Focus
                   </h2>
                   {summary.muscles.length === 0 ? (
@@ -238,7 +234,7 @@ export default function ProgressPage() {
 
                 <section className="card p-4" aria-labelledby="strength-title">
                   <div className="flex items-center justify-between">
-                    <h2 id="strength-title" className="text-[16px] text-ink">
+                    <h2 id="strength-title" className="text-[17px] font-semibold tracking-tight text-ink">
                       Strength Progress
                     </h2>
                     <button type="button" onClick={() => setTab("strength")} className="-mr-2 min-h-11 px-2 text-[15px] text-accent">
@@ -398,7 +394,7 @@ export default function ProgressPage() {
               <div className="mt-4 space-y-4">
                 <section className="card space-y-3 p-4 sm:p-6">
                   <div className="flex items-baseline justify-between">
-                    <h2 className="text-[16px] text-ink">Bodyweight</h2>
+                    <h2 className="text-[17px] font-semibold tracking-tight text-ink">Bodyweight</h2>
                     <Link href="/profile#bodyweight" className="text-sm text-accent">
                       Log weight
                     </Link>
@@ -420,25 +416,20 @@ export default function ProgressPage() {
                 {recentWorkouts.length === 0 ? (
                   <p className="card p-6 text-center text-sm text-muted">Your finished workouts will show up here.</p>
                 ) : (
-                  <ul className="divide-y divide-border overflow-hidden rounded-card bg-surface">
+                  <ListCard>
                     {recentWorkouts.map((w) => {
                       const n = sets.filter((x) => x.sessionId === w.id && x.completed).length;
                       return (
-                        <li key={w.id}>
-                          <Link href={`/session/${w.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface2/60">
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-ink">{w.title}</p>
-                              <p className="text-xs text-muted">
-                                {new Date(w.startedAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
-                                {` · ${n} sets`}
-                              </p>
-                            </div>
-                            <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
-                          </Link>
-                        </li>
+                        <ListRow
+                          key={w.id}
+                          href={`/session/${w.id}`}
+                          icon={Dumbbell}
+                          title={w.title}
+                          meta={`${new Date(w.startedAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · ${n} sets`}
+                        />
                       );
                     })}
-                  </ul>
+                  </ListCard>
                 )}
                 <Link href="/history" className="btn-secondary w-full">
                   Full history
@@ -449,36 +440,5 @@ export default function ProgressPage() {
         </>
       )}
     </main>
-  );
-}
-
-function SummaryTile({
-  icon: Icon,
-  value,
-  label,
-  title,
-  estimate,
-  rotate,
-}: {
-  icon: typeof Clock;
-  value: string;
-  label: string;
-  title?: string;
-  estimate?: boolean;
-  rotate?: boolean;
-}) {
-  return (
-    <div className="flex min-w-0 flex-col items-center gap-1 px-1 text-center" title={title}>
-      <Icon className={`h-7 w-7 text-ink ${rotate ? "rotate-45" : ""}`} strokeWidth={1.5} aria-hidden />
-      <dd className="mt-1.5 truncate text-[18px] font-medium tabular-nums text-ink">
-        {estimate && <span className="sr-only">about </span>}
-        {value}
-      </dd>
-      <dt className="truncate text-[13px] text-inkSoft">
-        {label}
-        {estimate && <span className="sr-only"> (estimated)</span>}
-        {estimate && <span aria-hidden>*</span>}
-      </dt>
-    </div>
   );
 }

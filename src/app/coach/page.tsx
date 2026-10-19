@@ -5,6 +5,7 @@ import { useCoachData } from "@/lib/useCoachData";
 import { CoachInsightCard } from "@/components/CoachInsightCard";
 import { CoachNutritionCard } from "@/components/CoachNutritionCard";
 import { Skeleton } from "@/components/Skeleton";
+import { PageHeader } from "@/components/kit";
 import { TrainerChat } from "@/components/coach/TrainerChat";
 import { StatusReview } from "@/components/coach/StatusReview";
 import { CoachTools } from "@/components/coach/CoachTools";
@@ -20,10 +21,7 @@ export default function CoachPage() {
 
   return (
     <main className="mx-auto max-w-6xl space-y-6">
-      <header>
-        <h1 className="page-title">AI Coach</h1>
-        <p className="page-subtitle">Where you stand against your plan, and a coach you can ask.</p>
-      </header>
+      <PageHeader title="AI Coach" subtitle="Where you stand against your plan, and a coach you can ask." />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="space-y-4">

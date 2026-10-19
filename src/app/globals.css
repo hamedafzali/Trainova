@@ -287,8 +287,9 @@ body {
   .page-subtitle {
     @apply text-body-sm text-muted mt-1;
   }
+  /* Same voice as .eyebrow: small, semibold, widely tracked. */
   .section-label {
-    @apply text-caption uppercase tracking-[0.12em] text-muted;
+    @apply text-xs font-semibold uppercase tracking-wider text-muted;
   }
 }
 

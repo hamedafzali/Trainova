@@ -21,6 +21,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { AccountPrivacy } from "@/components/AccountPrivacy";
 import { Stepper } from "@/components/Stepper";
 import { CardSkeleton } from "@/components/Skeleton";
+import { PageHeader } from "@/components/kit";
 import { buildBackup, buildSetsCsv, download } from "@/lib/backup";
 import { localDayKey } from "@/domain/streak";
 import { formatWeight, fromDisplay, toDisplay } from "@/lib/units";
@@ -94,7 +95,7 @@ function Section({ title, id, children }: { title: string; id?: string; children
   return (
     <section id={id} className="scroll-mt-20 space-y-2">
       <h2 className="section-label px-1">{title}</h2>
-      <div className="divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">{children}</div>
+      <div className="card divide-y divide-border overflow-hidden p-0">{children}</div>
     </section>
   );
 }
@@ -307,10 +308,19 @@ export default function ProfilePage() {
 
   return (
     <main className="mx-auto max-w-2xl space-y-8 pb-12">
-      <header>
-        <h1 className="page-title">Profile</h1>
-        <p className="page-subtitle">Your details, preferences and data.</p>
-      </header>
+      <PageHeader title="Profile" subtitle="Your details, preferences and data." />
+
+      <section className="hero-card rise flex items-center gap-4" aria-label="You">
+        <span className="font-display grid h-14 w-14 shrink-0 place-items-center rounded-full bg-volt text-xl font-bold text-night" aria-hidden>
+          {(profile.displayName?.trim()[0] ?? "T").toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <p className="font-display truncate text-xl font-bold text-white">{profile.displayName?.trim() || "Athlete"}</p>
+          <p className="text-sm text-white/60">
+            {completed} workout{completed === 1 ? "" : "s"} logged
+          </p>
+        </div>
+      </section>
 
       <Section title="About you">
         <Row label="Name">
