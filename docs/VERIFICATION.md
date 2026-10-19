@@ -19,7 +19,8 @@ Run locally on Node 25. CI runs the same checks on Node 22.
 **CI.** GitHub Actions had failed on every run since CI was added, before any
 of the checks above ran. On Node 20, undici 8 (pulled in by jsdom 30) throws
 `webidl.util.markAsUncloneable is not a function`. The workflow now uses
-Node 22. Confirm the first run after pushing is green.
+Node 22, and the first run on it (`3826d29`) passed. A second job builds the
+production image and checks that it boots and serves `/`.
 
 **Rendered checks.** UI changes were reviewed in Playwright screenshots at
 390 px, in dark and light, during the redesign milestones and again for the
@@ -70,11 +71,9 @@ These are ordered by how much they matter before or soon after release.
 2. **Guest data on iOS.** Safari may evict `localStorage` for sites left
    unused for weeks, unless the app is on the Home Screen. Guests without an
    account can lose their log. Phase 1 of `docs/MOBILE.md` addresses this.
-3. **Node 20 Docker image.** `Dockerfile` and `docker-compose.dev.yml` use
-   `node:20-alpine`, and Node 20 is past end of life. Production runs fine on
-   it, since only the test tooling needs 22. Move to `node:22-alpine` in a
-   separate deploy and watch the first boot. This wasn't tested locally
-   because the Docker daemon wasn't running.
+3. **First deploy on Node 22.** The image moved from `node:20-alpine` (past
+   end of life) to `node:22-alpine`. CI builds and boots it, but only without
+   a database. Watch the first ACM boot for the `[db]` migration line.
 4. **Client-built trainer context.** Trainer chat and review still take a
    context the client builds. It is parsed, size-capped and validated, but
    not rebuilt from the synced document as the analyst and exercise coach
