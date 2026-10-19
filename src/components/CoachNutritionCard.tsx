@@ -76,7 +76,7 @@ function BodyStatsForm({ invalid, onDone }: { invalid: string[]; onDone?: () => 
   const canSave = fields.every((f) => f.value !== "" && !bad(f));
 
   return (
-    <div className="card space-y-4">
+    <div className="card space-y-4 p-4 sm:p-5">
       <div>
         <h3 className="text-h3 text-ink">Nutrition guidance</h3>
         <p className="mt-1 text-body-sm text-inkSoft">
@@ -190,7 +190,7 @@ export function CoachNutritionCard({
 
   if (plan.status === "off") {
     return (
-      <div className="card space-y-3" data-testid="nutrition-off">
+      <div className="card space-y-3 p-4 sm:p-5" data-testid="nutrition-off">
         <h3 className="text-h3 text-ink">Nutrition guidance is off</h3>
         <p className="text-body-sm text-inkSoft">No calorie targets or meal ideas are shown, and no body details are kept for it.</p>
         <button type="button" className="btn-secondary w-full" onClick={() => setFlags({ optOut: false })}>
@@ -207,7 +207,7 @@ export function CoachNutritionCard({
   if (plan.status === "gated") {
     const text = GATE_TEXT[plan.reason];
     return (
-      <div className="card space-y-3" data-testid="nutrition-gated">
+      <div className="card space-y-3 p-4 sm:p-5" data-testid="nutrition-gated">
         <h3 className="text-h3 text-ink">{text.title}</h3>
         <p className="text-body-sm text-inkSoft">{text.body}</p>
         <p className="text-body-sm text-inkSoft">Everything else in Trainova works as usual.</p>
@@ -232,7 +232,7 @@ export function CoachNutritionCard({
   ];
 
   return (
-    <div className="card space-y-4">
+    <div className="card space-y-4 p-4 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-h3 text-ink">Nutrition guidance</h3>

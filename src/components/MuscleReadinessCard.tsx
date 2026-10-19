@@ -60,7 +60,7 @@ export function MuscleReadinessCard({ targets, workoutName }: { targets: Set<Mus
   const sel = selected ? state.get(selected) : null;
 
   return (
-    <section className="card p-5 sm:p-6" aria-labelledby="readiness">
+    <section className="card p-4 sm:p-5" aria-labelledby="readiness">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="section-label">Recovery</p>
