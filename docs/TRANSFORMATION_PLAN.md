@@ -46,7 +46,7 @@ build OK, `pnpm audit --prod` = 54 advisories (3 critical, 20 high).
 - [x] Navigation: Today / Train / Progress / AI Coach / Profile (one active item, sub-pages mapped, tested); History linked from Progress, Exercises from Train
 - [x] Active-workout focus mode (no sidebar or tab bar during a live workout)
 - [~] Rendered review: guest screens (Today, Train, template, Progress, AI Coach, Profile, History, Exercises, live workout) at 390/820/1440 in light + dark, no page errors. Signed-in screens (Privacy, Coaches, consent card) and AI Undo still need a database-backed session
-- [ ] Component primitives refactor (screens already consume tokens; per-component cleanup pending)
+- [x] Component primitives refactor: `ui/Segmented` replaces six hand-rolled radio groups (one tab stop, arrow keys; track / accent / choice / overlay variants), `.icon-btn` replaces the copied ghost icon buttons. Arbitrary font sizes (`text-[15px]` etc.) are left as they are: the semantic type tokens also set line height and weight, so swapping them would shift layouts
 
 ### M4 — Coaching profile
 - [x] Coaching profile (`src/domain/coachingProfile.ts`): days/week, usual days, session length, equipment, limitations, RPE preference, coach notes — normalised on every read, validated server-side in `PUT /api/state`
@@ -97,7 +97,7 @@ Screens:
 - [x] Home redesigned from the AIDesigner ultradesign run (373a5132); its palette and building blocks extracted into `src/components/kit.tsx` + `docs/DESIGN_SYSTEM.md` and applied to Plan, Workouts, Progress, Profile, History, Calendar, Exercises and Coach (390 px light + dark checked, no page errors)
 
 Where we differ from the reference, and why:
-- **No photos of people.** Third-party human models are ruled out and nothing is bought. Photo areas use our own art: the dumbbell/rack illustration on Home, the 3D movement guide on the exercise screen.
+- **Photos.** Owner decision (2026-10-19): Home's Today's Workout card uses a workout photo the owner supplied (`public/images/home-hero-*`). Its source and licence are recorded in `docs/CREDITS.md`. The exercise screen keeps the 3D movement guide, not photos, so a photo of a different variation can't teach the wrong form.
 - **Calories are labelled as an estimate**: 5 MET × bodyweight (75 kg when none is logged, and the card says so) × time trained.
 - **The streak counts weeks**, because that is how Trainova measures it; "7 days" would overstate it.
 - **Own copy** wherever the reference's text isn't a label.

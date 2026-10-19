@@ -5,6 +5,7 @@ import { Pause, Play } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { Segmented } from "@/components/ui/Segmented";
 import type { Muscle } from "@/domain/taxonomy";
 import type { Exercise } from "@/domain/types";
 import { motionSpecFor, resolveMotion } from "@/motion/catalog";
@@ -344,28 +345,13 @@ export default function MotionViewer({ exercise, bare = false }: Props) {
             {speed === 1 ? "1×" : "½×"}
           </button>
         </div>
-        <div
-          role="radiogroup"
-          aria-label="Camera angle"
-          className="flex gap-1 rounded-full bg-white/5 p-1"
-        >
-          {VIEWS.map((v) => (
-            <button
-              key={v.key}
-              type="button"
-              role="radio"
-              aria-checked={view === v.key}
-              onClick={() => setYaw(v.yaw ?? angleYaw, v.key)}
-              className={`h-11 min-w-11 rounded-full px-3 text-xs font-semibold transition-colors ${
-                view === v.key
-                  ? "bg-white/15 text-white"
-                  : "text-white/70 hover:text-white"
-              }`}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          variant="overlay"
+          label="Camera angle"
+          options={VIEWS}
+          value={view}
+          onChange={(k) => setYaw(VIEWS.find((v) => v.key === k)?.yaw ?? angleYaw, k)}
+        />
       </div>
       )}
     </div>

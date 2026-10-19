@@ -132,7 +132,7 @@ export default function HomePage() {
       {/* Today's workout */}
       <HeroCard
         titleId="todays-workout"
-        watermark={Dumbbell}
+        photo="/images/home-hero"
         eyebrow={
           active ? (
             <>

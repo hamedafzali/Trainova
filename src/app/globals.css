@@ -243,6 +243,12 @@ body {
     @apply btn bg-danger/[0.08] text-danger hover:bg-danger/[0.14];
   }
 
+  /* Borderless square icon button (back, close, overflow menus). The bordered
+     one on page headers is the kit's IconButton. */
+  .icon-btn {
+    @apply grid h-11 w-11 shrink-0 place-items-center rounded-control text-muted transition-colors hover:bg-surface2 hover:text-ink disabled:opacity-30;
+  }
+
   .input {
     @apply w-full rounded-control border border-border bg-surface2 px-4 py-3 text-base text-ink outline-none placeholder:text-muted focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-colors;
   }

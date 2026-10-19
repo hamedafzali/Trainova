@@ -41,7 +41,7 @@ export function ExercisePicker({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="grid h-11 w-11 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink"
+            className="icon-btn"
           >
             <X className="h-5 w-5" aria-hidden />
           </button>

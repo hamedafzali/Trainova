@@ -18,6 +18,7 @@ import {
   Trophy,
   type LucideIcon,
 } from "lucide-react";
+import { Segmented } from "@/components/ui/Segmented";
 import { useStore } from "@/lib/store";
 import { PROGRAM_BLUEPRINTS, recommendBlueprint, type ProgramBlueprint, type ProgramSetting } from "@/data/programs";
 import { label } from "@/domain/taxonomy";
@@ -44,6 +45,10 @@ const SETTINGS: Option<ProgramSetting>[] = [
   { key: "bodyweight", label: "No equipment", blurb: "Bodyweight anywhere", icon: PersonStanding },
 ];
 const DAYS = [2, 3, 4, 5];
+const UNIT_OPTIONS: { key: Units; label: string }[] = [
+  { key: "kg", label: "Kilograms (kg)" },
+  { key: "lb", label: "Pounds (lb)" },
+];
 const STEPS = ["Goal", "Experience", "Schedule", "Equipment", "Program"] as const;
 
 /** Guided setup: a few questions, then a matching program is installed. */
@@ -79,7 +84,7 @@ export function Onboarding() {
           type="button"
           aria-label="Back"
           onClick={() => setStep((s) => Math.max(0, s - 1))}
-          className={`grid h-11 w-11 place-items-center rounded-control text-muted hover:bg-surface2 hover:text-ink ${step === 0 ? "invisible" : ""}`}
+          className={`icon-btn ${step === 0 ? "invisible" : ""}`}
         >
           <ArrowLeft className="h-5 w-5" aria-hidden />
         </button>
@@ -137,22 +142,14 @@ export function Onboarding() {
             </div>
             <div className="space-y-2">
               <p className="text-sm font-semibold text-ink">Weight unit</p>
-              <div role="radiogroup" aria-label="Weight unit" className="grid grid-cols-2 gap-2">
-                {(["kg", "lb"] as Units[]).map((u) => (
-                  <button
-                    key={u}
-                    type="button"
-                    role="radio"
-                    aria-checked={units === u}
-                    onClick={() => setUnits(u)}
-                    className={`rounded-control border py-2.5 text-sm font-semibold transition-colors ${
-                      units === u ? "border-accentFill bg-accentFill text-onAccent" : "border-border bg-surface text-inkSoft"
-                    }`}
-                  >
-                    {u === "kg" ? "Kilograms (kg)" : "Pounds (lb)"}
-                  </button>
-                ))}
-              </div>
+              <Segmented
+                variant="choice"
+                label="Weight unit"
+                options={UNIT_OPTIONS}
+                value={units}
+                onChange={setUnits}
+                className="grid grid-cols-2 gap-2"
+              />
             </div>
           </>
         )}

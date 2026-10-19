@@ -84,6 +84,7 @@ export function HeroCard({
   title,
   titleId,
   watermark: W,
+  photo,
   children,
   className = "",
 }: {
@@ -91,20 +92,41 @@ export function HeroCard({
   title: ReactNode;
   titleId?: string;
   watermark?: Icon;
+  /** A photo on the right, faded into the card. Base path of `-720` / `-1200` AVIF + WebP files; replaces the watermark. */
+  photo?: string;
   children?: ReactNode;
   className?: string;
 }) {
   return (
     <section className={`hero-card rise ${className}`} aria-labelledby={titleId}>
-      {W && (
-        <W className="pointer-events-none absolute -right-6 -top-4 -z-10 h-36 w-36 -rotate-12 text-white/[0.03]" strokeWidth={1.5} aria-hidden />
+      {photo ? (
+        <HeroPhoto base={photo} />
+      ) : (
+        W && <W className="pointer-events-none absolute -right-6 -top-4 -z-10 h-36 w-36 -rotate-12 text-white/[0.03]" strokeWidth={1.5} aria-hidden />
       )}
       {eyebrow && <div className="eyebrow mb-3 text-white/60">{eyebrow}</div>}
-      <h2 id={titleId} className="font-display mb-2 text-[2rem] font-bold leading-tight text-white">
+      <h2 id={titleId} className={`font-display mb-2 text-[2rem] font-bold leading-tight text-white ${photo ? "max-w-[70%]" : ""}`}>
         {title}
       </h2>
       {children}
     </section>
+  );
+}
+
+/** Decorative, so no alt text. Two gradients keep the title (left) and the button (bottom) readable. */
+function HeroPhoto({ base }: { base: string }) {
+  const set = (ext: string) => `${base}-720.${ext} 720w, ${base}-1200.${ext} 1200w`;
+  const sizes = "(min-width: 768px) 420px, 65vw";
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 -z-10 w-[65%] md:w-1/2">
+      <picture>
+        <source type="image/avif" srcSet={set("avif")} sizes={sizes} />
+        {/* eslint-disable-next-line @next/next/no-img-element -- pre-sized static files, cached by the service worker */}
+        <img src={`${base}-720.webp`} srcSet={set("webp")} sizes={sizes} alt="" decoding="async" className="h-full w-full object-cover object-[50%_15%]" />
+      </picture>
+      <div className="absolute inset-0 bg-gradient-to-r from-night via-night/50 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-night via-night/30 to-transparent" />
+    </div>
   );
 }
 

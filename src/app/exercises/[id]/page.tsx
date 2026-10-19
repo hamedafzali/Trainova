@@ -9,6 +9,7 @@ import { BodyMap } from "@/components/BodyMap";
 import { EmptyState } from "@/components/EmptyState";
 import { LineChart } from "@/components/LineChart";
 import { MovementGuide, MovementHero } from "@/components/motion/MovementGuide";
+import { Segmented } from "@/components/ui/Segmented";
 import { SetTable, type SetRow } from "@/components/ui/SetTable";
 import { TabPanel, Tabs } from "@/components/ui/Tabs";
 import { useTabParam } from "@/lib/useTabParam";
@@ -352,22 +353,7 @@ export default function ExerciseDetailPage() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-h3 text-ink">Trend</h2>
               {metrics.length > 1 && (
-                <div role="radiogroup" aria-label="Metric" className="flex gap-1 rounded-control bg-surface2 p-1">
-                  {metrics.map((m) => (
-                    <button
-                      key={m.key}
-                      type="button"
-                      role="radio"
-                      aria-checked={metric.key === m.key}
-                      onClick={() => setMetricKey(m.key)}
-                      className={`min-h-9 rounded-[8px] px-3 py-1 text-xs font-semibold transition-colors ${
-                        metric.key === m.key ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
-                </div>
+                <Segmented label="Metric" options={metrics} value={metric.key} onChange={setMetricKey} />
               )}
             </div>
             <LineChart data={series} unit={metric.unit} trend={trend} />
