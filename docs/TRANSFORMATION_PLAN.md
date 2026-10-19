@@ -118,8 +118,8 @@ Where we differ from the reference, and why:
 - [x] Nutrition: calorie floor, protein/fat floors, carb floor, minors/pregnancy gating, opt-out — `src/domain/nutrition.ts`: Mifflin-St Jeor, deficit ≤ 300 kcal, surplus 250 kcal; calories ≥ max(BMR, 1500 m / 1200 f); protein 1.8 g/kg of reference weight (BMI ≤ 27), ≤ 220 g; fat ≥ max(0.6 g/kg, 20% kcal); carbs ≥ 130 g (fat trimmed first, then calories raised). No targets under 18, while pregnant/breastfeeding, or with a diet-related medical condition / disordered-eating history — the card points to a professional. Opt-out clears sex/age/height. The meals route recomputes targets server-side and takes the stricter of client and synced flags; gated or opted-out users never reach the model
 
 ### M9 — Docs, mobile plan, release readiness
-- [ ] ARCHITECTURE / OPERATIONS (env, migrations, backup+restore, rollback) / AI / DESIGN_SYSTEM / MOBILE
-- [ ] Verification report
+- [x] ARCHITECTURE / OPERATIONS (env, migrations, backup+restore, rollback) / AI / DESIGN_SYSTEM / MOBILE — `docs/ARCHITECTURE.md`, `docs/OPERATIONS.md`, `docs/AI.md`, `docs/MOBILE.md`; `docs/DESIGN_SYSTEM.md` gains the card padding and estimate rules; root `ARCHITECTURE.md` marked historical
+- [x] Verification report — `docs/VERIFICATION.md`: check results, milestone status, risks, owner actions. CI moved to Node 22 (it had failed on Node 20 since it was added)
 
 ## Remaining risks / decisions for the owner
 (maintained at the end of each milestone)
@@ -154,5 +154,11 @@ After M8 (2026-10-19): typecheck, lint, 408/408 tests, build — all pass. Recov
 - **Readiness is rule-based**, not validated against any outcome. It's labelled as an estimate and never blocks training; it isn't fed to the AI coaches yet (follow-up).
 - **Nutrition gates rely on self-report.** Age, pregnancy and medical flags are what the user tells us; the server uses the stricter of client and synced values but can't verify them.
 - **Legacy `/api/checkins` + `daily_checkins`** remain (export only); the new check-ins live in the synced document.
+
+After M9 (2026-10-19): typecheck, lint, 24/24 evals, 408/408 tests, build, `pnpm audit --prod` — all pass. Full list in `docs/VERIFICATION.md`.
+
+- **CI was red on every run** until this milestone (jsdom 30 / undici 8 need Node 22). Confirm the first run after pushing is green.
+- **Docker image is still `node:20-alpine`** (end of life). Production is unaffected; upgrade to 22 in its own deploy.
+- **Backups live on the same host** as the database. Copy them off the box.
 
 - **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.

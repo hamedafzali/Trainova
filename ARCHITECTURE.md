@@ -1,3 +1,6 @@
+> **Historical.** This is the session/template redesign that introduced the
+> explicit session `status`. For the current system see `docs/ARCHITECTURE.md`.
+
 # Trainova — Architecture Redesign
 
 Goal: a strict separation of **Template (definition)**, **Session (execution)**, and
