@@ -11,6 +11,7 @@ import { LineChart } from "@/components/LineChart";
 import { MovementGuide, MovementHero } from "@/components/motion/MovementGuide";
 import { SetTable, type SetRow } from "@/components/ui/SetTable";
 import { TabPanel, Tabs } from "@/components/ui/Tabs";
+import { useTabParam } from "@/lib/useTabParam";
 import { tipFor } from "@/domain/exerciseTips";
 import { musclesWorked } from "@/domain/recovery";
 import { toast } from "@/lib/toast";
@@ -32,13 +33,14 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "muscles", label: "Muscles" },
   { key: "instructions", label: "Instructions" },
 ];
+const TAB_KEYS = TABS.map((t) => t.key);
 const TAG: Record<string, string> = { warmup: "W", drop: "D", failure: "F" };
 
 export default function ExerciseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const hydrated = useHydrated();
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useTabParam(TAB_KEYS, "overview");
   const templates = useStore((s) => s.templates);
   const favorite = useStore((s) => (s.profile.favoriteExerciseIds ?? []).includes(id));
   const toggleFavorite = useStore((s) => s.toggleFavoriteExercise);
