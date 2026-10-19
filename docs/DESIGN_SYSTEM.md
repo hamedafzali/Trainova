@@ -94,7 +94,7 @@ check-in, for example, readiness shows the band but no score.
 | --------------- | -------------------------------------------------------------------------- |
 | `PageHeader`    | Title, optional subtitle, and actions on the right. Every tab starts here. |
 | `IconButton`    | 44px bordered square. Pass `href` for a link, otherwise `onClick`; `pressed` for toggles. |
-| `HeroCard`      | Navy hero with an eyebrow, a display title, an optional watermark icon and children. Put one `btn-volt-glow` inside. |
+| `HeroCard`      | Navy hero with an eyebrow, a display title, an optional watermark icon and children. Put one `btn-volt-glow` inside. `photo` puts a picture on the right, faded into the card by two gradients. It takes a base path to `-720`/`-1200` AVIF and WebP files and replaces the watermark. |
 | `StatBand`      | A row of `Stat`s in one card, split by hairlines. `columns` sets an uneven grid, e.g. `"1.2fr 1fr 1fr"`. |
 | `SectionHeader` | Section title with an optional "View all" action.                          |
 | `ListCard` + `ListRow` | Divided list. A row takes an icon tile (`tone` neutral, accent or ai), a title, meta and trailing content. It shows a chevron when it navigates. |

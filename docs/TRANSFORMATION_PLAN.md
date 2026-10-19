@@ -97,7 +97,7 @@ Screens:
 - [x] Home redesigned from the AIDesigner ultradesign run (373a5132); its palette and building blocks extracted into `src/components/kit.tsx` + `docs/DESIGN_SYSTEM.md` and applied to Plan, Workouts, Progress, Profile, History, Calendar, Exercises and Coach (390 px light + dark checked, no page errors)
 
 Where we differ from the reference, and why:
-- **No photos of people.** Third-party human models are ruled out and nothing is bought. Photo areas use our own art: the dumbbell/rack illustration on Home, the 3D movement guide on the exercise screen.
+- **Photos.** Owner decision (2026-10-19): Home's Today's Workout card uses a workout photo the owner supplied (`public/images/home-hero-*`). Its source and licence are recorded in `docs/CREDITS.md`. The exercise screen keeps the 3D movement guide, not photos, so a photo of a different variation can't teach the wrong form.
 - **Calories are labelled as an estimate**: 5 MET × bodyweight (75 kg when none is logged, and the card says so) × time trained.
 - **The streak counts weeks**, because that is how Trainova measures it; "7 days" would overstate it.
 - **Own copy** wherever the reference's text isn't a label.
