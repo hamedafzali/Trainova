@@ -125,6 +125,20 @@
       "expect": { "accepted": false, "fallback": "red_flag", "outcome": null, "mustNotContain": ["keep going at 100 kg"] }
     },
     {
+      "id": "exercise_coach.low-readiness",
+      "task": "exercise_coach",
+      "fixture": "leg_press_low_readiness",
+      "reply": { "answer": "That was 13 reps at RPE 6, past your range, but you slept poorly and you're quite sore. Stay at 100 kg today rather than adding load.", "cues": ["Control the bottom"] },
+      "expect": { "accepted": true, "fallback": null, "outcome": "success" }
+    },
+    {
+      "id": "exercise_coach.readiness-score",
+      "task": "exercise_coach",
+      "fixture": "leg_press_low_readiness",
+      "reply": { "answer": "Your readiness is 28 out of 100, so keep 100 kg.", "cues": [] },
+      "expect": { "accepted": false, "fallback": "invalid", "outcome": "rejected", "mustNotContain": ["28 out of 100"] }
+    },
+    {
       "id": "trainer.chat.valid-swap",
       "task": "trainer.chat",
       "fixture": "starter",

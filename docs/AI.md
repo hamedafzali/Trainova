@@ -59,6 +59,10 @@ Every route goes through the same gate (`src/server/aiGuard.ts`):
 - **Machine settings:** the exercise coach may not invent seat or pin
   positions. A setting number that isn't in the evidence fails the
   numeric check.
+- **Readiness:** the exercise coach and the trainer see today's readiness
+  band and its factors, never a score. On a low day the exercise coach holds
+  the load instead of adding to it. The analyst covers weeks of training, so
+  it leaves readiness out.
 - **Nutrition:** no targets for minors, during pregnancy or breastfeeding,
   or with a diet-related medical condition or a disordered-eating history.
   The calorie, protein, fat and carb floors always win over the goal
@@ -100,7 +104,5 @@ version.
 - **Client-built context:** trainer chat and review still receive a context
   built by the client. It is parsed, bounded and validated, but not rebuilt
   from the synced document as the analyst and exercise coach are.
-- **Readiness and AI:** the recovery readiness estimate isn't sent to any
-  AI task yet.
 - **Caches:** the analyst cache is in-process. Move it to Redis before
   running more than one app instance.

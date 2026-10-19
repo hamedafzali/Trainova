@@ -153,6 +153,15 @@ export const EXERCISE_FIXTURES: Record<string, { input: ExerciseCoachInput; sess
   leg_press_on_target: { input: liveLegPress([[100, 8, 8]]), sessionId: "now", exerciseId: "lp" },
   /** First set was a near-max grind: the app drops a plate. */
   leg_press_near_max: { input: liveLegPress([[100, 8, 10]]), sessionId: "now", exerciseId: "lp" },
+  /** Easy set past the range, but a poor check-in: the app holds the load. */
+  leg_press_low_readiness: {
+    input: {
+      ...liveLegPress([[100, 13, 6]]),
+      checkIns: [{ id: "c1", date: "2026-08-28", sleep: 1, energy: 2, soreness: 5, stress: 4, updatedAt: "2026-08-28T07:00:00Z" }],
+    },
+    sessionId: "now",
+    exerciseId: "lp",
+  },
 };
 
 // ---------------------------------------------------------------------------

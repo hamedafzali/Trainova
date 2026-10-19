@@ -108,14 +108,16 @@ function CoachBody({
   const templates = useStore((s) => s.templates);
   const units = useStore((s) => s.units);
   const coaching = useStore((s) => s.profile.coaching);
+  const checkIns = useStore((s) => s.checkIns);
+  const feedback = useStore((s) => s.feedback);
   const swap = useStore((s) => s.swapSessionExercise);
 
   const evidence = useMemo(
     () =>
-      buildCoachEvidence({ sessions, sets, exercises, devices, templates, units, coaching: coaching ?? null }, sessionId, exerciseId, {
+      buildCoachEvidence({ sessions, sets, exercises, devices, templates, units, coaching: coaching ?? null, checkIns, feedback }, sessionId, exerciseId, {
         planMatch: (name) => matchExercise(name, exercises),
       }),
-    [sessions, sets, exercises, devices, templates, units, coaching, sessionId, exerciseId],
+    [sessions, sets, exercises, devices, templates, units, coaching, checkIns, feedback, sessionId, exerciseId],
   );
 
   const ai = useAiStatus();
@@ -179,6 +181,9 @@ function CoachBody({
             Target {a.repMin === a.repMax ? a.repMin : `${a.repMin}–${a.repMax}`} reps
             {c.plan?.targetRpe ? ` · RPE ${c.plan.targetRpe}` : ""}
           </span>
+          {c.readiness && (c.readiness.band === "low" || (c.readiness.band === "moderate" && c.readiness.confidence === "normal")) && (
+            <span className="badge-warning">Readiness {c.readiness.band}</span>
+          )}
         </div>
 
         {next && (
@@ -195,7 +200,7 @@ function CoachBody({
           <ul className="flex flex-wrap gap-1.5" aria-label="Set check">
             {a.sets.map((s) => (
               <li key={s.index} className="chip gap-1 text-xs">
-                <span className="text-muted">Set {s.index + 1}</span>
+                <span className="text-muted">Set {s.index}</span>
                 <span className={`font-semibold ${VERDICT[s.verdict].cls}`}>{VERDICT[s.verdict].text}</span>
               </li>
             ))}
