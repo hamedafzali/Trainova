@@ -9,10 +9,11 @@ import { exerciseTypeOf, usesReps, usesWeight } from "./exerciseType";
 import { epley1rm, loadIncrement, roundToIncrement, suggestNextLoad, type LoadingKind } from "./progression";
 import { muscleGroupOf, type Equipment, type ExerciseType } from "./taxonomy";
 import { tipFor } from "./exerciseTips";
+import { muscleReadiness, readinessEstimate, type ReadinessBand } from "./recovery";
 import type { AnalystFact } from "./analyst";
-import type { Device, Exercise, Units, WorkoutSession, WorkoutSet, WorkoutTemplate } from "./types";
+import type { Device, Exercise, RecoveryCheckIn, SessionFeedback, Units, WorkoutSession, WorkoutSet, WorkoutTemplate } from "./types";
 
-export const EXERCISE_COACH_SCHEMA = "exercise-coach/1";
+export const EXERCISE_COACH_SCHEMA = "exercise-coach/2";
 
 const KG_PER_LB = 0.45359237;
 const toUnits = (kg: number, units: Units) => (units === "kg" ? kg : kg / KG_PER_LB);
@@ -34,6 +35,9 @@ export interface ExerciseCoachInput {
   templates: WorkoutTemplate[];
   units: Units;
   coaching: Partial<CoachingProfile> | null;
+  /** For today's readiness; absent means not known. */
+  checkIns?: RecoveryCheckIn[];
+  feedback?: SessionFeedback[];
 }
 
 /** One of today's sets, weights in display units. */
@@ -86,6 +90,14 @@ export interface ExerciseContext {
   bestE1rm: number | null;
   limitations: string | null;
   equipmentAccess: EquipmentAccess | null;
+  /** Readiness coming into this workout (same estimate as Progress → Body). */
+  readiness: {
+    band: ReadinessBand;
+    /** "low": no check-in that day, training load only. */
+    confidence: "normal" | "low";
+    factors: { key: string; label: string; effect: "up" | "down" }[];
+    painReported: boolean;
+  } | null;
 }
 
 /**
@@ -192,7 +204,31 @@ export function buildExerciseContext(input: ExerciseCoachInput, sessionId: strin
     bestE1rm: best > 0 ? round1(toUnits(best, units)) : null,
     limitations: input.coaching?.limitations?.trim() || null,
     equipmentAccess: input.coaching?.equipment ?? null,
+    readiness: readinessFor(input, session),
   };
+}
+
+/**
+ * Readiness as of the workout's start, so its own sets don't count against
+ * it. The workout's date is the user's local day, which the server can't
+ * otherwise know. Without a check-in it rests on training load alone.
+ */
+function readinessFor(input: ExerciseCoachInput, session: WorkoutSession): NonNullable<ExerciseContext["readiness"]> {
+  const checkIns = input.checkIns ?? [];
+  const feedback = input.feedback ?? [];
+  const started = new Date(session.startedAt);
+  const now = Number.isNaN(started.getTime()) ? new Date() : started;
+  const byId = new Map(input.exercises.map((e) => [e.id, e]));
+  const others = input.sessions.filter((s) => s.id !== session.id);
+  const e = readinessEstimate({
+    checkIn: checkIns.find((c) => c.date === session.date) ?? null,
+    feedback: feedback.filter((f) => f.sessionId !== session.id),
+    trainedDates: others.filter((s) => s.status === "completed" && s.date < session.date).map((s) => s.date),
+    muscles: muscleReadiness(others, input.sets, (id) => byId.get(id), now),
+    today: session.date,
+    now,
+  });
+  return { band: e.band, confidence: e.confidence, factors: e.factors, painReported: e.painReported };
 }
 
 // ---------------------------------------------------------------------------
@@ -273,6 +309,10 @@ export function assessSets(ctx: ExerciseContext): SetAssessment {
   if (done.length > 0 && done.every((s) => s.rpe == null) && counted) {
     notes.push("Effort (RPE) isn't logged, so the next-set call is based on reps only.");
   }
+  const r = ctx.readiness;
+  if (r?.painReported) notes.push("You reported pain after a recent workout. Stop this exercise if it hurts.");
+  if (r?.band === "low") notes.push("Readiness is low today, so the coach won't add load. A lighter session is fine.");
+  else if (r?.band === "moderate" && r.confidence === "normal") notes.push("Readiness is moderate today: stop sets a rep or two short of your limit.");
 
   const planned = ctx.plan?.sets ?? null;
   const remaining = ctx.today.some((s) => !s.completed && s.kind !== "warmup");
@@ -330,6 +370,8 @@ export function assessSets(ctx: ExerciseContext): SetAssessment {
     };
   } else if (reps < repMin) {
     next = { action: "keep", weight: w, reps: repMin, reason: `Set ${last.index} was 1 rep short. Same load, aim for ${repMin}.` };
+  } else if (weighted && reps >= repMax + 2 && (last.rpe == null || last.rpe <= EASY_RPE) && ctx.readiness?.band === "low") {
+    next = { action: "keep", weight: w, reps: repMax, reason: `Set ${last.index} went past ${repMax}, but readiness is low today. Keep the load.` };
   } else if (weighted && reps >= repMax + 2 && (last.rpe == null || last.rpe <= EASY_RPE)) {
     next = {
       action: "increase",
@@ -479,6 +521,11 @@ export function coachFacts(ctx: ExerciseContext, a: SetAssessment, subs: Substit
   }
   add("best.e1rm", "best estimated 1RM", ctx.bestE1rm, u);
   subs.forEach((s, i) => add(`sub.${i}`, `substitute: ${s.name}`, 0, ""));
+  // Factor labels can carry a count ("3 days in a row trained").
+  for (const f of ctx.readiness?.factors ?? []) {
+    const n = f.label.match(/\d+/);
+    if (n) add(`readiness.${f.key}`, f.label, Number(n[0]), "");
+  }
   return facts;
 }
 

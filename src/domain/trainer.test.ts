@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LIBRARY_EXERCISES } from "@/data/exercises";
 import { buildTrainerContext, describeAction, parseTrainerReview, validateTrainerActions, type TrainerContext } from "./trainer";
-import type { Program, UserProfile, WorkoutSession, WorkoutSet, WorkoutTemplate } from "./types";
+import type { Program, RecoveryCheckIn, UserProfile, WorkoutSession, WorkoutSet, WorkoutTemplate } from "./types";
 
 const profile: UserProfile = { displayName: null, role: "user", goal: "strength", experience: "beginner", onboarded: true };
 
@@ -23,7 +23,7 @@ const tpl = (id: string, name: string, exerciseIds: string[]): WorkoutTemplate =
   })),
 });
 
-function ctx(): TrainerContext {
+function ctx(checkIns: RecoveryCheckIn[] = []): TrainerContext {
   const templates = [tpl("solo", "Arms", ["e-curl"]), tpl("dayA", "Day A", ["e-squat", "e-bench", "e-plank"])];
   const programs: Program[] = [{ id: "p", owner: "u", name: "Starter", source: "library", notes: null, dayTemplateIds: ["dayA"] }];
   const sessions: WorkoutSession[] = [
@@ -67,6 +67,7 @@ function ctx(): TrainerContext {
     feedback: [],
     exercises: LIBRARY_EXERCISES,
     nextTemplateId: "dayA",
+    checkIns,
   });
 }
 
@@ -176,5 +177,18 @@ describe("parseTrainerReview", () => {
     expect(parseTrainerReview(raw, ctx(), keep)!.wins).toEqual(["a", "b", "c"]);
     expect(parseTrainerReview({ ...raw, headline: "" }, ctx())).toBeNull();
     expect(parseTrainerReview({ ...raw, status: "great" }, ctx())!.status).toBe("on_track");
+  });
+});
+
+describe("readiness in the trainer context", () => {
+  it("is training load only without a check-in", () => {
+    expect(ctx().readiness).toMatchObject({ band: "ready", confidence: "low" });
+  });
+
+  it("uses today's check-in", () => {
+    const poor = { id: "c", date: "2026-10-10", sleep: 1, energy: 1, soreness: 5, stress: 5, updatedAt: "2026-10-10T07:00:00Z" } as RecoveryCheckIn;
+    const r = ctx([poor]).readiness!;
+    expect(r).toMatchObject({ band: "low", confidence: "normal" });
+    expect(r.factors).toContain("Poor sleep");
   });
 });

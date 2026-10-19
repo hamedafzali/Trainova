@@ -77,14 +77,14 @@ Primitives (`src/components/ui/`):
 - [x] `ProgressRing`, `Donut` (legend carries the values, not colour alone), `DayDots`, `QuickAction`
 - [x] `SetTable` (read-only rows), `StrengthChart` (y axis, week labels, latest-value pill), `WorkoutArt` (our own hero art)
 - [x] Tab bar: flat full-width bar, lime icon + label active state, no pill
-- [ ] `?tab=` deep links for the tab sets
+- [x] `?tab=` deep links for the tab sets (Progress, exercise page): `useTabParam` keeps the tab in the URL with `history.replaceState`, so no history entry and no server request; the default tab keeps the URL clean
 
 Domain modules:
 - [x] `periodStats` — workouts, time (clamped 1–240 min per session), estimated calories, PRs, muscle share of working sets (warm-ups/cardio excluded, "Other" bucket, shares sum to 100), weekly best e1RM
 - [x] `estimateDuration(template)` — sets × (40 s work + rest), rounded to 5 min
 - [x] Exercise favourites (bookmark) — `profile.favoriteExerciseIds`
 - [x] Exercise tips — `tipFor()`: template cue → our own pattern tips → first instruction → muscle-group tip
-- [ ] Inbox for the bell (the bell opens the coach for now)
+- [x] Inbox for the bell (`/inbox`): trainer plans, today's check-in / low readiness / pain, PRs (one item per exercise), stalls, streaks, volume. Built from data already on the device (`src/domain/inbox.ts`); only seen ids are stored, locally. The bell shows a dot for unseen items; info items never light it
 
 Screens:
 - [x] Home: logo + bell, greeting + "Ready to forge greatness.", streak tile, weekly progress (X / goal, M–S dots, % ring), Today's Workout hero (Resume when live), quick actions (Workouts, Exercises, Programs, Nutrition), floating coach button
@@ -93,7 +93,7 @@ Screens:
 - [x] Nav: Home · Plan (/programs, /calendar) · Workouts (/templates, /session, /history, /exercises) · Progress · Profile; coach reached from Home (bell, floating button) and the desktop sidebar
 - [x] Accent retuned to `#C3E201` (light theme text accent `#546500` for contrast); charts, 3D scene and recap card follow
 - [x] Rendered check at 390 (light + dark) and 1280 against the reference; no horizontal scroll, no page errors
-- [ ] Live workout restyled to the per-set table (deferred: today it inherits the new tokens but keeps the stepper cards)
+- [x] Live workout restyled to the per-set table: SET · PREVIOUS · KG · REPS rows (done rows green with a check, pending rows removable), the active set expands in place with the steppers, RPE and Complete set
 - [x] Home redesigned from the AIDesigner ultradesign run (373a5132); its palette and building blocks extracted into `src/components/kit.tsx` + `docs/DESIGN_SYSTEM.md` and applied to Plan, Workouts, Progress, Profile, History, Calendar, Exercises and Coach (390 px light + dark checked, no page errors)
 
 Where we differ from the reference, and why:
@@ -151,7 +151,7 @@ After M5 (2026-10-18): typecheck, lint, 314/314 tests, build — all pass.
 
 After M8 (2026-10-19): typecheck, lint, 408/408 tests, build — all pass. Recovery and nutrition cards checked at 390 px in dark and light.
 
-- **Readiness is rule-based**, not validated against any outcome. It's labelled as an estimate and never blocks training; it isn't fed to the AI coaches yet (follow-up).
+- **Readiness is rule-based**, not validated against any outcome. It's labelled as an estimate and never blocks training; it is passed to the AI coaches as context, labelled as an estimate.
 - **Nutrition gates rely on self-report.** Age, pregnancy and medical flags are what the user tells us; the server uses the stricter of client and synced values but can't verify them.
 - **Legacy `/api/checkins` + `daily_checkins`** remain (export only); the new check-ins live in the synced document.
 
@@ -161,4 +161,4 @@ After M9 (2026-10-19): typecheck, lint, 24/24 evals, 408/408 tests, build, `pnpm
 - **Docker image moved to `node:22-alpine`** (after M9, own deploy). CI now builds the image and checks it boots; watch the first ACM boot.
 - **Backups live on the same host** as the database. Copy them off the box.
 
-- **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.
+- **CSP** is nonce-based (follow-up, `src/middleware.ts`): no `'unsafe-inline'` scripts. Pages now render per request; API routes get a no-script policy.

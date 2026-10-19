@@ -42,3 +42,12 @@ describe("coaching profile in the coach prompt", () => {
     expect(text).not.toContain("LIMITATIONS");
   });
 });
+
+describe("readiness in the coach prompt", () => {
+  it("renders the estimate and drops malformed input", () => {
+    const ctx = parseTrainerContext({ ...base, readiness: { band: "low", confidence: "normal", factors: ["Poor sleep", 7] } })!;
+    expect(ctx.readiness).toEqual({ band: "low", confidence: "normal", factors: ["Poor sleep"] });
+    expect(renderTrainerContext(ctx)).toContain("READINESS TODAY (app estimate): low · Poor sleep");
+    expect(parseTrainerContext({ ...base, readiness: { band: "great" } })!.readiness).toBeNull();
+  });
+});

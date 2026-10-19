@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "@fontsource-variable/inter";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
@@ -37,15 +38,17 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Set per request by src/middleware.ts; reading it renders every page per request.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: NO_FLASH_THEME_SCRIPT }} />
       </head>
       <body className="min-h-screen">
         <ServiceWorker />

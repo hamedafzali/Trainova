@@ -11,6 +11,7 @@ import { Donut, DONUT_COLORS } from "@/components/ui/Donut";
 import { PeriodPicker } from "@/components/ui/PeriodPicker";
 import { StrengthChart } from "@/components/ui/StrengthChart";
 import { TabPanel, Tabs } from "@/components/ui/Tabs";
+import { useTabParam } from "@/lib/useTabParam";
 import { formatMinutes, periodFor, summarisePeriod, weeklyBest, type PeriodKind } from "@/domain/periodStats";
 import { localDayKey, startOfWeek } from "@/domain/streak";
 import { Sparkline } from "@/components/Sparkline";
@@ -30,6 +31,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "body", label: "Body" },
   { key: "workouts", label: "Workouts" },
 ];
+const TAB_KEYS = TABS.map((t) => t.key);
 
 type Row = {
   exId: string;
@@ -65,7 +67,7 @@ export default function ProgressPage() {
   const deviceForExercise = useStore((s) => s.deviceForExercise);
   const bestsFor = useStore((s) => s.bestsFor);
   const [group, setGroup] = useState<MuscleGroup | "all">("all");
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useTabParam(TAB_KEYS, "overview");
   const [kind, setKind] = useState<PeriodKind>("week");
   const [offset, setOffset] = useState(0);
   const [liftId, setLiftId] = useState<string | null>(null);

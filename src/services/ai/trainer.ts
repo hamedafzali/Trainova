@@ -115,7 +115,17 @@ export function parseTrainerContext(raw: unknown): TrainerContext | null {
         (t) => t === c.type,
       ) ?? "weight_reps",
     })),
+    readiness: parseReadiness(r.readiness),
   };
+}
+
+function parseReadiness(raw: unknown): TrainerContext["readiness"] {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const band = (["ready", "moderate", "low"] as const).find((b) => b === r.band);
+  if (!band) return null;
+  const factors = Array.isArray(r.factors) ? r.factors.filter((f): f is string => typeof f === "string").slice(0, 8).map((f) => f.slice(0, 60)) : [];
+  return { band, confidence: r.confidence === "normal" ? "normal" : "low", factors };
 }
 
 export async function askTrainer(ctx: TrainerContext, history: TrainerTurn[]): Promise<TrainerReply> {

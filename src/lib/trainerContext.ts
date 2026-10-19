@@ -21,5 +21,6 @@ export function currentTrainerContext(viewing: string | null = null): TrainerCon
     exercises: st.exercises,
     nextTemplateId: rec?.templateId ?? null,
     viewing,
+    checkIns: st.checkIns,
   });
 }

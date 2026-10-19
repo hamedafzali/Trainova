@@ -275,3 +275,38 @@ describe("facts and readings", () => {
     expect(r.cues[0]).toBeTruthy();
   });
 });
+
+describe("readiness", () => {
+  const checkIn = (sleep: number, energy: number, soreness: number, stress: number) =>
+    ({ id: "c1", date: "2026-10-18", sleep, energy, soreness, stress, updatedAt: "2026-10-18T07:00:00Z" }) as never;
+  const easyPastRange: S[] = [[100, 13, 6], [null, null, undefined, false]];
+
+  it("comes from the day's check-in and ignores this workout's own sets", () => {
+    const ctx = buildExerciseContext(input(easyPastRange, { checkIns: [checkIn(5, 5, 1, 1)] }), "now", "lp")!;
+    expect(ctx.readiness).toMatchObject({ band: "ready", confidence: "normal" });
+    expect(assessSets(ctx).next?.action).toBe("increase");
+  });
+
+  it("holds the load instead of adding it when readiness is low", () => {
+    const a = assessSets(buildExerciseContext(input(easyPastRange, { checkIns: [checkIn(1, 1, 5, 5)] }), "now", "lp")!);
+    expect(a.next).toMatchObject({ action: "keep", weight: 100 });
+    expect(a.notes.join(" ")).toMatch(/Readiness is low/);
+  });
+
+  it("notes recent pain", () => {
+    const feedback = [
+      { id: "f1", owner: "u", sessionId: "old2", difficulty: "right", energy: 3, confidence: 3, pain: "knee", completedInMinutes: 50, createdAt: "2026-10-15T11:00:00Z" },
+    ] as never;
+    const a = assessSets(buildExerciseContext(input([[100, 8, 8]], { feedback }), "now", "lp")!);
+    expect(a.notes.join(" ")).toMatch(/reported pain/);
+  });
+
+  it("makes counts in factor labels citable", () => {
+    const i = input([[100, 8, 8]]);
+    i.sessions.push(session("d1", "2026-10-15"), session("d2", "2026-10-16"), session("d3", "2026-10-17"));
+    const e = buildCoachEvidence(i, "now", "lp")!;
+    expect(e.context.readiness?.factors.map((f) => f.key)).toContain("streak");
+    expect(e.facts).toContainEqual(expect.objectContaining({ id: "readiness.streak", value: 3 }));
+    expect(unsupportedNumbers("You've trained 3 days in a row.", e)).toEqual([]);
+  });
+});

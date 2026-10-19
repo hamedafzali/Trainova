@@ -3,6 +3,7 @@ import type {
   Exercise,
   PersonalRecord,
   Program,
+  RecoveryCheckIn,
   SessionFeedback,
   Units,
   UserProfile,
@@ -14,6 +15,7 @@ import type { ExerciseType } from "./taxonomy";
 import { exerciseTypeOf } from "./exerciseType";
 import { matchExercise } from "./exerciseMatch";
 import { localDayKey, startOfWeek, weekDays, weekStreak } from "./streak";
+import { muscleReadiness, readinessEstimate, type ReadinessBand } from "./recovery";
 
 // The AI trainer sees a compact snapshot of the user's plans and recent
 // training (built on the client from the local store) and may answer with a
@@ -83,6 +85,15 @@ export interface TrainerContext {
   recent: TrainerSession[];
   records: { name: string; kind: PersonalRecord["kind"]; value: number; date: string }[];
   catalogue: CatalogueEntry[];
+  /** Today's readiness estimate (Progress → Body); null when not sent. */
+  readiness: TrainerReadiness | null;
+}
+
+export interface TrainerReadiness {
+  band: ReadinessBand;
+  /** "low": no check-in today, training load only. */
+  confidence: "normal" | "low";
+  factors: string[];
 }
 
 export const LIMITS = {
@@ -129,6 +140,7 @@ export function buildTrainerContext(input: {
   exercises: Exercise[];
   nextTemplateId: string | null;
   viewing?: string | null;
+  checkIns?: RecoveryCheckIn[];
 }): TrainerContext {
   const { units, exercises } = input;
   const byId = new Map(exercises.map((e) => [e.id, e]));
@@ -199,6 +211,15 @@ export function buildTrainerContext(input: {
 
   const nextRef = workouts.find((w) => w.templateId === input.nextTemplateId)?.ref ?? null;
   const consistency = buildConsistency(input);
+  const today = localDayKey(input.now);
+  const est = readinessEstimate({
+    checkIn: input.checkIns?.find((c) => c.date === today) ?? null,
+    feedback: input.feedback,
+    trainedDates: input.sessions.filter((s) => s.status === "completed").map((s) => s.date),
+    muscles: muscleReadiness(input.sessions, input.sets, (id) => byId.get(id), input.now),
+    today,
+    now: input.now,
+  });
 
   return {
     today: input.now.toISOString().slice(0, 10),
@@ -224,6 +245,7 @@ export function buildTrainerContext(input: {
       equipment: e.equipment ?? null,
       type: exerciseTypeOf(e),
     })),
+    readiness: { band: est.band, confidence: est.confidence, factors: est.factors.map((f) => f.label) },
   };
 }
 
