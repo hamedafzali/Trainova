@@ -161,4 +161,4 @@ After M9 (2026-10-19): typecheck, lint, 24/24 evals, 408/408 tests, build, `pnpm
 - **Docker image moved to `node:22-alpine`** (after M9, own deploy). CI now builds the image and checks it boots; watch the first ACM boot.
 - **Backups live on the same host** as the database. Copy them off the box.
 
-- **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.
+- **CSP** is nonce-based (follow-up, `src/middleware.ts`): no `'unsafe-inline'` scripts. Pages now render per request; API routes get a no-script policy.

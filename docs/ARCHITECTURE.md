@@ -95,6 +95,11 @@ everything from it.
   checked on the server in `src/server/aiGuard.ts`.
 - **Rate limits:** sign-in, reset and AI each have a limit, per email and per
   IP. Forwarded IPs are trusted only when `TRUST_PROXY=1`.
+- **Content Security Policy:** `src/middleware.ts` sets a policy with a fresh
+  nonce on every page. Next puts the nonce on its own scripts and the root
+  layout puts it on the theme script, so no inline script runs without it.
+  Because of this every page renders per request. API routes get a strict
+  no-script policy from `next.config.mjs`.
 
 ## Database
 

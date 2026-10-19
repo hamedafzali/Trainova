@@ -78,12 +78,14 @@ These are ordered by how much they matter before or soon after release.
    context the client builds. It is parsed, size-capped and validated, but
    not rebuilt from the synced document as the analyst and exercise coach
    contexts are.
-5. **CSP allows `'unsafe-inline'` scripts.** Next's inline bootstrap and the
-   theme script need it. A nonce-based CSP is a follow-up.
+5. **Pages render per request.** The nonce CSP (`src/middleware.ts`) needs a
+   fresh nonce on every page, so no page is prerendered. Pages are client
+   shells, so the cost is small, but watch response times after deploy.
 6. **In-process analyst cache.** This is fine for one instance. Move it to
    Redis before scaling out.
-7. **Readiness isn't used by the AI.** The recovery estimate is rule-based,
-   labelled as an estimate, and not yet sent to any AI task.
+7. **Readiness is a heuristic.** The exercise coach and trainer now see the
+   band and its reasons (never the score), and the coach won't add load on a
+   low band. The estimate itself is rule-based, not validated against outcomes.
 8. **Self-reported nutrition gates.** Age, pregnancy and medical flags are
    whatever the user enters. The server takes the stricter of the client and
    synced values but can't verify them.
