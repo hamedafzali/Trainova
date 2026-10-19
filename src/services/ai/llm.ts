@@ -1,4 +1,5 @@
 import { chatComplete, isRateLimited } from "./mistralClient";
+import { noteRejected } from "./runMeter";
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
@@ -59,6 +60,9 @@ export async function completeJson(
     throw new LlmError("The coach is unavailable right now. Try again in a moment.", "AI_UNAVAILABLE");
   }
   const parsed = parseJsonObject(text);
-  if (!parsed) throw new LlmError("The coach gave an unreadable answer. Try rephrasing.", "BAD_OUTPUT");
+  if (!parsed) {
+    noteRejected("BAD_OUTPUT");
+    throw new LlmError("The coach gave an unreadable answer. Try rephrasing.", "BAD_OUTPUT");
+  }
   return parsed;
 }

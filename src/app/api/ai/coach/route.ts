@@ -11,6 +11,7 @@ import { getCoachIntro, getMealIdeas, staticMealIdeas, CoachError } from "@/serv
 import type { CoachIntroInput, MealIdeasInput } from "@/services/ai/prompts/coach";
 import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
 import { aiConfigured, aiDisabledResponse } from "@/server/aiConfig";
+import { meteredAi } from "@/server/aiRuns";
 import { cached } from "@/lib/cache/cacheMiddleware";
 import { CACHE_KEYS, CACHE_TTL } from "@/lib/cache/cacheKeys";
 
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
       case "intro": {
         const intro = await cached(
           CACHE_KEYS.AI_COACH_INTRO(authorization.user.userId, contextHash),
-          () => getCoachIntro(data as CoachIntroInput),
+          () => meteredAi({ userId: authorization.user.userId, task: "coach.intro" }, () => getCoachIntro(data as CoachIntroInput)),
           { ttl: CACHE_TTL.AI_COACH }
         );
         return NextResponse.json({ intro });
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
         const input = data as MealIdeasInput;
         const result = await cached(
           CACHE_KEYS.AI_COACH_MEALS(authorization.user.userId, contextHash),
-          () => getMealIdeas(input),
+          () => meteredAi({ userId: authorization.user.userId, task: "coach.meals" }, () => getMealIdeas(input)),
           { ttl: CACHE_TTL.AI_COACH }
         );
         return NextResponse.json(result);

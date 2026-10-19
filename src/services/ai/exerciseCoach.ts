@@ -17,6 +17,8 @@ import { matchExercise } from "@/domain/exerciseMatch";
 import type { Units } from "@/domain/types";
 import { completeJson, LlmError } from "./llm";
 import { harmfulAdviceReason, hasRedFlagSymptoms, sanitizeContent } from "./safety";
+import { notePromptVersion, noteRejected } from "./runMeter";
+import { promptVersion } from "./tasks";
 
 const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === "object") as T[]) : []);
 
@@ -111,6 +113,7 @@ export async function coachExercise(
   if (!opts.ai) return { evidence, reading: rules(), fallback: "ai_off" };
 
   let raw: Record<string, unknown>;
+  notePromptVersion(promptVersion("exercise_coach", EXERCISE_COACH_SYSTEM_PROMPT));
   try {
     raw = await completeJson(
       [
@@ -125,6 +128,7 @@ export async function coachExercise(
   }
   const checked = validateCoachReading(raw, evidence, (t) => unsupportedNumbers(t, evidence));
   if (!checked || harmfulAdviceReason([checked.answer, ...checked.cues].join(" "))) {
+    noteRejected(checked ? "UNSAFE" : "INVALID");
     return { evidence, reading: rules(), fallback: "invalid" };
   }
   return { evidence, reading: checked, fallback: null };

@@ -14,6 +14,8 @@ import {
 import { completeJson, LlmError, type ChatMessage } from "./llm";
 import { harmfulAdviceReason, hasRedFlagSymptoms, sanitizeContent } from "./safety";
 import { renderTrainerContext, REVIEW_SYSTEM_PROMPT, TRAINER_SYSTEM_PROMPT } from "./prompts/trainer";
+import { noteIssues, notePromptVersion, noteRejected } from "./runMeter";
+import { promptVersion } from "./tasks";
 
 export const MAX_MESSAGE_CHARS = 2000;
 export const MAX_HISTORY = 12;
@@ -129,12 +131,15 @@ export async function askTrainer(ctx: TrainerContext, history: TrainerTurn[]): P
     { role: "system", content: renderTrainerContext(ctx) },
     ...turns,
   ];
+  notePromptVersion(promptVersion("trainer.chat", TRAINER_SYSTEM_PROMPT));
   const out = await completeJson(messages, { temperature: 0.4, maxTokens: 1200 });
 
   let reply = sanitizeContent(replyText(out.reply).trim());
   let actions = validateTrainerActions(out.actions, ctx);
+  noteIssues((Array.isArray(out.actions) ? out.actions.length : 0) - actions.length);
   if (!reply) reply = actions.length ? "Here's what I'd change:" : "Sorry — I didn't catch that. Could you rephrase?";
   if (harmfulAdviceReason(reply)) {
+    noteRejected("UNSAFE");
     reply = SAFE_FALLBACK;
     actions = [];
   }
@@ -144,6 +149,7 @@ export async function askTrainer(ctx: TrainerContext, history: TrainerTurn[]): P
 
 /** Status review of the client's training against their active plan. */
 export async function reviewTraining(ctx: TrainerContext): Promise<TrainerReview> {
+  notePromptVersion(promptVersion("trainer.review", REVIEW_SYSTEM_PROMPT));
   const out = await completeJson(
     [
       { role: "system", content: REVIEW_SYSTEM_PROMPT },
@@ -153,7 +159,10 @@ export async function reviewTraining(ctx: TrainerContext): Promise<TrainerReview
     { temperature: 0.3, maxTokens: 1200 },
   );
   const review = parseTrainerReview(out, ctx, (text) => !harmfulAdviceReason(text));
-  if (!review) throw new LlmError("The coach couldn't put a review together. Try again.", "BAD_OUTPUT");
+  if (!review) {
+    noteRejected("INVALID");
+    throw new LlmError("The coach couldn't put a review together. Try again.", "BAD_OUTPUT");
+  }
   // Logged pain in recent sessions: advice only, no automatic plan edits.
   if (ctx.recent.some((r) => r.pain && hasRedFlagSymptoms(r.pain))) review.actions = [];
   return review;

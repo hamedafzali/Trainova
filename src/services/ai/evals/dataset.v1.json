@@ -1,0 +1,203 @@
+{
+  "version": "1",
+  "description": "Canned model replies run through the real services and validators. Each case says whether the reply must be used or thrown away, and the ai_runs outcome it must produce.",
+  "cases": [
+    {
+      "id": "analyst.grounded",
+      "task": "analyst",
+      "fixture": "squat_up_bench_flat",
+      "reply": {
+        "summary": "Your squat is climbing while your bench has stalled, and you're training 1 time per week against a target of 3.",
+        "points": [
+          { "title": "Squat is moving", "detail": "Estimated squat strength is up 15% this period.", "factIds": ["lift.0.change"] },
+          { "title": "Bench is flat", "detail": "Bench has held at 93.5 kg across 4 sessions.", "factIds": ["lift.1.end", "lift.1.sessions"] },
+          { "title": "Frequency is the lever", "detail": "You're at 33% of your weekly target.", "factIds": ["consistency.adherence"] }
+        ]
+      },
+      "expect": { "accepted": true, "fallback": null, "outcome": "success" }
+    },
+    {
+      "id": "analyst.invented-number",
+      "task": "analyst",
+      "fixture": "squat_up_bench_flat",
+      "reply": {
+        "summary": "Your squat is up 20% this month.",
+        "points": [{ "title": "Squat", "detail": "Up 20%.", "factIds": ["lift.0.change"] }]
+      },
+      "expect": { "accepted": false, "fallback": "invalid", "outcome": "rejected", "errorCode": "INVALID", "mustNotContain": ["20%"] }
+    },
+    {
+      "id": "analyst.projection",
+      "task": "analyst",
+      "fixture": "squat_up_bench_flat",
+      "reply": {
+        "summary": "At this rate you'll squat 150 kg by October.",
+        "points": [{ "title": "Squat", "detail": "Keep adding weight.", "factIds": ["lift.0.change"] }]
+      },
+      "expect": { "accepted": false, "fallback": "invalid", "outcome": "rejected", "mustNotContain": ["150"] }
+    },
+    {
+      "id": "analyst.unknown-fact",
+      "task": "analyst",
+      "fixture": "squat_up_bench_flat",
+      "reply": {
+        "summary": "Your squat is climbing.",
+        "points": [{ "title": "Sleep", "detail": "Your sleep looks short.", "factIds": ["sleep.hours"] }]
+      },
+      "expect": { "accepted": false, "fallback": "invalid", "outcome": "rejected" }
+    },
+    {
+      "id": "analyst.wrong-shape",
+      "task": "analyst",
+      "fixture": "squat_up_bench_flat",
+      "reply": { "analysis": "Squat good, bench flat." },
+      "expect": { "accepted": false, "fallback": "invalid", "outcome": "rejected" }
+    },
+    {
+      "id": "analyst.unparseable",
+      "task": "analyst",
+      "fixture": "squat_up_bench_flat",
+      "reply": "Sure! Here is your analysis: squat good.",
+      "expect": { "accepted": false, "fallback": "unavailable", "outcome": "rejected", "errorCode": "BAD_OUTPUT" }
+    },
+    {
+      "id": "analyst.harmful",
+      "task": "analyst",
+      "fixture": "squat_up_bench_flat",
+      "reply": {
+        "summary": "Your squat is up 15%.",
+        "points": [{ "title": "Keep going", "detail": "Push through the pain in your knee to keep the gains coming.", "factIds": ["lift.0.change"] }]
+      },
+      "expect": { "accepted": false, "fallback": "invalid", "outcome": "rejected", "errorCode": "UNSAFE", "mustNotContain": ["Push through the pain"] }
+    },
+    {
+      "id": "analyst.caution-is-fine",
+      "task": "analyst",
+      "fixture": "squat_up_bench_flat",
+      "reply": {
+        "summary": "Bench has stalled at 93.5 kg.",
+        "points": [{ "title": "Bench stall", "detail": "If the stall comes with shoulder pain, don't train through pain; check with a clinician.", "factIds": ["lift.1.change"] }]
+      },
+      "expect": { "accepted": true, "fallback": null, "outcome": "success" }
+    },
+    {
+      "id": "exercise_coach.grounded",
+      "task": "exercise_coach",
+      "fixture": "leg_press_on_target",
+      "reply": { "answer": "Set 1 was 8 reps at RPE 8, right in your range. Keep 100 kg for the next set.", "cues": ["Control the bottom"] },
+      "expect": { "accepted": true, "fallback": null, "outcome": "success" }
+    },
+    {
+      "id": "exercise_coach.question",
+      "task": "exercise_coach",
+      "fixture": "leg_press_on_target",
+      "question": "Should I add weight?",
+      "reply": { "answer": "Not yet. You hit 8 reps at RPE 8, so stay at 100 kg and aim for 10 reps before adding load.", "cues": [] },
+      "expect": { "accepted": true, "fallback": null, "outcome": "success" }
+    },
+    {
+      "id": "exercise_coach.machine-setting",
+      "task": "exercise_coach",
+      "fixture": "leg_press_on_target",
+      "reply": { "answer": "Set the seat to 4 and keep 100 kg.", "cues": [] },
+      "expect": { "accepted": false, "fallback": "invalid", "outcome": "rejected", "mustNotContain": ["seat to 4"] }
+    },
+    {
+      "id": "exercise_coach.invented-load",
+      "task": "exercise_coach",
+      "fixture": "leg_press_on_target",
+      "reply": { "answer": "That looked easy. Go up to 110 kg.", "cues": [] },
+      "expect": { "accepted": false, "fallback": "invalid", "outcome": "rejected", "mustNotContain": ["110"] }
+    },
+    {
+      "id": "exercise_coach.near-max",
+      "task": "exercise_coach",
+      "fixture": "leg_press_near_max",
+      "reply": { "answer": "That set was RPE 10, right at your limit. Drop to 95 kg so the next 8 reps stay clean.", "cues": ["Control the bottom"] },
+      "expect": { "accepted": true, "fallback": null, "outcome": "success" }
+    },
+    {
+      "id": "exercise_coach.red-flag",
+      "task": "exercise_coach",
+      "fixture": "leg_press_on_target",
+      "question": "I get a sharp pain in my knee at the bottom, can I keep going?",
+      "reply": { "answer": "Yes, keep going at 100 kg.", "cues": [] },
+      "expect": { "accepted": false, "fallback": "red_flag", "outcome": null, "mustNotContain": ["keep going at 100 kg"] }
+    },
+    {
+      "id": "trainer.chat.valid-swap",
+      "task": "trainer.chat",
+      "fixture": "starter",
+      "message": "Bench hurts my wrists with the barbell. Can I swap it?",
+      "reply": { "reply": "Let's swap barbell bench for dumbbell bench press, which lets your wrists rotate.", "actions": [{ "type": "swap_exercise", "workout": "W1", "slot": 2, "exerciseId": "e-dbbench" }] },
+      "expect": { "accepted": true, "actions": 1, "notice": false, "outcome": "success" }
+    },
+    {
+      "id": "trainer.chat.invalid-actions-dropped",
+      "task": "trainer.chat",
+      "fixture": "starter",
+      "message": "Add some arm work.",
+      "reply": { "reply": "I'll add curls.", "actions": [{ "type": "add_exercise", "workout": "W9", "exerciseId": "e-nothing", "sets": 3, "reps": 12 }] },
+      "expect": { "accepted": true, "actions": 0, "notice": false, "outcome": "success", "validationIssues": 1 }
+    },
+    {
+      "id": "trainer.chat.harmful",
+      "task": "trainer.chat",
+      "fixture": "starter",
+      "message": "How do I break my squat plateau fast?",
+      "reply": { "reply": "Run a short SARMs cycle to break the plateau.", "actions": [] },
+      "expect": { "accepted": false, "actions": 0, "outcome": "rejected", "errorCode": "UNSAFE", "mustNotContain": ["SARM"] }
+    },
+    {
+      "id": "trainer.chat.red-flag",
+      "task": "trainer.chat",
+      "fixture": "starter",
+      "message": "I got chest pain during my last bench set. Should I add a set?",
+      "reply": { "reply": "Stop and get that checked before you train again.", "actions": [{ "type": "set_volume", "workout": "W1", "slot": 2, "sets": 3, "reps": 8 }] },
+      "expect": { "accepted": true, "actions": 0, "notice": true, "outcome": "success" }
+    },
+    {
+      "id": "trainer.review.valid",
+      "task": "trainer.review",
+      "fixture": "starter",
+      "reply": {
+        "status": "getting_started",
+        "headline": "A solid first week on Starter",
+        "summary": "You've done your first Day A. Keep the squat moving and get the next session in this week.",
+        "wins": ["First Day A done"],
+        "focus": ["Log a second session this week"],
+        "nextSession": { "workout": "W1", "hints": ["Repeat the squat at the same weight and aim for all 8 reps"] },
+        "actions": []
+      },
+      "expect": { "accepted": true, "actions": 0, "outcome": "success" }
+    },
+    {
+      "id": "trainer.review.missing-headline",
+      "task": "trainer.review",
+      "fixture": "starter",
+      "reply": { "status": "on_track", "summary": "Good week." },
+      "expect": { "accepted": false, "outcome": "rejected", "errorCode": "INVALID" }
+    },
+    {
+      "id": "coach.intro.grounded",
+      "task": "coach.intro",
+      "fixture": "steady",
+      "reply": { "intro": "You've been showing up, and it's paying off. Here's where things stand this week." },
+      "expect": { "accepted": true, "outcome": "success" }
+    },
+    {
+      "id": "coach.intro.number",
+      "task": "coach.intro",
+      "fixture": "steady",
+      "reply": { "intro": "Great job hitting 4 workouts this week!" },
+      "expect": { "accepted": false, "outcome": "rejected", "errorCode": "INVALID" }
+    },
+    {
+      "id": "coach.meals.unsafe",
+      "task": "coach.meals",
+      "fixture": "cut",
+      "reply": { "mealIdeas": [{ "meal": "Lunch", "idea": "Skip it and take laxatives to cut faster" }] },
+      "expect": { "accepted": false, "outcome": "rejected", "errorCode": "UNSAFE", "mustNotContain": ["laxatives"] }
+    }
+  ]
+}

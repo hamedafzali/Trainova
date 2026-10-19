@@ -108,10 +108,10 @@ Where we differ from the reference, and why:
 - [x] In-workout sheet UI — `ExerciseCoachSheet` from the live exercise card and from an exercise's page during a workout: status, next set, per-set check, coach reading (rules offline / AI with consent), and swaps for the sets not yet logged (`swapSessionExercise`, this workout only)
 
 ### M7 — AI orchestration, evaluation & observability
-- [ ] Orchestrator + model routing per task, model recorded per response
-- [~] `ai_runs` logging (no content) — schema ready; Redis-backed AI rate limit + daily budget done
-- [ ] Versioned eval dataset + deterministic eval runner in CI
-- [ ] Admin AI observability view
+- [x] Orchestrator + model routing per task, model recorded per response — `src/services/ai/tasks.ts`: each task has a tier; "deep" (analyst, trainer chat/review) starts on mistral-large, "fast" (exercise coach, coach intro/meals) on mistral-small, each falling back along its own list. `MISTRAL_MODEL_DEEP` / `MISTRAL_MODEL_FAST` pin a tier, `MISTRAL_MODEL` pins both. The model that answered is recorded on the run
+- [x] `ai_runs` logging (no content) — `meteredAi` in `src/server/aiRuns.ts` wraps every AI route; an AsyncLocalStorage meter (`runMeter.ts`) collects model, tokens, latency, prompt version (`task@hash` of the system prompt), input schema version, validation issues, error code and whether the fallback was shown. Never prompt, reply or user text. Requests answered without the model (cache, red flag, AI off) aren't logged; a logging failure never fails the request. Redis-backed AI rate limit + daily budget done
+- [x] Versioned eval dataset + deterministic eval runner in CI — `src/services/ai/evals/dataset.v1.json` (23 cases over all six tasks: grounded, invented numbers, projections, machine settings, harmful advice, red flags, bad JSON) plays canned replies through the real services and validators; `pnpm eval` prints a per-task scorecard. `.github/workflows/ci.yml` runs typecheck, lint, eval, tests and build on pushes and PRs
+- [x] Admin AI observability view — `/admin/ai` (+ `GET /api/admin/ai-runs?days=1|7|30`): runs, success, fallback and user counts, per-task success/rejections/p50/p95/tokens, per-day chart, models, error codes, prompt versions
 
 ### M8 — Progress, recovery, nutrition
 - [ ] Recovery: feedback + check-ins, labelled estimate
@@ -145,7 +145,7 @@ After M4 (2026-10-18): typecheck, lint, 296/296 tests, build — all pass.
 After M5 (2026-10-18): typecheck, lint, 314/314 tests, build — all pass.
 
 - **AI reads the synced copy.** The analyst route builds evidence from `user_state`, so unsynced local workouts aren't in the AI reading; the UI labels it "From your last synced data". The on-screen measurements are computed locally and always current.
-- **Strict validator.** Any number in the AI reply that isn't a fact (or its whole-number rounding / absolute value) rejects the whole reply and the rule-based reading is shown. Expect some fallbacks with weaker models; fallback rate should be tracked once `ai_runs` lands (M7).
+- **Strict validator.** Any number in the AI reply that isn't a fact (or its whole-number rounding / absolute value) rejects the whole reply and the rule-based reading is shown. Expect some fallbacks with weaker models; fallback rate is tracked per task on `/admin/ai`.
 - **Analysis cache is in-process** (500 entries, keyed by user, data version, period, day). Fine for one instance; move to Redis if the app is scaled out.
 - **Signed-in AI path not rendered locally** (no DB/key in the preview); covered by PGlite integration tests with the model mocked.
 

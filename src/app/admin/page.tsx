@@ -185,6 +185,14 @@ export default function AdminPage() {
             <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
           </Link>
 
+          <Link
+            href="/admin/ai"
+            className="flex items-center justify-between rounded-card border border-border bg-surface shadow-card px-5 py-4 hover:bg-border/60 transition-colors"
+          >
+            <span className="font-semibold text-h3 text-ink">AI runs and quality</span>
+            <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
+          </Link>
+
           <ul className="space-y-3">
             {users.map((u) => (
               <li key={u.id} className="rounded-card border border-border bg-surface shadow-card p-6 space-y-3">

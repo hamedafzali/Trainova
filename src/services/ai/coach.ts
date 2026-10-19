@@ -12,6 +12,8 @@
 
 import { chatComplete } from "./mistralClient";
 import { performSafetyCheck } from "./safety";
+import { currentRun, notePromptVersion, noteRejected } from "./runMeter";
+import { promptVersion } from "./tasks";
 import {
   createCoachIntroPrompt,
   createMealIdeasPrompt,
@@ -81,6 +83,11 @@ export function staticMealIdeas(goal: string | null): MealIdeasResponse {
  */
 export async function getCoachIntro(input: CoachIntroInput): Promise<string | null> {
   if (input.situations.length === 0) return null;
+  notePromptVersion(promptVersion("coach.intro", COACH_INTRO_SYSTEM_PROMPT));
+  const reject = (code: string) => {
+    noteRejected(code);
+    return null;
+  };
   try {
     const response = await chatComplete({
       messages: [
@@ -91,22 +98,24 @@ export async function getCoachIntro(input: CoachIntroInput): Promise<string | nu
       maxTokens: 150,
     });
     const text = extractContentText(response.choices?.[0]?.message?.content);
-    if (!text) return null;
+    if (!text) return reject("BAD_OUTPUT");
 
     const parsed = extractJson(text) as { intro?: unknown };
     const intro = typeof parsed.intro === "string" ? parsed.intro.trim() : "";
-    if (!intro) return null;
+    if (!intro) return reject("BAD_OUTPUT");
 
     // Guardrail: reject any response containing a digit — the intro must
     // never state a number, since numbers are only ever trustworthy when
     // they come straight from src/domain/coach.ts.
-    if (/\d/.test(intro)) return null;
+    if (/\d/.test(intro)) return reject("INVALID");
 
     const safety = performSafetyCheck(intro);
-    if (!safety.isSafe) return null;
+    if (!safety.isSafe) return reject("UNSAFE");
 
     return intro;
   } catch {
+    // An outage is already on the run; anything else here is an unparseable reply.
+    if (!currentRun()?.errorCode) noteRejected("BAD_OUTPUT");
     return null;
   }
 }
@@ -117,6 +126,11 @@ export async function getCoachIntro(input: CoachIntroInput): Promise<string | nu
  * out, or returns something that doesn't validate.
  */
 export async function getMealIdeas(input: MealIdeasInput): Promise<MealIdeasResponse> {
+  notePromptVersion(promptVersion("coach.meals", MEAL_IDEAS_SYSTEM_PROMPT));
+  const reject = (code: string) => {
+    noteRejected(code);
+    return staticMealIdeas(input.goal);
+  };
   try {
     const response = await chatComplete({
       messages: [
@@ -127,25 +141,24 @@ export async function getMealIdeas(input: MealIdeasInput): Promise<MealIdeasResp
       maxTokens: 400,
     });
     const text = extractContentText(response.choices?.[0]?.message?.content);
-    if (!text) return staticMealIdeas(input.goal);
+    if (!text) return reject("BAD_OUTPUT");
 
     const parsed = extractJson(text) as MealIdeasResponse;
-    if (!Array.isArray(parsed.mealIdeas) || parsed.mealIdeas.length === 0) {
-      return staticMealIdeas(input.goal);
-    }
+    if (!Array.isArray(parsed.mealIdeas) || parsed.mealIdeas.length === 0) return reject("BAD_OUTPUT");
     const clean = parsed.mealIdeas
       .filter(
         (m): m is { meal: string; idea: string } =>
           typeof m?.meal === "string" && typeof m?.idea === "string" && m.idea.trim().length > 0
       )
       .slice(0, 6);
-    if (clean.length === 0) return staticMealIdeas(input.goal);
+    if (clean.length === 0) return reject("INVALID");
 
     const safety = performSafetyCheck(clean.map((m) => m.idea).join(" "));
-    if (!safety.isSafe) return staticMealIdeas(input.goal);
+    if (!safety.isSafe) return reject("UNSAFE");
 
     return { mealIdeas: clean };
   } catch {
+    if (!currentRun()?.errorCode) noteRejected("BAD_OUTPUT");
     return staticMealIdeas(input.goal);
   }
 }

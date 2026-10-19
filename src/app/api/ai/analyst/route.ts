@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
 import { aiConfigured } from "@/server/aiConfig";
+import { meteredAi } from "@/server/aiRuns";
 import { getPool } from "@/server/db";
 import { getSessionUser } from "@/server/session";
 import { ANALYST_PERIODS, ANALYST_SCHEMA } from "@/domain/analyst";
@@ -62,7 +63,10 @@ export async function POST(request: NextRequest) {
   const cached = Boolean(result);
   if (!result) {
     try {
-      result = await analyse(analystInputFromState(row?.data), weeks, today, { ai });
+      const input = analystInputFromState(row?.data);
+      result = await meteredAi({ userId, task: "analyst", inputVersion: ANALYST_SCHEMA }, () =>
+        analyse(input, weeks, today, { ai }),
+      );
     } catch (e) {
       console.error("Analyst error:", e instanceof Error ? e.message : e);
       return NextResponse.json({ error: "Something went wrong. Try again.", code: "INTERNAL" }, { status: 500 });

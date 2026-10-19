@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
 import { aiConfigured, aiDisabledResponse } from "@/server/aiConfig";
+import { meteredAi } from "@/server/aiRuns";
 import { askTrainer, MAX_MESSAGE_CHARS, parseTrainerContext, type TrainerTurn } from "@/services/ai/trainer";
 import { LlmError } from "@/services/ai/llm";
 
@@ -41,7 +42,8 @@ export async function POST(request: NextRequest) {
   if (last.content.length > MAX_MESSAGE_CHARS) return bad(`Keep messages under ${MAX_MESSAGE_CHARS} characters.`);
 
   try {
-    return NextResponse.json(await askTrainer(context, messages));
+    const reply = await meteredAi({ userId: authorization.user.userId, task: "trainer.chat" }, () => askTrainer(context, messages));
+    return NextResponse.json(reply);
   } catch (e) {
     if (e instanceof LlmError) {
       return NextResponse.json({ error: e.message, code: e.code }, { status: e.code === "AI_UNAVAILABLE" ? 503 : 502 });

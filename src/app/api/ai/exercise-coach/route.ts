@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authorizeAiRequest, isAuthorizedAiRequest } from "@/server/aiGuard";
 import { aiConfigured } from "@/server/aiConfig";
+import { meteredAi } from "@/server/aiRuns";
 import { getPool } from "@/server/db";
 import { getSessionUser } from "@/server/session";
 import { EXERCISE_COACH_SCHEMA } from "@/domain/exerciseCoach";
@@ -63,7 +64,10 @@ export async function POST(request: NextRequest) {
   const cached = Boolean(result);
   if (!result) {
     try {
-      result = await coachExercise(exerciseCoachInputFromState(row?.data), sessionId, exerciseId, question, { ai });
+      const input = exerciseCoachInputFromState(row?.data);
+      result = await meteredAi({ userId, task: "exercise_coach", inputVersion: EXERCISE_COACH_SCHEMA }, () =>
+        coachExercise(input, sessionId, exerciseId, question, { ai }),
+      );
     } catch (e) {
       console.error("Exercise coach error:", e instanceof Error ? e.message : e);
       return NextResponse.json({ error: "Something went wrong. Try again.", code: "INTERNAL" }, { status: 500 });

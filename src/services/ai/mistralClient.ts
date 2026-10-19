@@ -11,8 +11,15 @@
 // queued and spaced, and a 429 is retried once. A model that stays rate
 // limited (its quota is used up) is skipped for a while and the next one is
 // used, so the coach keeps working on a smaller model.
+//
+// The model order depends on the task's tier (see tasks.ts): deep tasks start
+// on the largest model, fast ones on a small one. The task comes from the
+// current AI run (runMeter.ts), which also receives the model used and the
+// token counts for ai_runs.
 
 import { Mistral } from "@mistralai/mistralai";
+import { currentRun } from "./runMeter";
+import { pinnedModel, TIER_MODELS, type AiTier } from "./tasks";
 
 let client: Mistral | null = null;
 
@@ -25,24 +32,17 @@ export function getMistralClient(): Mistral {
   return client;
 }
 
-/** Best first; all support JSON mode. */
-const PREFERRED_MODELS = [
-  "mistral-large-latest",
-  "mistral-medium-latest",
-  "mistral-small-latest",
-  "open-mistral-nemo",
-  "ministral-8b-latest",
-];
-
-let workingModel: string | null = null;
+/** Tier → the last model that answered for it. */
+const workingModel = new Map<AiTier, string>();
 const deniedModels = new Set<string>();
 /** Model → time until which it is skipped because it kept returning 429. */
 const coolingUntil = new Map<string, number>();
 
-export function candidateModels(): string[] {
-  const pinned = process.env.MISTRAL_MODEL?.trim();
-  const list = pinned ? [pinned, ...PREFERRED_MODELS] : PREFERRED_MODELS;
-  const ordered = workingModel ? [workingModel, ...list] : list;
+export function candidateModels(tier: AiTier = "deep"): string[] {
+  const pinned = pinnedModel(tier);
+  const list = pinned ? [pinned, ...TIER_MODELS[tier]] : TIER_MODELS[tier];
+  const working = workingModel.get(tier);
+  const ordered = working ? [working, ...list] : list;
   const usable = [...new Set(ordered)].filter((m) => !deniedModels.has(m));
   const now = Date.now();
   const ready = usable.filter((m) => (coolingUntil.get(m) ?? 0) <= now);
@@ -89,17 +89,35 @@ const MAX_RATE_RETRIES = 1;
 type CompleteRequest = Omit<Parameters<Mistral["chat"]["complete"]>[0], "model">;
 type CompleteOptions = Parameters<Mistral["chat"]["complete"]>[1];
 
-/** chat.complete on the best model this key may use. Rethrows other errors. */
+/** chat.complete on the best model this key may use for the current task's tier. Rethrows other errors. */
 export async function chatComplete(req: CompleteRequest, opts?: CompleteOptions) {
-  const models = candidateModels();
+  const run = currentRun();
+  try {
+    const { res, model } = await completeOnBestModel(run?.tier ?? "deep", req, opts);
+    if (run) {
+      run.model = model;
+      run.inputTokens += res.usage?.promptTokens ?? 0;
+      run.outputTokens += res.usage?.completionTokens ?? 0;
+    }
+    return res;
+  } catch (e) {
+    if (run) run.errorCode = isRateLimited(e) ? "RATE_LIMITED" : "UNAVAILABLE";
+    throw e;
+  }
+}
+
+async function completeOnBestModel(tier: AiTier, req: CompleteRequest, opts?: CompleteOptions) {
+  const models = candidateModels(tier);
   if (models.length === 0) throw new Error("No Mistral model is available for this API key.");
   let lastError: unknown;
   for (const model of models) {
     try {
+      const run = currentRun();
+      if (run) run.calls++;
       const res = await completeWithRetry({ ...req, model }, opts);
-      if (workingModel !== model) console.info(`[ai] using Mistral model ${model}`);
-      workingModel = model;
-      return res;
+      if (workingModel.get(tier) !== model) console.info(`[ai] using Mistral model ${model} for ${tier} tasks`);
+      workingModel.set(tier, model);
+      return { res, model };
     } catch (e) {
       if (isModelDenied(e)) {
         console.warn(`[ai] Mistral model ${model} not available for this key, trying the next one`);
@@ -110,7 +128,7 @@ export async function chatComplete(req: CompleteRequest, opts?: CompleteOptions)
       } else {
         throw e;
       }
-      if (workingModel === model) workingModel = null;
+      if (workingModel.get(tier) === model) workingModel.delete(tier);
       lastError = e;
     }
   }

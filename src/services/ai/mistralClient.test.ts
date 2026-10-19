@@ -99,6 +99,32 @@ describe("chatComplete", () => {
     expect(complete.mock.calls[0][0].model).toBe("open-mistral-nemo");
   });
 
+  it("starts fast tasks on a small model and reports the model and tokens to the run", async () => {
+    const m = await load();
+    const { newMeter, runWithMeter } = await import("./runMeter");
+    complete.mockResolvedValue({ choices: [], usage: { promptTokens: 120, completionTokens: 30 } });
+    const meter = newMeter("exercise_coach");
+    await runWithMeter(meter, () => m.chatComplete({ messages: [] }));
+    expect(complete.mock.calls[0][0].model).toBe("mistral-small-latest");
+    expect(meter).toMatchObject({ calls: 1, model: "mistral-small-latest", inputTokens: 120, outputTokens: 30, errorCode: null });
+
+    const deep = newMeter("analyst");
+    await runWithMeter(deep, () => m.chatComplete({ messages: [] }));
+    expect(complete.mock.calls[1][0].model).toBe("mistral-large-latest");
+  });
+
+  it("honours a per-tier pin and marks a rate-limited run", async () => {
+    process.env.MISTRAL_MODEL_FAST = "ministral-8b-latest";
+    const m = await load();
+    const { newMeter, runWithMeter } = await import("./runMeter");
+    complete.mockRejectedValue(limited);
+    const meter = newMeter("coach.intro");
+    await expect(runWithMeter(meter, () => m.chatComplete({ messages: [] }))).rejects.toThrow("429");
+    expect(complete.mock.calls[0][0].model).toBe("ministral-8b-latest");
+    expect(meter.errorCode).toBe("RATE_LIMITED");
+    delete process.env.MISTRAL_MODEL_FAST;
+  });
+
   it("recognises tier and unknown-model errors", async () => {
     const m = await load();
     expect(m.isModelDenied(denied)).toBe(true);

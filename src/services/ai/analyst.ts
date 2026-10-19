@@ -14,6 +14,8 @@ import {
 import type { Units } from "@/domain/types";
 import { completeJson, LlmError } from "./llm";
 import { harmfulAdviceReason } from "./safety";
+import { notePromptVersion, noteRejected } from "./runMeter";
+import { promptVersion } from "./tasks";
 
 const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === "object") as T[]) : []);
 
@@ -82,6 +84,7 @@ export async function analyse(
   if (evidence.consistency.sessions === 0) return { evidence, interpretation: rules(), fallback: "no_data" };
 
   let raw: Record<string, unknown>;
+  notePromptVersion(promptVersion("analyst", ANALYST_SYSTEM_PROMPT));
   try {
     raw = await completeJson(
       [
@@ -96,6 +99,9 @@ export async function analyse(
   }
   const checked = validateInterpretation(raw, evidence);
   const text = checked ? [checked.summary, ...checked.points.map((p) => p.detail)].join(" ") : "";
-  if (!checked || harmfulAdviceReason(text)) return { evidence, interpretation: rules(), fallback: "invalid" };
+  if (!checked || harmfulAdviceReason(text)) {
+    noteRejected(checked ? "UNSAFE" : "INVALID");
+    return { evidence, interpretation: rules(), fallback: "invalid" };
+  }
   return { evidence, interpretation: checked, fallback: null };
 }
