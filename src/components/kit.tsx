@@ -23,7 +23,7 @@ export function PageHeader({ title, subtitle, actions }: { title: ReactNode; sub
 }
 
 const iconBtn =
-  "grid h-11 w-11 shrink-0 place-items-center rounded-control border border-border bg-surface text-inkSoft transition-colors hover:text-ink active:scale-95";
+  "relative grid h-11 w-11 shrink-0 place-items-center rounded-control border border-border bg-surface text-inkSoft transition-colors hover:text-ink active:scale-95";
 
 /** Square bordered icon button, as the bell on Home. A link with `href`, else a button. */
 export function IconButton({
@@ -32,14 +32,22 @@ export function IconButton({
   href,
   onClick,
   pressed,
+  dot,
 }: {
   icon: Icon;
   label: string;
   href?: string;
   onClick?: () => void;
   pressed?: boolean;
+  /** A lime dot in the corner, e.g. new items behind the bell. Say so in `label` too. */
+  dot?: boolean;
 }) {
-  const inner = <I className="h-5 w-5" aria-hidden />;
+  const inner = (
+    <>
+      <I className="h-5 w-5" aria-hidden />
+      {dot && <span aria-hidden className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-surface bg-accent" />}
+    </>
+  );
   if (href)
     return (
       <Link href={href} className={iconBtn} aria-label={label} title={label}>

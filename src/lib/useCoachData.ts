@@ -68,16 +68,8 @@ const KIND_TO_SITUATION: Record<CoachInsight["kind"], string> = {
   streak: "there's a solid, ongoing training streak right now",
 };
 
-/**
- * Assembles the deterministic TrainingSummary + insights from the local
- * store (the same source History/Progress read from), then layers on the
- * two narrow AI enrichments (intro line, meal ideas) with client + server
- * caching so unchanged training data never re-hits the model.
- */
-export function useCoachData() {
-  const ai = useAiStatus();
-  const enabled = ai.available === true && ai.signedIn && ai.consented === true;
-
+/** The deterministic TrainingSummary from the local store, without any AI. */
+export function useTrainingSummary(): TrainingSummary {
   const profile = useStore((s) => s.profile);
   const units = useStore((s) => s.units);
   const sessions = useStore((s) => s.sessions);
@@ -88,7 +80,7 @@ export function useCoachData() {
   const exercisesWithHistory = useStore((s) => s.exercisesWithHistory);
   const exerciseHistory = useStore((s) => s.exerciseHistory);
 
-  const summary: TrainingSummary = useMemo(() => {
+  return useMemo(() => {
     const now = new Date();
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
     const completedDates = sessions
@@ -143,6 +135,21 @@ export function useCoachData() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions, sets, prs, exercises, profile.goal, profile.experience, units]);
+}
+
+/**
+ * Assembles the deterministic TrainingSummary + insights from the local
+ * store (the same source History/Progress read from), then layers on the
+ * two narrow AI enrichments (intro line, meal ideas) with client + server
+ * caching so unchanged training data never re-hits the model.
+ */
+export function useCoachData() {
+  const ai = useAiStatus();
+  const enabled = ai.available === true && ai.signedIn && ai.consented === true;
+
+  const summary = useTrainingSummary();
+  const profile = useStore((s) => s.profile);
+  const units = useStore((s) => s.units);
 
   const insights = useMemo(() => buildDeterministicInsights(summary), [summary]);
 

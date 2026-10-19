@@ -14,6 +14,7 @@ import { localDayKey, startOfWeek, weekDays, weekStreak } from "@/domain/streak"
 import { label } from "@/domain/taxonomy";
 import { calcSetVolume } from "@/domain/volume";
 import { useHydrated, useStore } from "@/lib/store";
+import { useInbox } from "@/lib/useInbox";
 import { formatWeight, toDisplay } from "@/lib/units";
 import type { Units } from "@/domain/types";
 
@@ -31,6 +32,7 @@ const shortDate = (k: string) =>
 
 export default function HomePage() {
   const hydrated = useHydrated();
+  const { fresh } = useInbox();
   const router = useRouter();
   const session = useStore((s) => s.session);
   const profile = useStore((s) => s.profile);
@@ -124,7 +126,7 @@ export default function HomePage() {
             {firstName ? `, ${firstName}` : ""}
           </h1>
         </div>
-        <IconButton href="/coach" icon={Bell} label="Coach updates" />
+        <IconButton href="/inbox" icon={Bell} label={fresh.length ? `Inbox, ${fresh.length} new` : "Inbox"} dot={fresh.length > 0} />
       </header>
 
       {/* Today's workout */}

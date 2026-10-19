@@ -18,7 +18,7 @@ export interface NavItem {
   also?: string[];
 }
 
-export const HOME: NavItem = { href: "/", label: "Home", icon: Home, also: ["/coach"] };
+export const HOME: NavItem = { href: "/", label: "Home", icon: Home, also: ["/coach", "/inbox"] };
 /** Plan: the programme you follow and its calendar. */
 export const PLAN: NavItem = { href: "/programs", label: "Plan", icon: ClipboardList, also: ["/calendar"] };
 /** Workouts: the workouts you can start, live sessions and past workouts. */
