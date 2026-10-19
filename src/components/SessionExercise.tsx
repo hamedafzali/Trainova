@@ -231,6 +231,104 @@ export function SessionExercise({
   const steps = ex?.instructions ?? [];
   const cue = templateExercise?.cue ?? null;
 
+  // Table columns after SET and PREVIOUS, by how the exercise is logged.
+  const columns =
+    type === "duration"
+      ? ["Sec"]
+      : type === "cardio"
+        ? ["Min"]
+        : weighted && counted
+          ? [type === "assisted_bodyweight" ? "Assist" : type === "weighted_bodyweight" ? `+${units}` : units, "Reps"]
+          : ["Reps"];
+  const rowGrid =
+    columns.length === 2
+      ? "grid grid-cols-[2rem_minmax(0,1fr)_4rem_3rem_2.75rem] items-center gap-2"
+      : "grid grid-cols-[2rem_minmax(0,1fr)_4.5rem_2.75rem] items-center gap-2";
+  const w = (kg: number | null | undefined) => (kg == null ? "–" : String(stepperValue(kg, units)));
+
+  /** Last time's numbers for the same set, in the table's units. */
+  const previous = (s: WorkoutSet): string => {
+    const p = last?.sets[s.setIndex] as WorkoutSet | undefined;
+    if (!p) return "–";
+    if (type === "duration") return `${p.durationSec ?? "–"} s`;
+    if (type === "cardio") return `${p.durationMin ?? "–"} min`;
+    if (weighted && counted) return `${w(p.actualWeight)} × ${p.actualReps ?? "–"}`;
+    return `${p.actualReps ?? "–"} reps`;
+  };
+
+  /** The set's numbers: logged values once done, else what the steppers start at. */
+  const values = (s: WorkoutSet): string[] => {
+    if (type === "duration") return [String(s.completed ? (s.durationSec ?? "–") : startHold(s))];
+    if (type === "cardio") return [String(s.completed ? (s.durationMin ?? "–") : startMinutes(s))];
+    const reps = String(s.completed ? (s.actualReps ?? "–") : startReps(s));
+    return weighted && counted ? [s.completed ? w(s.actualWeight) : w(startWeight(s)), reps] : [reps];
+  };
+
+  const rowCells = (s: WorkoutSet, tag: string, kind: SetKind, active: boolean) => (
+    <div className={rowGrid}>
+      <span
+        className={`mx-auto grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${
+          active
+            ? "bg-accentFill text-onAccent"
+            : kind === "warmup"
+              ? "bg-warningSoft text-amber"
+              : kind === "drop" || kind === "failure"
+                ? "bg-danger/10 text-danger"
+                : "bg-surface text-inkSoft"
+        } ${s.editedAt ? "ring-2 ring-amber/60" : ""}`}
+        title={[SET_KINDS.find((k) => k.key === kind)?.label, s.editedAt ? "edited" : ""].filter(Boolean).join(" · ")}
+      >
+        {tag}
+      </span>
+      <span className="truncate text-sm tabular-nums text-muted">{previous(s)}</span>
+      {values(s).map((v, i) => (
+        <span
+          key={i}
+          className={`text-center text-[15px] font-semibold tabular-nums ${
+            active ? "text-accent" : s.completed ? "text-ink" : "text-muted"
+          }`}
+        >
+          {v}
+          {i === columns.length - 1 && s.completed && s.rpe != null && (
+            <span className="ml-0.5 text-[10px] font-normal text-muted">@{s.rpe}</span>
+          )}
+        </span>
+      ))}
+      <span className="flex justify-end">
+        {s.completed && !readOnly ? (
+          <button
+            type="button"
+            aria-label={`Undo set ${tag}`}
+            title="Undo"
+            onClick={(e) => {
+              e.stopPropagation();
+              updateSet(s.id, { completed: false, completedAt: null });
+            }}
+            className="group -my-1 -mr-2 grid h-11 w-11 place-items-center"
+          >
+            <span className="grid h-7 w-7 place-items-center rounded-control bg-green text-onStatus transition-transform group-active:scale-90">
+              <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
+            </span>
+          </button>
+        ) : s.completed ? (
+          <Check className="h-4 w-4 text-green" strokeWidth={3} aria-label="Done" />
+        ) : !readOnly && !active ? (
+          <button
+            type="button"
+            aria-label={`Delete set ${tag}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              removeSet(s.id);
+            }}
+            className="-my-1 -mr-2 grid h-11 w-11 place-items-center rounded-control text-muted hover:text-danger"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        ) : null}
+      </span>
+    </div>
+  );
+
   return (
     <section className="card space-y-4 p-4 sm:p-6">
       {/* header */}
@@ -303,283 +401,236 @@ export function SessionExercise({
 
       {cue && <p className="rounded-control bg-surface2/60 px-3 py-2 text-sm text-inkSoft">“{cue}”</p>}
 
-      {/* last time + suggestion */}
-      {!readOnly && counted && last && last.sets.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
-          <span className="min-w-0 truncate">
-            Last time:{" "}
-            <span className="text-inkSoft">
-              {last.sets
-                .slice(0, 5)
-                .map((s) =>
-                  describeSet(s as WorkoutSet, type, units),
-                )
-                .join(", ")}
-            </span>
-          </span>
-          {suggestion && suggestion.action !== "start" && (
-            <button
-              type="button"
-              onClick={applySuggestion}
-              title={suggestion.reason}
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${
-                suggestion.action === "increase" || suggestion.action === "add_reps"
-                  ? "bg-successSoft text-green"
-                  : suggestion.action === "deload"
-                    ? "bg-warningSoft text-amber"
-                    : "bg-surface2 text-inkSoft"
-              }`}
-            >
-              <TrendingUp className="h-3.5 w-3.5" aria-hidden />
-              {suggestion.action === "increase" ? "Try" : suggestion.action === "deload" ? "Deload to" : "Repeat"}{" "}
-              {suggestion.weight} {units}
-              {suggestion.action === "add_reps" ? ` × ${suggestion.reps}` : ""}?
-              <span className="ml-0.5 underline underline-offset-2">Apply</span>
-            </button>
-          )}
-        </div>
+      {/* progression hint; last time's numbers are in the PREVIOUS column */}
+      {!readOnly && suggestion && suggestion.action !== "start" && (
+        <button
+          type="button"
+          onClick={applySuggestion}
+          title={suggestion.reason}
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+            suggestion.action === "increase" || suggestion.action === "add_reps"
+              ? "bg-successSoft text-green"
+              : suggestion.action === "deload"
+                ? "bg-warningSoft text-amber"
+                : "bg-surface2 text-inkSoft"
+          }`}
+        >
+          <TrendingUp className="h-3.5 w-3.5" aria-hidden />
+          {suggestion.action === "increase" ? "Try" : suggestion.action === "deload" ? "Deload to" : "Repeat"}{" "}
+          {suggestion.weight} {units}
+          {suggestion.action === "add_reps" ? ` × ${suggestion.reps}` : ""}?
+          <span className="ml-0.5 underline underline-offset-2">Apply</span>
+        </button>
       )}
 
-      {/* sets */}
-      <ul className="space-y-2">
-        {sets.map((s) => {
-          const tag = numbers.get(s.id) ?? "";
-          const kind: SetKind = s.kind ?? "normal";
+      {/* sets: one row per set; the current set's row opens into big steppers */}
+      <div>
+        <div
+          aria-hidden
+          className={`${rowGrid} border border-transparent px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted`}
+        >
+          <span className="text-center">Set</span>
+          <span>Previous</span>
+          {columns.map((c) => (
+            <span key={c} className="text-center">
+              {c}
+            </span>
+          ))}
+          <span />
+        </div>
+        <ul className="space-y-1.5">
+          {sets.map((s) => {
+            const tag = numbers.get(s.id) ?? "";
+            const kind: SetKind = s.kind ?? "normal";
 
-          if (s === activeSet) {
-            return (
-              <li key={s.id} className="space-y-5 rounded-card border border-accent/30 bg-bg/60 p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-ink">
-                    {kind === "normal" ? `Set ${tag}` : SET_KINDS.find((k) => k.key === kind)?.label}
-                    {s.targetReps != null && counted && (
-                      <span className="ml-2 font-normal text-muted">target {s.targetReps} reps</span>
-                    )}
-                  </p>
-                  <button
-                    type="button"
-                    className="-my-2 -mr-2 flex min-h-11 items-center gap-1 rounded-control px-3 text-xs text-muted hover:text-danger"
-                    onClick={() => removeSet(s.id)}
-                  >
-                    <X className="h-3.5 w-3.5" aria-hidden /> Remove
-                  </button>
-                </div>
-
-                {counted && (
-                  <div role="radiogroup" aria-label="Set type" className="grid grid-cols-4 gap-1 rounded-control bg-surface2 p-1">
-                    {SET_KINDS.map((k) => (
+            if (s === activeSet) {
+              return (
+                <li
+                  key={s.id}
+                  aria-current="step"
+                  className="space-y-5 rounded-card border border-accent/40 bg-accent/[0.06] px-3 pb-4 pt-2.5"
+                >
+                  <div className="space-y-1">
+                    {rowCells(s, tag, kind, true)}
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-muted">
+                        {kind === "normal" ? "Working set" : SET_KINDS.find((k) => k.key === kind)?.label}
+                        {s.targetReps != null && counted && ` · target ${s.targetReps} reps`}
+                      </p>
                       <button
-                        key={k.key}
                         type="button"
-                        role="radio"
-                        aria-checked={kind === k.key}
-                        onClick={() => updateSet(s.id, { kind: k.key === "normal" ? undefined : k.key })}
-                        className={`min-h-10 rounded-md py-2 text-xs font-semibold transition-colors ${
-                          kind === k.key ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-inkSoft"
-                        }`}
+                        className="-my-2 -mr-2 flex min-h-11 items-center gap-1 rounded-control px-3 text-xs text-muted hover:text-danger"
+                        onClick={() => removeSet(s.id)}
                       >
-                        {k.key === "normal" ? "Working" : k.key === "warmup" ? "Warm-up" : k.key === "drop" ? "Drop" : "Failure"}
+                        <X className="h-3.5 w-3.5" aria-hidden /> Remove
                       </button>
-                    ))}
-                  </div>
-                )}
-
-                {type === "duration" && (
-                  <Field label="Duration">
-                    <Stepper
-                      label="Duration in seconds"
-                      size="lg"
-                      value={startHold(s)}
-                      step={5}
-                      min={5}
-                      unit="sec"
-                      onChange={(v) => updateSet(s.id, { durationSec: v })}
-                    />
-                  </Field>
-                )}
-
-                {type === "cardio" && (
-                  <>
-                    <Field label="Time">
-                      <Stepper label="Minutes" size="lg" value={startMinutes(s)} step={1} min={1} unit="min" onChange={(v) => updateSet(s.id, { durationMin: v })} />
-                    </Field>
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      <Field label="Speed">
-                        <Stepper label="Speed" value={startSpeed(s)} step={0.5} unit="km/h" onChange={(v) => updateSet(s.id, { speed: v })} />
-                      </Field>
-                      <Field label="Incline / level">
-                        <Stepper label="Incline" value={startIncline(s)} step={0.5} unit="%" onChange={(v) => updateSet(s.id, { incline: v })} />
-                      </Field>
-                      <Field label="Distance (optional)">
-                        <Stepper label="Distance" value={startDistance(s)} step={0.1} unit="km" onChange={(v) => updateSet(s.id, { distance: v })} />
-                      </Field>
                     </div>
-                  </>
-                )}
+                  </div>
 
-                {weighted && (
-                  <Field label={weightLabel(type)}>
-                    <Stepper
-                      label={weightLabel(type)}
-                      size="lg"
-                      value={stepperValue(startWeight(s), units)}
-                      step={weightStep(units)}
-                      unit={units}
-                      onChange={(v) => updateSet(s.id, { actualWeight: fromDisplay(v, units) })}
-                    />
-                    {bar != null && <PlateLoader total={stepperValue(startWeight(s), units)} bar={bar} units={units} />}
-                  </Field>
-                )}
-
-                {counted && (
-                  <Field label="Reps">
-                    <Stepper
-                      label="Reps"
-                      size={weighted ? "default" : "lg"}
-                      value={startReps(s)}
-                      step={1}
-                      min={0}
-                      max={200}
-                      unit="reps"
-                      onChange={(v) => updateSet(s.id, { actualReps: v })}
-                    />
-                  </Field>
-                )}
-
-                {counted && kind !== "warmup" && rpeOn && (
-                  <Field label="Effort (RPE)" hint="Optional · 10 = nothing left, 8 = 2 in reserve">
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {[6, 7, 8, 9, 10].map((rpe) => (
+                  {counted && (
+                    <div role="radiogroup" aria-label="Set type" className="grid grid-cols-4 gap-1 rounded-control bg-surface2 p-1">
+                      {SET_KINDS.map((k) => (
                         <button
-                          key={rpe}
+                          key={k.key}
                           type="button"
-                          aria-pressed={s.rpe === rpe}
-                          onClick={() => updateSet(s.id, { rpe: s.rpe === rpe ? null : rpe })}
-                          className={`min-h-11 rounded-control py-2.5 text-sm font-semibold transition-transform duration-100 active:scale-95 ${
-                            s.rpe === rpe ? "bg-accentFill text-onAccent" : "bg-surface2 text-inkSoft hover:text-ink"
+                          role="radio"
+                          aria-checked={kind === k.key}
+                          onClick={() => updateSet(s.id, { kind: k.key === "normal" ? undefined : k.key })}
+                          className={`min-h-10 rounded-md py-2 text-xs font-semibold transition-colors ${
+                            kind === k.key ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-inkSoft"
                           }`}
                         >
-                          {rpe}
+                          {k.key === "normal" ? "Working" : k.key === "warmup" ? "Warm-up" : k.key === "drop" ? "Drop" : "Failure"}
                         </button>
                       ))}
                     </div>
-                  </Field>
-                )}
+                  )}
 
-                <CompleteButton
-                  onComplete={() => complete(s)}
-                  label={type === "cardio" ? "Log cardio" : type === "duration" ? "Log hold" : "Complete set"}
+                  {type === "duration" && (
+                    <Field label="Duration">
+                      <Stepper
+                        label="Duration in seconds"
+                        size="lg"
+                        value={startHold(s)}
+                        step={5}
+                        min={5}
+                        unit="sec"
+                        onChange={(v) => updateSet(s.id, { durationSec: v })}
+                      />
+                    </Field>
+                  )}
+
+                  {type === "cardio" && (
+                    <>
+                      <Field label="Time">
+                        <Stepper label="Minutes" size="lg" value={startMinutes(s)} step={1} min={1} unit="min" onChange={(v) => updateSet(s.id, { durationMin: v })} />
+                      </Field>
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <Field label="Speed">
+                          <Stepper label="Speed" value={startSpeed(s)} step={0.5} unit="km/h" onChange={(v) => updateSet(s.id, { speed: v })} />
+                        </Field>
+                        <Field label="Incline / level">
+                          <Stepper label="Incline" value={startIncline(s)} step={0.5} unit="%" onChange={(v) => updateSet(s.id, { incline: v })} />
+                        </Field>
+                        <Field label="Distance (optional)">
+                          <Stepper label="Distance" value={startDistance(s)} step={0.1} unit="km" onChange={(v) => updateSet(s.id, { distance: v })} />
+                        </Field>
+                      </div>
+                    </>
+                  )}
+
+                  {weighted && (
+                    <Field label={weightLabel(type)}>
+                      <Stepper
+                        label={weightLabel(type)}
+                        size="lg"
+                        value={stepperValue(startWeight(s), units)}
+                        step={weightStep(units)}
+                        unit={units}
+                        onChange={(v) => updateSet(s.id, { actualWeight: fromDisplay(v, units) })}
+                      />
+                      {bar != null && <PlateLoader total={stepperValue(startWeight(s), units)} bar={bar} units={units} />}
+                    </Field>
+                  )}
+
+                  {counted && (
+                    <Field label="Reps">
+                      <Stepper
+                        label="Reps"
+                        size={weighted ? "default" : "lg"}
+                        value={startReps(s)}
+                        step={1}
+                        min={0}
+                        max={200}
+                        unit="reps"
+                        onChange={(v) => updateSet(s.id, { actualReps: v })}
+                      />
+                    </Field>
+                  )}
+
+                  {counted && kind !== "warmup" && rpeOn && (
+                    <Field label="Effort (RPE)" hint="Optional · 10 = nothing left, 8 = 2 in reserve">
+                      <div className="grid grid-cols-5 gap-1.5">
+                        {[6, 7, 8, 9, 10].map((rpe) => (
+                          <button
+                            key={rpe}
+                            type="button"
+                            aria-pressed={s.rpe === rpe}
+                            onClick={() => updateSet(s.id, { rpe: s.rpe === rpe ? null : rpe })}
+                            className={`min-h-11 rounded-control py-2.5 text-sm font-semibold transition-transform duration-100 active:scale-95 ${
+                              s.rpe === rpe ? "bg-accentFill text-onAccent" : "bg-surface2 text-inkSoft hover:text-ink"
+                            }`}
+                          >
+                            {rpe}
+                          </button>
+                        ))}
+                      </div>
+                    </Field>
+                  )}
+
+                  <CompleteButton
+                    onComplete={() => complete(s)}
+                    label={type === "cardio" ? "Log cardio" : type === "duration" ? "Log hold" : "Complete set"}
+                  />
+                </li>
+              );
+            }
+
+            if (editable && editingId === s.id && s.completed) {
+              return (
+                <EditSetRow
+                  key={s.id}
+                  set={s}
+                  tag={tag}
+                  weighted={weighted}
+                  counted={counted}
+                  units={units}
+                  device={device?.id ?? null}
+                  devices={deviceChoices}
+                  exercises={siblingList}
+                  onCancel={() => setEditingId(null)}
+                  onRevert={() => {
+                    revertSet(s.id);
+                    setEditingId(null);
+                  }}
+                  onDelete={() => {
+                    removeSet(s.id);
+                    setEditingId(null);
+                  }}
+                  onSave={({ kg, reps, deviceId, moveTo }) => {
+                    if (counted) editSet(s.id, { actualWeight: weighted ? kg : null, actualReps: reps > 0 ? reps : null });
+                    if (deviceId !== (device?.id ?? null)) setExerciseDevice(sessionId, exerciseId, deviceId);
+                    if (moveTo) moveSet(s.id, moveTo);
+                    setEditingId(null);
+                  }}
                 />
+              );
+            }
+
+            const canEdit = editable && s.completed;
+            return (
+              <li
+                key={s.id}
+                onClick={() => canEdit && setEditingId(s.id)}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && canEdit) {
+                    e.preventDefault();
+                    setEditingId(s.id);
+                  }
+                }}
+                role={canEdit ? "button" : undefined}
+                tabIndex={canEdit ? 0 : undefined}
+                aria-label={canEdit ? `Fix set ${tag}: ${describeSet(s, type, units)}` : undefined}
+                className={`rounded-control border border-transparent px-3 py-1.5 ${s.completed ? "bg-successSoft/70" : "bg-surface2/50"} ${
+                  canEdit ? "cursor-pointer hover:bg-successSoft" : ""
+                }`}
+              >
+                {rowCells(s, tag, kind, false)}
               </li>
             );
-          }
-
-          if (editable && editingId === s.id && s.completed) {
-            return (
-              <EditSetRow
-                key={s.id}
-                set={s}
-                tag={tag}
-                weighted={weighted}
-                counted={counted}
-                units={units}
-                device={device?.id ?? null}
-                devices={deviceChoices}
-                exercises={siblingList}
-                onCancel={() => setEditingId(null)}
-                onRevert={() => {
-                  revertSet(s.id);
-                  setEditingId(null);
-                }}
-                onDelete={() => {
-                  removeSet(s.id);
-                  setEditingId(null);
-                }}
-                onSave={({ kg, reps, deviceId, moveTo }) => {
-                  if (counted) editSet(s.id, { actualWeight: weighted ? kg : null, actualReps: reps > 0 ? reps : null });
-                  if (deviceId !== (device?.id ?? null)) setExerciseDevice(sessionId, exerciseId, deviceId);
-                  if (moveTo) moveSet(s.id, moveTo);
-                  setEditingId(null);
-                }}
-              />
-            );
-          }
-
-          const canEdit = editable && s.completed;
-          return (
-            <li
-              key={s.id}
-              onClick={() => canEdit && setEditingId(s.id)}
-              onKeyDown={(e) => {
-                if ((e.key === "Enter" || e.key === " ") && canEdit) {
-                  e.preventDefault();
-                  setEditingId(s.id);
-                }
-              }}
-              role={canEdit ? "button" : undefined}
-              tabIndex={canEdit ? 0 : undefined}
-              className={`flex items-center gap-3 rounded-control px-3 py-2.5 text-sm ${
-                s.completed ? "bg-successSoft/70" : "bg-surface2/50"
-              } ${canEdit ? "cursor-pointer hover:bg-successSoft" : ""}`}
-            >
-              <span
-                className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${
-                  kind === "warmup"
-                    ? "bg-warningSoft text-amber"
-                    : kind === "drop" || kind === "failure"
-                      ? "bg-danger/10 text-danger"
-                      : "bg-surface text-inkSoft"
-                }`}
-                title={SET_KINDS.find((k) => k.key === kind)?.label}
-              >
-                {tag}
-              </span>
-              <span className={`min-w-0 flex-1 truncate font-semibold tabular-nums ${s.completed ? "text-ink" : "text-muted"}`}>
-                {describeSet(
-                  s.completed || !counted ? s : { ...s, actualWeight: startWeight(s), actualReps: startReps(s) },
-                  type,
-                  units,
-                  !s.completed,
-                )}
-                {s.completed && s.rpe != null && <span className="ml-2 text-xs font-normal text-muted">RPE {s.rpe}</span>}
-                {s.editedAt && <span className="ml-2 text-[10px] font-semibold uppercase text-amber">edited</span>}
-              </span>
-              {canEdit && <span className="text-xs font-semibold text-accent">Edit</span>}
-              {!readOnly && !s.completed && (
-                <button
-                  type="button"
-                  aria-label={`Delete set ${tag}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeSet(s.id);
-                  }}
-                  className="-my-2 -mr-2 grid h-11 w-11 place-items-center rounded-control text-muted hover:text-danger"
-                >
-                  <X className="h-4 w-4" aria-hidden />
-                </button>
-              )}
-              {s.completed && !readOnly ? (
-                <button
-                  type="button"
-                  aria-label={`Undo set ${tag}`}
-                  title="Undo"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateSet(s.id, { completed: false, completedAt: null });
-                  }}
-                  className="group -my-2 -mr-2 grid h-11 w-11 place-items-center"
-                >
-                  <span className="grid h-7 w-7 place-items-center rounded-control bg-green text-onStatus transition-transform group-active:scale-90">
-                    <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
-                  </span>
-                </button>
-              ) : s.completed ? (
-                <Check className="h-4 w-4 text-green" strokeWidth={3} aria-label="Done" />
-              ) : null}
-            </li>
-          );
-        })}
-      </ul>
+          })}
+        </ul>
+      </div>
 
       {!readOnly && (
         <button
