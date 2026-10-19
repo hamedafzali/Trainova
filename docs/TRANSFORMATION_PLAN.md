@@ -103,9 +103,9 @@ Where we differ from the reference, and why:
 - **Own copy** wherever the reference's text isn't a label.
 
 ### M6 — Exercise & Equipment Coach
-- [ ] Context builder (exercise metadata, device, targets, today's sets, history, limitations)
-- [ ] Deterministic set assessment + substitutions; model explains, never invents machine settings
-- [ ] In-workout sheet UI
+- [x] Context builder (exercise metadata, device, targets, today's sets, history, limitations) — `src/domain/exerciseCoach.ts`, same answer on server and device
+- [x] Deterministic set assessment + substitutions; model explains, never invents machine settings — `POST /api/ai/exercise-coach` builds evidence from the synced log, validates numbers against facts, rejects seat/pin settings, red-flag symptoms get a stop message
+- [x] In-workout sheet UI — `ExerciseCoachSheet` from the live exercise card and from an exercise's page during a workout: status, next set, per-set check, coach reading (rules offline / AI with consent), and swaps for the sets not yet logged (`swapSessionExercise`, this workout only)
 
 ### M7 — AI orchestration, evaluation & observability
 - [ ] Orchestrator + model routing per task, model recorded per response

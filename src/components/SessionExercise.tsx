@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, Info, Plus, TrendingUp, X } from "lucide-react";
+import { Check, ChevronDown, Info, Plus, Sparkles, TrendingUp, X } from "lucide-react";
 import { Stepper } from "@/components/Stepper";
 import { CompleteButton } from "@/components/CompleteButton";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
+import { ExerciseCoachSheet } from "@/components/ExerciseCoachSheet";
 import { PlateLoader } from "@/components/PlateLoader";
 import { barWeight } from "@/domain/plates";
 import { suggestNextLoad } from "@/domain/progression";
@@ -60,6 +61,7 @@ export function SessionExercise({
   readOnly = false,
   editable = false,
   onPr,
+  onSwapped,
 }: {
   sessionId: string;
   exerciseId: string;
@@ -67,6 +69,8 @@ export function SessionExercise({
   readOnly?: boolean;
   editable?: boolean; // allow correcting logged sets (live or finished workout)
   onPr: (kinds: string[]) => void;
+  /** Called with the new exercise after the coach swaps this one out. */
+  onSwapped?: (exerciseId: string) => void;
 }) {
   const units = useStore((s) => s.units);
   const rpeOn = useStore((s) => showsRpe(s.profile.coaching));
@@ -97,6 +101,7 @@ export function SessionExercise({
   const startRest = useRestTimer((s) => s.start);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [coachOpen, setCoachOpen] = useState(false);
 
   const ex = exerciseById(exerciseId);
   const device = deviceById(sets[0]?.deviceId ?? ex?.defaultDeviceId ?? undefined);
@@ -239,6 +244,18 @@ export function SessionExercise({
             {done.length}/{sets.length} sets
           </p>
         </div>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => setCoachOpen(true)}
+            aria-label="Exercise coach"
+            title="Exercise coach"
+            data-testid="open-exercise-coach"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-control bg-ai/15 text-ai transition-colors hover:bg-ai/25"
+          >
+            <Sparkles className="h-5 w-5" aria-hidden />
+          </button>
+        )}
         {(steps.length > 0 || muscles.length > 0 || device?.guidance) && (
           <button
             type="button"
@@ -275,6 +292,14 @@ export function SessionExercise({
           {device?.guidance && <p className="text-xs text-muted">{device.guidance}</p>}
         </div>
       )}
+
+      <ExerciseCoachSheet
+        open={coachOpen}
+        sessionId={sessionId}
+        exerciseId={exerciseId}
+        onClose={() => setCoachOpen(false)}
+        onSwapped={onSwapped}
+      />
 
       {cue && <p className="rounded-control bg-surface2/60 px-3 py-2 text-sm text-inkSoft">“{cue}”</p>}
 

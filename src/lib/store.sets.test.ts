@@ -54,3 +54,38 @@ describe("correcting logged sets", () => {
     expect(st().sets.filter((x) => x.exerciseId === bench).at(-1)?.targetWeight).toBe(35);
   });
 });
+
+describe("swapping an exercise mid-workout", () => {
+  let session: string;
+  let bench: string;
+  let row: string;
+  let press: string;
+  beforeEach(() => {
+    st().resetUserData();
+    session = st().startSession(null).id!;
+    [bench, row, press] = st().exercises.filter((e) => e.type === "weight_reps" || !e.type).map((e) => e.id);
+  });
+
+  it("moves the open sets and keeps the logged ones", () => {
+    logSet(session, bench, 60, 8);
+    st().addSet(session, bench);
+    st().addSet(session, bench);
+    expect(st().swapSessionExercise(session, bench, press)).toBe(2);
+    const sets = st().setsForSession(session);
+    const benchSets = sets.filter((x) => x.exerciseId === bench);
+    expect(benchSets.map((x) => x.completed)).toEqual([true]);
+    const moved = sets.filter((x) => x.exerciseId === press);
+    expect(moved.map((x) => x.setIndex)).toEqual([0, 1]);
+    expect(moved.every((x) => !x.completed && x.targetWeight === null)).toBe(true);
+  });
+
+  it("refuses an exercise already in the workout or nothing to move", () => {
+    st().addSet(session, bench);
+    st().addSet(session, row);
+    expect(st().swapSessionExercise(session, bench, row)).toBe(0);
+    logSet(session, press, 40, 10);
+    const other = st().exercises.find((e) => ![bench, row, press].includes(e.id))!.id;
+    expect(st().swapSessionExercise(session, press, other)).toBe(0);
+    expect(st().setsForSession(session).filter((x) => x.exerciseId === bench)).toHaveLength(1);
+  });
+});

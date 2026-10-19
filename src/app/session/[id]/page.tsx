@@ -438,6 +438,7 @@ export default function SessionPage() {
             sets={setsByExercise.get(focused) ?? []}
             editable
             onPr={showPr}
+            onSwapped={setCurrent}
           />
 
           <div className="grid grid-cols-2 gap-2">

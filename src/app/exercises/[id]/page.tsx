@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Bookmark, Ellipsis, Info, Layers, Plus, SearchX, ShieldCheck, Timer, Trophy, User } from "lucide-react";
+import { ArrowLeft, Bookmark, Ellipsis, Info, Layers, Plus, SearchX, ShieldCheck, Sparkles, Timer, Trophy, User } from "lucide-react";
+import { ExerciseCoachSheet } from "@/components/ExerciseCoachSheet";
 import { BodyMap } from "@/components/BodyMap";
 import { EmptyState } from "@/components/EmptyState";
 import { LineChart } from "@/components/LineChart";
@@ -80,6 +81,7 @@ export default function ExerciseDetailPage() {
     ];
   }, [type, history, bests.maxWeight, units]);
   const [metricKey, setMetricKey] = useState<string | null>(null);
+  const [coachOpen, setCoachOpen] = useState(false);
   const metric = metrics.find((m) => m.key === metricKey) ?? metrics[0];
 
   const recent = useMemo(() => {
@@ -217,6 +219,18 @@ export default function ExerciseDetailPage() {
           <ArrowLeft className="h-6 w-6" aria-hidden />
         </button>
         <h1 className="min-w-0 flex-1 truncate text-center text-[19px] font-medium text-ink">{exercise.name}</h1>
+        {live && (
+          <button
+            type="button"
+            onClick={() => setCoachOpen(true)}
+            aria-label="Exercise coach"
+            title="Coach for today's workout"
+            data-testid="open-exercise-coach"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-ai hover:bg-surface"
+          >
+            <Sparkles className="h-6 w-6" strokeWidth={1.7} aria-hidden />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => toggleFavorite(id)}
@@ -228,6 +242,16 @@ export default function ExerciseDetailPage() {
         </button>
         <MoreMenu />
       </header>
+
+      {live && (
+        <ExerciseCoachSheet
+          open={coachOpen}
+          sessionId={active!.id}
+          exerciseId={id}
+          onClose={() => setCoachOpen(false)}
+          onSwapped={() => router.push(`/session/${active!.id}`)}
+        />
+      )}
 
       <Tabs tabs={TABS} value={tab} onChange={setTab} label="Exercise sections" idPrefix="ex" className="-mx-4 px-2 md:mx-0 md:px-0" />
 

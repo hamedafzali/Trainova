@@ -186,6 +186,12 @@ export interface TrainovaState {
   setExerciseDevice: (sessionId: string, exerciseId: string, deviceId: string | null) => void;
   /** Move a logged set to another exercise in the same workout (logged on the wrong card). */
   moveSet: (setId: string, toExerciseId: string) => void;
+  /**
+   * Swap an exercise for another in this workout only: its open sets move to
+   * `toExerciseId`, logged sets stay where they were. Returns how many sets
+   * moved (0 when nothing is open or the target is already in the workout).
+   */
+  swapSessionExercise: (sessionId: string, fromExerciseId: string, toExerciseId: string) => number;
 
   // selectors
   getActiveSession: () => WorkoutSession | null;
@@ -1033,6 +1039,28 @@ export const useStore = create<TrainovaState>()(
           const sets = next.map((x) => (index.has(x.id) ? { ...x, setIndex: index.get(x.id)! } : x));
           return { sets, prs: withRebuiltPrs({ ...s, sets }, [target.exerciseId, toExerciseId]) };
         }),
+
+      swapSessionExercise: (sessionId, fromExerciseId, toExerciseId) => {
+        const s = get();
+        if (fromExerciseId === toExerciseId) return 0;
+        const inWorkout = s.sets.filter((x) => x.sessionId === sessionId);
+        if (inWorkout.some((x) => x.exerciseId === toExerciseId)) return 0;
+        const open = inWorkout
+          .filter((x) => x.exerciseId === fromExerciseId && !x.completed)
+          .sort((a, b) => a.setIndex - b.setIndex);
+        if (open.length === 0) return 0;
+        const deviceId = s.exercises.find((e) => e.id === toExerciseId)?.defaultDeviceId ?? null;
+        // The old exercise's target load means nothing on the new one; reps carry over.
+        const index = new Map(open.map((x, i) => [x.id, i]));
+        set({
+          sets: s.sets.map((x) =>
+            index.has(x.id)
+              ? { ...x, exerciseId: toExerciseId, deviceId, targetWeight: null, actualWeight: null, setIndex: index.get(x.id)! }
+              : x,
+          ),
+        });
+        return open.length;
+      },
 
       getActiveSession: () => activeSession(get().sessions),
 
