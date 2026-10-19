@@ -12,7 +12,7 @@ export function BottomNav() {
   const current = activeHref(MOBILE_TABS, path);
   return (
     <nav
-      className="md:hidden fixed inset-x-0 bottom-0 z-50 border-t border-border bg-elevated/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
+      className="md:hidden fixed inset-x-0 bottom-0 z-50 rounded-t-sheet border-t border-border bg-elevated/70 px-2 pb-[env(safe-area-inset-bottom)] pt-1 shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.25)] backdrop-blur-xl"
       aria-label="Primary"
     >
       <ul className="mx-auto grid max-w-md grid-cols-5">
@@ -24,8 +24,8 @@ export function BottomNav() {
                 href={t.href}
                 aria-current={active ? "page" : undefined}
                 data-testid={`nav-${t.label.toLowerCase().replace(/\s+/g, "-")}`}
-                className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors ${
-                  active ? "text-accent" : "text-inkSoft hover:text-ink"
+                className={`flex min-h-[3.75rem] flex-col items-center justify-center gap-1.5 text-[10px] transition-colors ${
+                  active ? "font-semibold text-accent" : "font-medium text-muted hover:text-ink"
                 }`}
               >
                 <t.icon
