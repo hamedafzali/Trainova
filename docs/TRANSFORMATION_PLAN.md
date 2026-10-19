@@ -158,7 +158,7 @@ After M8 (2026-10-19): typecheck, lint, 408/408 tests, build — all pass. Recov
 After M9 (2026-10-19): typecheck, lint, 24/24 evals, 408/408 tests, build, `pnpm audit --prod` — all pass. Full list in `docs/VERIFICATION.md`.
 
 - **CI was red on every run** until this milestone (jsdom 30 / undici 8 need Node 22). Confirm the first run after pushing is green.
-- **Docker image is still `node:20-alpine`** (end of life). Production is unaffected; upgrade to 22 in its own deploy.
+- **Docker image moved to `node:22-alpine`** (after M9, own deploy). CI now builds the image and checks it boots; watch the first ACM boot.
 - **Backups live on the same host** as the database. Copy them off the box.
 
 - **CSP** still allows `'unsafe-inline'` scripts (Next inline bootstrap + theme script). Nonce-based CSP is a follow-up.

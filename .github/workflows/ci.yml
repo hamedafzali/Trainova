@@ -22,3 +22,20 @@ jobs:
       - run: pnpm eval
       - run: pnpm test
       - run: pnpm build
+
+  # Builds the production image ACM deploys and checks that it boots and serves
+  # the app shell (guest mode, no database needed).
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --build-arg NEXT_PUBLIC_AUTH_ENABLED=1 -t trainova:ci .
+      - name: Boot and fetch /
+        run: |
+          docker run -d --name trainova-ci -p 3000:3000 trainova:ci
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:3000/; then echo "serving"; exit 0; fi
+            sleep 2
+          done
+          docker logs trainova-ci
+          exit 1

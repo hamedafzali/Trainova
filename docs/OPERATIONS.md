@@ -16,7 +16,8 @@ next to the production services:
 `docker compose -f docker-compose.yml -f docker-compose.dev.yml up web-dev`.
 
 CI (`.github/workflows/ci.yml`) runs the same five checks on every push to
-`main` and `transformation`, and on every pull request.
+`main` and `transformation`, and on every pull request. A second job builds
+the production Docker image and checks that it boots and serves `/`.
 
 ## Environment
 
