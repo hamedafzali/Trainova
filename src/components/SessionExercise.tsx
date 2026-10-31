@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, Info, Plus, Sparkles, TrendingUp, X } from "lucide-react";
+import { Check, ChevronDown, Info, PersonStanding, Plus, Sparkles, TrendingUp, X } from "lucide-react";
 import { Stepper } from "@/components/Stepper";
 import { CompleteButton } from "@/components/CompleteButton";
 import { DeviceAvatar } from "@/components/DeviceAvatar";
 import { ExerciseCoachSheet } from "@/components/ExerciseCoachSheet";
+import { MovementPreview } from "@/components/motion/MovementGuide";
 import { PlateLoader } from "@/components/PlateLoader";
 import { Segmented } from "@/components/ui/Segmented";
 import { barWeight } from "@/domain/plates";
@@ -107,6 +108,7 @@ export function SessionExercise({
   const startRest = useRestTimer((s) => s.start);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [show3d, setShow3d] = useState(false);
   const [coachOpen, setCoachOpen] = useState(false);
 
   const ex = exerciseById(exerciseId);
@@ -343,7 +345,7 @@ export function SessionExercise({
         <DeviceAvatar device={device} className="h-11 w-11 rounded-control text-sm" />
         <div className="min-w-0 flex-1">
           <h2 className="text-h3 leading-tight text-ink">{ex?.name ?? "Exercise"}</h2>
-          <p className="mt-0.5 truncate text-xs text-muted">
+          <p className="mt-0.5 text-xs text-muted">
             {device ? `${device.name}${device.machineNumber ? ` · No. ${device.machineNumber}` : ""}` : label(type)}
             {" · "}
             {done.length}/{sets.length} sets
@@ -361,6 +363,20 @@ export function SessionExercise({
             <Sparkles className="h-5 w-5" aria-hidden />
           </button>
         )}
+        {ex && (
+          <button
+            type="button"
+            onClick={() => setShow3d((v) => !v)}
+            aria-expanded={show3d}
+            aria-label="Show the 3D movement guide"
+            title="3D movement guide"
+            className={`grid h-11 w-11 shrink-0 place-items-center rounded-control transition-colors ${
+              show3d ? "bg-accent/15 text-accent" : "bg-surface2 text-inkSoft hover:text-ink"
+            }`}
+          >
+            <PersonStanding className="h-5 w-5" aria-hidden />
+          </button>
+        )}
         {(steps.length > 0 || muscles.length > 0 || device?.guidance) && (
           <button
             type="button"
@@ -375,6 +391,13 @@ export function SessionExercise({
           </button>
         )}
       </div>
+
+      {/* 3D guide: three.js only loads once this is opened */}
+      {show3d && ex && (
+        <div className="enter-fade">
+          <MovementPreview exercise={ex} />
+        </div>
+      )}
 
       {showInfo && (
         <div className="space-y-3 rounded-control bg-surface2/60 p-4 text-sm text-inkSoft enter-fade">
