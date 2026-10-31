@@ -9,7 +9,7 @@ import { ExerciseCoachSheet } from "@/components/ExerciseCoachSheet";
 import { PlateLoader } from "@/components/PlateLoader";
 import { Segmented } from "@/components/ui/Segmented";
 import { barWeight } from "@/domain/plates";
-import { suggestNextLoad } from "@/domain/progression";
+import { suggestNextLoad, type LastPerformance } from "@/domain/progression";
 import { exerciseTypeOf, usesReps, usesWeight } from "@/domain/exerciseType";
 import { SET_KINDS, label, type ExerciseType, type SetKind } from "@/domain/taxonomy";
 import { useStore } from "@/lib/store";
@@ -252,15 +252,16 @@ export function SessionExercise({
       : "grid grid-cols-[2rem_minmax(0,1fr)_4.5rem_2.75rem] items-center gap-2";
   const w = (kg: number | null | undefined) => (kg == null ? "–" : String(stepperValue(kg, units)));
 
-  /** Last time's numbers for the same set, in the table's units. */
-  const previous = (s: WorkoutSet): string => {
-    const p = last?.sets[s.setIndex] as WorkoutSet | undefined;
+  /** One of last time's sets, in the table's units. */
+  const shortSet = (p: LastPerformance["sets"][number] | undefined): string => {
     if (!p) return "–";
     if (type === "duration") return `${p.durationSec ?? "–"} s`;
     if (type === "cardio") return `${p.durationMin ?? "–"} min`;
     if (weighted && counted) return `${w(p.actualWeight)} × ${p.actualReps ?? "–"}`;
     return `${p.actualReps ?? "–"} reps`;
   };
+  /** Last time's numbers for the same set. */
+  const previous = (s: WorkoutSet) => shortSet(last?.sets[s.setIndex]);
 
   /** The set's numbers: logged values once done, else what the steppers start at. */
   const values = (s: WorkoutSet): string[] => {
@@ -427,6 +428,18 @@ export function SessionExercise({
           {suggestion.action === "add_reps" ? ` × ${suggestion.reps}` : ""}?
           <span className="ml-0.5 underline underline-offset-2">Apply</span>
         </button>
+      )}
+
+      {/* every set from last time, so set 2 and 3 show before their rows are added */}
+      {last && last.sets.length > 0 && (
+        <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+          <span className="font-semibold uppercase tracking-wide">Last time</span>
+          {last.sets.map((p, i) => (
+            <span key={i} className="rounded-full bg-surface2 px-2 py-0.5 tabular-nums text-inkSoft">
+              {shortSet(p)}
+            </span>
+          ))}
+        </p>
       )}
 
       {/* sets: one row per set; the current set's row opens into big steppers */}

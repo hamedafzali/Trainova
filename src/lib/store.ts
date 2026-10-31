@@ -1147,6 +1147,8 @@ export const useStore = create<TrainovaState>()(
                 actualWeight: x.actualWeight,
                 rpe: x.rpe,
                 completed: x.completed,
+                durationSec: x.durationSec,
+                durationMin: x.durationMin,
               })),
             };
           }
