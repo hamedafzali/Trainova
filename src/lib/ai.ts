@@ -6,7 +6,7 @@ import { apiFetch, fetchMeCached, isSignedIn } from "@/lib/auth";
 let statusPromise: Promise<boolean> | null = null;
 
 function fetchAvailable(): Promise<boolean> {
-  statusPromise ??= fetch("/api/ai/status", { cache: "no-store" })
+  statusPromise ??= apiFetch("/api/ai/status", { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : { available: false }))
     .then((j: { available?: boolean }) => j.available === true)
     .catch(() => {
