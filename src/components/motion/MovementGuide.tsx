@@ -33,6 +33,15 @@ export function MovementHero({ exercise }: { exercise: Exercise }) {
   );
 }
 
+/** The guide with its controls but no card around it, for opening inside another card. */
+export function MovementPreview({ exercise }: { exercise: Exercise }) {
+  return (
+    <WebGLBoundary>
+      <MotionViewer exercise={exercise} />
+    </WebGLBoundary>
+  );
+}
+
 export function MovementGuide({ exercise }: { exercise: Exercise }) {
   return (
     <section className="card space-y-3 p-4 sm:p-6">
