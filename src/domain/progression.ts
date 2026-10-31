@@ -51,7 +51,7 @@ export interface ProgressionSuggestion {
 
 export interface LastPerformance {
   /** Sets logged for this exercise in the most recent session, in order. */
-  sets: Pick<WorkoutSet, "actualReps" | "actualWeight" | "rpe" | "completed">[];
+  sets: Pick<WorkoutSet, "actualReps" | "actualWeight" | "rpe" | "completed" | "durationSec" | "durationMin">[];
   targetReps: number;
 }
 
