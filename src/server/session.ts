@@ -4,6 +4,8 @@ import { signToken, verifyToken } from "./auth";
 
 export const SESSION_COOKIE = "tv_session";
 export const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+export const NATIVE_CLIENT_HEADER = "x-trainova-client";
+export const SESSION_TOKEN_HEADER = "x-session-token";
 
 export type SessionUser = {
   userId: string;
@@ -87,6 +89,10 @@ export async function startSession(
     path: "/",
     maxAge: SESSION_TTL_SECONDS,
   });
+  // The native app has no cookie jar it can rely on; it asks for the token and
+  // keeps it in the device keychain, then sends it as a bearer. Browsers never
+  // send this header, so the web session stays HttpOnly-only.
+  if (req.headers.get(NATIVE_CLIENT_HEADER) === "native") res.headers.set(SESSION_TOKEN_HEADER, token);
   return res;
 }
 

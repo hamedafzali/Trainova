@@ -101,6 +101,39 @@ describe("sessions", () => {
     expect(set).toMatch(/SameSite=lax/i);
     expect(await res.json()).not.toHaveProperty("token");
   });
+
+  it("hands the native app a bearer token that authenticates without a cookie", async () => {
+    const { POST } = await import("@/app/api/auth/login/route");
+    await signup("n@example.com");
+    const web = await POST(req("/api/auth/login", { method: "POST", body: { email: "n@example.com", password: "correct horse battery" } }));
+    expect(web.headers.get("x-session-token")).toBeNull();
+
+    const native = await POST(
+      new Request(ORIGIN + "/api/auth/login", {
+        method: "POST",
+        headers: { host: "trainova.test", "content-type": "application/json", "x-trainova-client": "native" },
+        body: JSON.stringify({ email: "n@example.com", password: "correct horse battery" }),
+      }),
+    );
+    expect(native.status).toBe(200);
+    const token = native.headers.get("x-session-token");
+    expect(token).toBeTruthy();
+
+    const me = await import("@/app/api/auth/me/route");
+    const ok = await me.GET(new Request(ORIGIN + "/api/auth/me", { headers: { host: "trainova.test", authorization: `Bearer ${token}` } }));
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toMatchObject({ email: "n@example.com" });
+
+    const { PUT } = await import("@/app/api/state/route");
+    const put = await PUT(
+      new Request(ORIGIN + "/api/state", {
+        method: "PUT",
+        headers: { host: "trainova.test", "content-type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({ data: { units: "kg" } }),
+      }),
+    );
+    expect(put.status).toBe(200);
+  });
 });
 
 describe("PUT /api/state", () => {
