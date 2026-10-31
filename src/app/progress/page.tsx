@@ -196,7 +196,8 @@ export default function ProgressPage() {
 
                 <StatBand
                   label="Workout summary"
-                  columns="1.3fr 1fr 1fr 0.8fr"
+                  columns="1fr 1.2fr 1fr 0.55fr"
+                  compact
                   className="rise"
                   stats={[
                     { label: "Workouts", value: summary.workouts },

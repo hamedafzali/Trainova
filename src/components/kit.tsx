@@ -149,12 +149,15 @@ export function StatBand({
   stats,
   label,
   columns,
+  compact = false,
   className = "",
 }: {
   stats: Stat[];
   label: string;
   /** CSS grid-template-columns; equal columns by default. */
   columns?: string;
+  /** Smaller values on phones, for four columns with long values like "41h 36m". */
+  compact?: boolean;
   className?: string;
 }) {
   return (
@@ -169,7 +172,7 @@ export function StatBand({
             <h3 className="mb-1 truncate text-[10px] font-semibold uppercase tracking-wide text-muted">{s.label}</h3>
             {s.kicker && <p className="mb-1 truncate text-[11px] leading-tight text-inkSoft">{s.kicker}</p>}
             <p className="flex items-baseline gap-1">
-              <span className="font-display truncate text-2xl font-bold text-ink">{s.value}</span>
+              <span className={`font-display truncate font-bold text-ink ${compact ? "text-xl sm:text-2xl" : "text-2xl"}`}>{s.value}</span>
               {s.unit && <span className="text-xs text-muted">{s.unit}</span>}
             </p>
             {s.extra}

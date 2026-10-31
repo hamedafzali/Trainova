@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { ChevronRight, Download, FileSpreadsheet, LogOut, Shield, Trash2, Upload, Users, X } from "lucide-react";
+import { ChevronRight, Download, FileSpreadsheet, LogOut, Share, Shield, Smartphone, Trash2, Upload, Users, X } from "lucide-react";
 import { useHydrated, useStore } from "@/lib/store";
 import { signOut } from "@/lib/auth";
 import { pushState } from "@/lib/sync";
@@ -27,6 +27,7 @@ import { buildBackup, buildSetsCsv, download } from "@/lib/backup";
 import { localDayKey } from "@/domain/streak";
 import { formatWeight, fromDisplay, toDisplay } from "@/lib/units";
 import { toast } from "@/lib/toast";
+import { useInstall } from "@/lib/install";
 import pkg from "../../../package.json";
 
 const GOALS: { key: NonNullable<UserProfile["goal"]>; label: string }[] = [
@@ -91,6 +92,29 @@ function Section({ title, id, children }: { title: string; id?: string; children
       <div className="card divide-y divide-border overflow-hidden p-0">{children}</div>
     </section>
   );
+}
+
+/** Install to the home screen: a button where the browser offers it, steps on iOS, nothing once installed. */
+function InstallRow() {
+  const [state, install] = useInstall();
+  if (state === "prompt")
+    return (
+      <Row label="Install app" hint="Open Trainova from your home screen, full screen and offline.">
+        <button type="button" className="btn-secondary px-4 py-2.5 text-sm" onClick={install}>
+          <Smartphone className="h-4 w-4" aria-hidden /> Install Trainova
+        </button>
+      </Row>
+    );
+  if (state === "ios")
+    return (
+      <Row label="Install app" hint="Open Trainova from your home screen, full screen and offline.">
+        <p className="text-sm text-inkSoft">
+          In Safari, tap <Share className="inline h-4 w-4 align-text-bottom" aria-label="Share" /> Share, then{" "}
+          <span className="font-semibold text-ink">Add to Home Screen</span>.
+        </p>
+      </Row>
+    );
+  return null;
 }
 
 const DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ key: String(n), label: String(n) }));
@@ -411,6 +435,7 @@ export default function ProfilePage() {
         <Row label="Appearance">
           <ThemeToggle />
         </Row>
+        <InstallRow />
       </Section>
 
       <Section title="Your data">
