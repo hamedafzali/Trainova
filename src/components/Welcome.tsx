@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { BarChart3, Dumbbell, Eye, EyeOff, ListChecks, WifiOff } from "lucide-react";
+import { BarChart3, Dumbbell, Eye, EyeOff, ListChecks, Smartphone, WifiOff } from "lucide-react";
+import { LANDING_PATH } from "@/components/AppShell";
 import { LogoMark } from "@/components/Logo";
 import { useStore } from "@/lib/store";
 import { isCloudEnabled, signIn, signUp } from "@/lib/auth";
@@ -108,6 +110,13 @@ export function Welcome() {
           <p className="mt-4 text-body text-white/75">
             Follow a plan, log every set in seconds and watch your strength climb.
           </p>
+          <Link
+            href={LANDING_PATH}
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-volt hover:underline"
+          >
+            <Smartphone className="h-4 w-4" aria-hidden />
+            Get the app for Android and iPhone
+          </Link>
           <ul className="mt-10 hidden space-y-5 md:block">
             {FEATURES.map((f) => (
               <li key={f.title} className="flex gap-4">

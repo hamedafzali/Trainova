@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
+import { LANDING_PATH } from "@/components/AppShell";
 import { useAiStatus } from "@/lib/ai";
 import { useAssistant } from "@/lib/assistant";
 import { pageFocus } from "@/lib/pageFocus";
@@ -109,7 +110,7 @@ export function CoachAssistant() {
   if (ai.available !== true) return null;
 
   const inSession = pathname.startsWith("/session/");
-  const showFab = !otherModal && !inSession && !signedOut;
+  const showFab = !otherModal && !inSession && !signedOut && pathname !== LANDING_PATH;
 
   return (
     <>
