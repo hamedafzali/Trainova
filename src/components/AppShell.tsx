@@ -2,24 +2,25 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { LANDING_PATH, SIGN_IN_PATH } from "@/lib/paths";
 import { useHydrated, useStore } from "@/lib/store";
 import { SidebarNav } from "./SidebarNav";
 import { BottomNav } from "./BottomNav";
 import { ToastHost } from "./Toast";
 
-/** The public app introduction: full-bleed, no nav chrome, open to everyone. */
-export const LANDING_PATH = "/app";
+/** Pages anyone can open without a session. Full-bleed, no nav chrome. */
+const PUBLIC_PATHS = new Set([LANDING_PATH, SIGN_IN_PATH, "/reset"]);
 
 /**
  * Gates the whole app shell (nav chrome + routed pages) behind an entered
  * session (guest or account). Individual pages don't each re-check this —
  * without it, sidebar/bottom nav and any route were reachable and rendered
- * their local data even before the user picked guest/sign-in on "/".
+ * their local data even before the user picked guest/sign-in.
  *
- * Same gate applies to onboarding: the flow (manual and AI) renders inline
- * at "/" (see app/page.tsx) rather than its own route, so a session that
- * hasn't finished onboarding is confined to "/" exactly like no-session is —
- * nav chrome stays hidden and any other route bounces back to "/".
+ * Without a session, "/" shows the introduction and any other route bounces
+ * to the sign-in page. Onboarding (manual and AI) renders inline at "/" (see
+ * app/page.tsx) rather than its own route, so a session that hasn't finished
+ * it is confined to "/" — nav chrome stays hidden and other routes bounce back.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const hydrated = useHydrated();
@@ -28,25 +29,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const landing = pathname === LANDING_PATH;
-  const needsGate = !landing && (!session || !onboarded);
+  const open = PUBLIC_PATHS.has(pathname);
+  const needsGate = !open && (!session || !onboarded);
   // Focus mode: a live workout gets the whole screen on every device.
   const liveId = pathname.startsWith("/session/") ? pathname.split("/")[2] : null;
   const focus = useStore((s) => (liveId ? s.sessions.some((x) => x.id === liveId && x.status === "active") : false));
 
   useEffect(() => {
     if (hydrated && needsGate && pathname !== "/") {
-      router.replace("/");
+      router.replace(session ? "/" : SIGN_IN_PATH);
     }
-  }, [hydrated, needsGate, pathname, router]);
+  }, [hydrated, needsGate, pathname, router, session]);
 
   // Served before hydration too, so the first paint (and crawlers) get the content.
-  if (landing) return <main className="min-h-screen">{children}</main>;
+  if (pathname === LANDING_PATH) return <main className="min-h-screen">{children}</main>;
 
   if (!hydrated) return <main className="min-h-screen" />;
 
-  if (needsGate) {
-    if (pathname !== "/") return <main className="min-h-screen" />;
+  if (needsGate || open) {
+    if (needsGate && pathname !== "/") return <main className="min-h-screen" />;
     return (
       <main className="min-h-screen">
         <div key={pathname} className="enter-fade">

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { BarChart3, Dumbbell, Eye, EyeOff, ListChecks, Smartphone, WifiOff } from "lucide-react";
-import { LANDING_PATH } from "@/components/AppShell";
 import { LogoMark } from "@/components/Logo";
+import { LANDING_PATH } from "@/lib/paths";
 import { useStore } from "@/lib/store";
 import { isCloudEnabled, signIn, signUp } from "@/lib/auth";
 import { mergeRemote, pullState, pushState } from "@/lib/sync";

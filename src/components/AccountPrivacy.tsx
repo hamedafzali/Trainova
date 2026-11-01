@@ -6,6 +6,7 @@ import { Download, LogOut, Trash2 } from "lucide-react";
 import { apiFetch, fetchMeCached, signOut, type Me } from "@/lib/auth";
 import { pushState } from "@/lib/sync";
 import { setAnalyticsOptOut } from "@/lib/analytics";
+import { SIGN_IN_PATH } from "@/lib/paths";
 import { useStore } from "@/lib/store";
 import { toast } from "@/lib/toast";
 import { PromptDialog } from "@/components/PromptDialog";
@@ -136,7 +137,7 @@ export function AccountPrivacy() {
     await pushState(); // keep anything not yet synced
     await signOut({ everywhere: true });
     leaveSession({ wipe: true });
-    router.push("/");
+    router.push(SIGN_IN_PATH);
   };
 
   const aiOn = Boolean(me?.aiConsent);

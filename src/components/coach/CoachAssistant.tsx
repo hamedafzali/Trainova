@@ -3,10 +3,10 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
-import { LANDING_PATH } from "@/components/AppShell";
 import { useAiStatus } from "@/lib/ai";
 import { useAssistant } from "@/lib/assistant";
 import { pageFocus } from "@/lib/pageFocus";
+import { LANDING_PATH } from "@/lib/paths";
 import { useStore } from "@/lib/store";
 import { useDialogA11y } from "@/lib/useDialogA11y";
 import { TrainerChat } from "./TrainerChat";

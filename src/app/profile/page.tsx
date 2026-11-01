@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { ChevronRight, Download, FileSpreadsheet, LogOut, Share, Shield, Smartphone, Trash2, Upload, Users, X } from "lucide-react";
 import { useHydrated, useStore } from "@/lib/store";
 import { signOut } from "@/lib/auth";
+import { SIGN_IN_PATH } from "@/lib/paths";
 import { pushState } from "@/lib/sync";
 import type { UserProfile, Units } from "@/domain/types";
 import {
@@ -287,7 +288,7 @@ export default function ProfilePage() {
     if (account) await pushState();
     await signOut();
     state.leaveSession({ wipe: account });
-    router.push("/");
+    router.push(SIGN_IN_PATH);
   };
 
   const persisted = () => ({

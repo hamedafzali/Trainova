@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import { Bell, Check, Dumbbell, Flame, Play, Plus } from "lucide-react";
 import { CoachCard, HeroCard, IconButton, ListCard, ListRow, SectionHeader, StatBand, type Stat } from "@/components/kit";
+import { Landing } from "@/components/Landing";
 import { Onboarding } from "@/components/Onboarding";
 import { Welcome } from "@/components/Welcome";
 import { recommendToday } from "@/domain/adaptive";
@@ -13,6 +14,7 @@ import { sessionMinutes } from "@/domain/periodStats";
 import { localDayKey, startOfWeek, weekDays, weekStreak } from "@/domain/streak";
 import { label } from "@/domain/taxonomy";
 import { calcSetVolume } from "@/domain/volume";
+import { useInstall } from "@/lib/install";
 import { useHydrated, useStore } from "@/lib/store";
 import { useInbox } from "@/lib/useInbox";
 import { formatWeight, toDisplay } from "@/lib/units";
@@ -33,6 +35,7 @@ const shortDate = (k: string) =>
 export default function HomePage() {
   const hydrated = useHydrated();
   const { fresh } = useInbox();
+  const [install] = useInstall();
   const router = useRouter();
   const session = useStore((s) => s.session);
   const profile = useStore((s) => s.profile);
@@ -83,7 +86,8 @@ export default function HomePage() {
   }, [sessions, sets, todayKey]);
 
   if (!hydrated) return <main className="p-4 text-muted">Loading…</main>;
-  if (!session) return <Welcome />;
+  // Visitors get the introduction; the installed app goes straight to sign-in.
+  if (!session) return install === "installed" ? <Welcome /> : <Landing />;
   if (!profile.onboarded) return <Onboarding />;
 
   const active = getActiveSession();
