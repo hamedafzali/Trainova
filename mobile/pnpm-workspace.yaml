@@ -1,0 +1,10 @@
+# pnpm 11 (used by EAS Build) reads its settings from here, not from .npmrc.
+# .npmrc keeps node-linker for older local pnpm versions.
+packages:
+  - "."
+# Metro resolves from a flat node_modules (see metro.config.js).
+nodeLinker: hoisted
+# pnpm 11 fails the install on unreviewed dependency build scripts.
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
