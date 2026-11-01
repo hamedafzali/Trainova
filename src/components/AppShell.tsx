@@ -7,6 +7,9 @@ import { SidebarNav } from "./SidebarNav";
 import { BottomNav } from "./BottomNav";
 import { ToastHost } from "./Toast";
 
+/** The public app introduction: full-bleed, no nav chrome, open to everyone. */
+export const LANDING_PATH = "/app";
+
 /**
  * Gates the whole app shell (nav chrome + routed pages) behind an entered
  * session (guest or account). Individual pages don't each re-check this —
@@ -25,7 +28,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const needsGate = !session || !onboarded;
+  const landing = pathname === LANDING_PATH;
+  const needsGate = !landing && (!session || !onboarded);
   // Focus mode: a live workout gets the whole screen on every device.
   const liveId = pathname.startsWith("/session/") ? pathname.split("/")[2] : null;
   const focus = useStore((s) => (liveId ? s.sessions.some((x) => x.id === liveId && x.status === "active") : false));
@@ -35,6 +39,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       router.replace("/");
     }
   }, [hydrated, needsGate, pathname, router]);
+
+  // Served before hydration too, so the first paint (and crawlers) get the content.
+  if (landing) return <main className="min-h-screen">{children}</main>;
 
   if (!hydrated) return <main className="min-h-screen" />;
 
